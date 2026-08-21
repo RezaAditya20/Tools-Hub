@@ -231,7 +231,7 @@ code {
   top: 0;
   z-index: 100;
   margin-top: -48px;
-  padding: 24px 0 12px;
+  padding: 18px 0 12px;
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   background: color-mix(in srgb, var(--bg) 72%, transparent);
@@ -269,7 +269,10 @@ code {
     flex-wrap: nowrap;
   }
   .topbar {
-    padding-top: 1px;
+    position: sticky;
+    top: 0;
+    margin-top: -48px;
+    padding-top: 10px;
     margin-bottom: 0px !important;
     padding-left: 40px;
   }
@@ -1694,6 +1697,10 @@ textarea {
   body:has(#navbar) .container {
     margin-left: 0;
     padding-top: 58px;
+  }
+  /* netralkan padding 58px agar topbar langsung di top:0 (gak geser pas scroll) */
+  body:has(#navbar) .topbar {
+    margin-top: -58px;
   }
   .navbar.open ~ .container {
     margin-left: 220px;
