@@ -57,6 +57,10 @@
         border-radius: 38px;
         justify-content: flex-end;
         background: var(--card);
+        --width: 44px;
+        --height: 28px;
+        --color-primary: var(--muted);
+        --color-secondary: var(--card);
         border: 1px solid rgba(255, 255, 255, 0.05);
         box-shadow: var(--liquid-shadow);
       }
@@ -272,6 +276,9 @@
       }
       .col-date {
         width: 140px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .col-progress {
         width: 150px !important;
