@@ -566,7 +566,6 @@ button:hover:not(:disabled) {
     background: var(--muted);
     color: #fff;
     border-color: var(--muted);
-    transform: scale(1.1);
     box-shadow: 0 2px 12px rgba(41, 151, 255, 0.2);
 }
 
@@ -577,6 +576,14 @@ button:active:not(:disabled) {
 button:disabled {
     opacity: 0.35;
     cursor: not-allowed;
+}
+
+/* Icon buttons: pop 1.1 saat hover */
+.btn-icon-only:hover:not(:disabled),
+.btn-icon:hover:not(:disabled),
+.nav-burger:hover {
+    transform: scale(1.1);
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 [data-theme="light"] button {
@@ -858,7 +865,7 @@ th, td {
 
 th {
     font-weight: 400;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--muted);
     letter-spacing: -0.01em;
 }

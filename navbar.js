@@ -293,11 +293,6 @@
       if (!overBurger && !overNav) mount.classList.remove("open");
     }, 120);
   }
-  burger.addEventListener("mouseenter", () => {
-    clearTimeout(closeTimer);
-    overBurger = true;
-    mount.classList.add("open");
-  });
   burger.addEventListener("mouseleave", () => {
     overBurger = false;
     scheduleClose();
@@ -309,6 +304,19 @@
   mount.addEventListener("mouseleave", () => {
     overNav = false;
     scheduleClose();
+  });
+  // Pointer agak di tepi kiri → langsung buka (tanpa hover burger).
+  document.addEventListener("mousemove", (e) => {
+    const near = e.clientX <= 24;
+    if (near) {
+      clearTimeout(closeTimer);
+      overBurger = true;
+      mount.classList.add("open");
+    } else if (overBurger) {
+      // keluar dari zona tepi kiri → lepas flag, biarkan scheduleClose nutup
+      overBurger = false;
+      scheduleClose();
+    }
   });
   // Tutup sidebar (mobile). Item lain navigasi sendiri; klik item aktif di halaman
   // yang SAMA tidak navigasi → langsung tutup biar konsisten dengan pindah halaman.
