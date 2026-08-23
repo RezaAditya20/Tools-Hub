@@ -212,6 +212,10 @@
       th,
       td {
         padding: 8px 12px;
+        border-bottom: 1px solid color-mix(in srgb, #f5f5f7 12%, transparent);
+      }
+      thead th {
+        border-bottom: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
       }
       input[type="checkbox"] {
         width: 18px;
@@ -2374,7 +2378,16 @@
             showHome();
           } else if (d.action === "school" && d.schoolId) {
             if (!db[d.schoolId]) return;
-            showDetail(d.schoolId);
+            if (db[d.schoolId].pin) {
+              showPinModal("Masukkan PIN:", {
+                mode: "verify",
+                verifyFn: (pin) => pin === db[d.schoolId].pin,
+              }).then((result) => {
+                if (result !== null) showDetail(d.schoolId);
+              });
+            } else {
+              showDetail(d.schoolId);
+            }
           } else if (d.action === "note" && d.noteId) {
             if (!db[currentSchoolId]) return;
             if (!db[currentSchoolId].notes.some((n) => n.id === d.noteId)) return;
@@ -3333,6 +3346,7 @@
         updateStorageInfo();
         showHome();
 
+        // ── Scroll: compact topbar + blur gradual ──
         // === Task container collapse (default open) ===
         const taskToggle = document.getElementById("btn-task-toggle");
         const taskToggleIco = taskToggle.querySelector(".task-toggle-ico");

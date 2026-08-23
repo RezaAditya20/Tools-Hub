@@ -81,7 +81,8 @@
     schools.forEach(({ id, school }) => {
       const active = id === snState.schoolId ? " active" : "";
       const count = (school.notes || []).filter((n) => !n.done).length;
-      html += `<a class="nav-item${active}" data-school-id="${id}" style="--icon-bg:#22d3ee"><span class="nav-ico"><i class="fa-regular fa-school"></i></span><span class="label">${escapeHtml(school.name)}${count ? ` <span style="opacity:.6">(${count})</span>` : ""}</span></a>`;
+      const locked = !!school.pin;
+      html += `<a class="nav-item${active}" data-school-id="${id}"${locked ? ' data-locked="1"' : ""} style="--icon-bg:#22d3ee"><span class="nav-ico"><i class="fa-regular fa-school"></i></span><span class="label">${escapeHtml(school.name)}${count ? ` <span style="opacity:.6">(${count})</span>` : ""}</span></a>`;
     });
     return html;
   }
@@ -155,11 +156,14 @@
     navEl.addEventListener("click", (e) => {
       const item = e.target.closest(".nav-item");
       if (!item) return;
-      e.preventDefault();
-      if (item.dataset.schoolId) {
-        window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "school", schoolId: item.dataset.schoolId } }));
-      } else if (item.dataset.noteId) {
-        window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "note", noteId: item.dataset.noteId } }));
+      // Item School Notes → handle via custom event (jangan navigasi link)
+      if (item.dataset.schoolId || item.dataset.noteId) {
+        e.preventDefault();
+        if (item.dataset.schoolId) {
+          window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "school", schoolId: item.dataset.schoolId } }));
+        } else if (item.dataset.noteId) {
+          window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "note", noteId: item.dataset.noteId } }));
+        }
       }
     });
   }
@@ -177,6 +181,43 @@
   // Class ini (opacity:1) harus sudah ada saat collapse-warm dilepas, supaya
   // navbar tidak kembali ke state base opacity:0 (penyebab kedip di semua halaman).
   mount.classList.add("loaded");
+
+  // ── Scroll: blur gradual + fade band + subtitle collapse (shared, all pages) ──
+  // navbar.js di-load SEBELUM .topbar diparse → tunggu DOM siap dulu.
+  (function () {
+    function initScroll() {
+      const topbar = document.querySelector(".topbar");
+      if (!topbar) return;
+      let ticking = false;
+      // Hysteresis: nyala di >12px, mati di <4px → cegah kedip pas scroll mondar-mandir di atas.
+      function onScroll() {
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        const compact = topbar.classList.contains("scroll-compact");
+        const next = compact ? y > 4 : y > 12;
+        topbar.classList.toggle("scroll-compact", next);
+        const b = Math.min(20, (y / 120) * 20); // 0px → 20px over 120px
+        topbar.style.backdropFilter = `saturate(180%) blur(${b}px)`;
+        topbar.style.webkitBackdropFilter = `saturate(180%) blur(${b}px)`;
+        ticking = false;
+      }
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(onScroll);
+          }
+        },
+        { passive: true }
+      );
+      onScroll();
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initScroll);
+    } else {
+      initScroll();
+    }
+  })();
 
   // ── Theme toggle (single source — sidebar only) ──
   (function () {
