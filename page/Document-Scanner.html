@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      try { var t = localStorage.getItem("theme"); if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000"; } catch (e) { document.documentElement.style.background = "#000000"; }
+    </script>
+
+    <link rel="stylesheet" href="shared.css" />
+        <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-duotone-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Document Scanner — Auto Crop & Perjelas Teks</title>
+    <meta name="description" content="Scan dokumen: auto-crop mengikuti bentuk dokumen + filter perjelas teks (OpenCV.js)." />
+    <script src="https://docs.opencv.org/4.x/opencv.js" onload="window.__opencvOnLoad && window.__opencvOnLoad()"></script>
+    <style>
+      /* ── Upload ── */
+      .upload-zone {
+        border: 2px dashed var(--border);
+        border-radius: 30px;
+        padding: 48px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s;
+        background: var(--input);
+        position: relative;
+      }
+      .upload-zone:hover,
+      .upload-zone.drag-over {
+        border-color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 6%, var(--input));
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      }
+      .upload-zone input[type="file"] { display: none; }
+      .upload-icon { font-size: 2.5rem; margin-bottom: 12px; display: block; color: var(--muted); transition: transform 0.25s; }
+      .upload-zone:hover .upload-icon { transform: translateY(-4px) scale(1.05); }
+      .upload-label { font-size: 0.9375rem; font-weight: 500; color: var(--fg); margin-bottom: 4px; }
+      .upload-hint { font-size: 0.75rem; color: var(--muted); }
+
+      /* ── Canvas preview ── */
+      .preview-wrap { margin-top: 16px; text-align: center; display: none; }
+      .preview-wrap.show { display: block; animation: fade-in 0.2s ease; }
+      .canvas-stage {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        line-height: 0;
+      }
+      #canvas {
+        max-width: 100%;
+        max-height: 70vh;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        object-fit: contain;
+        background: var(--bg);
+        touch-action: none;
+      }
+      .corner {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        margin: -11px 0 0 -11px;
+        border-radius: 50%;
+        background: var(--primary);
+        border: 2px solid #fff;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        cursor: grab;
+        touch-action: none;
+      }
+      .corner:active { cursor: grabbing; }
+      .corner.tl { top: 0; left: 0; }
+      .corner.tr { top: 0; right: 0; }
+      .corner.bl { bottom: 0; left: 0; }
+      .corner.br { bottom: 0; right: 0; }
+      #overlay {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        pointer-events: none;
+      }
+      .result-stage { margin-top: 16px; text-align: center; display: none; }
+      .result-stage.show { display: block; animation: fade-in 0.2s ease; }
+      .result-cap { font-size: 0.8125rem; color: var(--muted); margin-bottom: 8px; }
+      #result {
+        max-width: 100%; max-height: 70vh; border-radius: 16px;
+        border: 1px solid var(--border); background: var(--bg);
+        cursor: zoom-in;
+      }
+
+      /* ── Lightbox hasil ── */
+      .lightbox {
+        position: fixed; inset: 0; z-index: 100;
+        background: rgba(0,0,0,0.85);
+        display: none; align-items: center; justify-content: center;
+        padding: 24px; cursor: zoom-out;
+      }
+      .lightbox.show { display: flex; animation: fade-in 0.15s ease; }
+      .lightbox img {
+        max-width: 96vw; max-height: 92vh;
+        border-radius: 12px; box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      }
+      .lightbox .lb-hint {
+        position: fixed; bottom: 18px; left: 0; right: 0; text-align: center;
+        color: rgba(255,255,255,0.65); font-size: 0.75rem; pointer-events: none;
+      }
+
+      /* ── Popover pilih format download (kecil, di bawah tombol download) ── */
+      .modal {
+        position: fixed; inset: 0; z-index: 110;
+        background: rgba(0,0,0,0.45);
+        display: none; padding: 0; cursor: default;
+      }
+      /* posisi tetap di pojok kanan-atas, tepat di bawah baris topbar */
+      .modal.popover { display: none; }
+      .modal.popover.show { display: block; }
+      .modal.popover .modal-card {
+        position: fixed; top: 64px; right: 18px;
+        width: 220px;
+        background: var(--card); color: var(--fg);
+        border: 1px solid var(--border); border-radius: 14px;
+        padding: 14px; display: flex; flex-direction: column; gap: 8px;
+        box-shadow: 0 16px 50px rgba(0,0,0,0.45);
+        animation: fade-in 0.12s ease;
+      }
+      .modal-label { font-size: 0.75rem; color: var(--muted); }
+      .modal-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 0; }
+      .modal-opt {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--input); color: var(--fg);
+        font-family: inherit; font-size: 0.85rem; cursor: pointer; text-align: left;
+      }
+      .modal-opt:hover { border-color: var(--primary); }
+      .modal-opt i { width: 18px; text-align: center; color: var(--primary); }
+      .modal-close {
+        margin-top: 2px; padding: 9px; border-radius: 10px;
+        border: 1px solid var(--border); background: transparent; color: var(--muted);
+        font-family: inherit; font-size: 0.8rem; cursor: pointer;
+      }
+      .modal-close:hover { color: var(--fg); }
+
+      /* ── Controls ── */
+      .ctrl-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        padding: 6px 2px;
+      }
+      .ctrl {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .ctrl label { font-size: 0.8125rem; color: var(--fg); font-weight: 500; }
+      .ctrl .val { color: var(--muted); font-weight: 400; }
+      .ctrl input[type="range"] { width: 100%; accent-color: var(--primary); }
+      .text-input {
+        width: 100%; padding: 9px 12px; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--input); color: var(--fg);
+        font-family: inherit; font-size: 0.875rem; outline: none;
+      }
+      .text-input:focus { border-color: var(--primary); }
+      .seg {
+        display: inline-flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .seg button {
+        flex: 1;
+        padding: 7px 10px;
+        border-radius: 30px;
+        border: 1px solid var(--border);
+        background: var(--input);
+        color: var(--fg);
+        font-family: inherit;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        transition: all 0.15s;
+        min-width: 60px;
+      }
+      .seg button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+      .switch-row { display: flex; align-items: center; gap: 10px; }
+      .switch {
+        position: relative; width: 44px; height: 26px; flex-shrink: 0;
+        border-radius: 30px; border: none; cursor: pointer;
+        background: var(--muted); transition: background 0.2s;
+      }
+      .switch.on { background: var(--primary); }
+      .switch::after {
+        content: ""; position: absolute; top: 3px; left: 3px;
+        width: 20px; height: 20px; border-radius: 50%; background: #fff;
+        transition: transform 0.2s;
+      }
+      .switch.on::after { transform: translateX(18px); }
+
+      .format-row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .download-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+      /* circular liquid-glass icon button (consisten dgn School Notes back-btn) */
+      .btn-icon-only {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; font-size: 1rem; border-radius: 50%;
+        padding: 0;
+      }
+      .btn-icon-only svg { width: 16px; height: 16px; }
+    </style>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <script src="../navbar.js"></script>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Document Scanner</h1>
+            <p class="subtitle">Auto-crop mengikuti bentuk dokumen + filter perjelas teks.</p>
+          </div>
+          <div class="topbar-actions">
+            <div class="topbar-action-group">
+              <div class="topbar-action" id="topbar-action-dl" style="display:none">
+                <button class="btn btn-icon-only btn-liquid" id="btn-dl" title="Download"><i class="fa-solid fa-download"></i></button>
+              </div>
+              <div class="topbar-action" id="topbar-action-reset" style="display:none">
+                <button class="btn btn-icon-only btn-liquid" id="btn-reset" title="Ulangi"><i class="fa-regular fa-rotate-left"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div class="panel">
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="file-input" accept="image/*" />
+          <span class="upload-icon">📷</span>
+          <div class="upload-label">Klik atau seret gambar ke sini</div>
+          <div class="upload-hint">JPG, PNG, WEBP, BMP · Ctrl+V paste · <span id="cv-status">memuat OpenCV.js…</span></div>
+        </div>
+
+        <div class="preview-wrap" id="preview-wrap">
+          <div class="canvas-stage" id="canvas-stage">
+            <canvas id="canvas"></canvas>
+            <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polygon id="guide" points="0,0 100,0 100,100 0,100"
+                fill="rgba(0,122,255,0.12)" stroke="var(--primary)" stroke-width="0.6" stroke-linejoin="round" />
+            </svg>
+            <div class="corner tl" data-c="0"></div>
+            <div class="corner tr" data-c="1"></div>
+            <div class="corner br" data-c="2"></div>
+            <div class="corner bl" data-c="3"></div>
+          </div>
+        </div>
+
+        <div class="result-stage" id="result-stage">
+          <div class="result-cap">Hasil (dokumen rapi tegak lurus):</div>
+          <canvas id="result"></canvas>
+        </div>
+
+        <div class="action-row" id="action-row" style="display:none; margin-top:16px">
+          <button class="btn btn-primary" id="btn-recrop">✂ Re-crop Otomatis</button>
+          <button class="btn" id="btn-apply-corners" title="Terapkan sudut manual">✓ Terapkan Sudut</button>
+          <button class="btn" id="btn-clear">✕ Hapus</button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="panel-group" id="filter-group" style="display:none">
+        <div class="panel-title-row">
+          <div class="panel-title"><h2>Perjelas Teks</h2></div>
+        </div>
+        <div class="panel">
+          <div class="ctrl-grid">
+            <div class="ctrl">
+              <label class="switch-row">
+                <button class="switch" id="sw-gray" aria-pressed="false"></button>
+                <span>Grayscale</span>
+              </label>
+            </div>
+            <div class="ctrl">
+              <label class="switch-row">
+                <button class="switch" id="sw-sharp" aria-pressed="false"></button>
+                <span>Sharpen (tajamkan)</span>
+              </label>
+            </div>
+            <div class="ctrl">
+              <label>Threshold <span class="val" id="thr-label">Off</span></label>
+              <div class="seg" id="seg-thr">
+                <button data-mode="none" class="active">Off</button>
+                <button data-mode="adaptive">Adaptive</button>
+                <button data-mode="otsu">Otsu</button>
+              </div>
+            </div>
+            <div class="ctrl">
+              <label>Contrast <span class="val" id="con-val">1.00</span></label>
+              <input type="range" id="rng-contrast" min="0.5" max="2.5" step="0.05" value="1.1" />
+            </div>
+            <div class="ctrl">
+              <label>Brightness <span class="val" id="bri-val">0</span></label>
+              <input type="range" id="rng-bright" min="-80" max="80" step="2" value="0" />
+            </div>
+          </div>
+
+          <div class="ctrl" style="margin-top:18px">
+            <label>Nama file</label>
+            <input type="text" id="file-name" class="text-input" placeholder="scan-dokumen" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="lightbox" id="lightbox">
+      <img id="lightbox-img" alt="Hasil scan" />
+      <div class="lb-hint">Klik di mana saja untuk tutup</div>
+    </div>
+
+    <!-- Popover pilih format download (kecil, di bawah tombol) -->
+    <div class="modal popover" id="dl-modal">
+      <div class="modal-card">
+        <label class="modal-label">Nama file</label>
+        <input type="text" id="dl-name" class="text-input" placeholder="scan-dokumen" />
+        <div class="modal-title" style="margin-top:4px">Pilih format</div>
+        <button class="modal-opt" data-kind="png"><i class="fa-regular fa-image"></i> PNG</button>
+        <button class="modal-opt" data-kind="jpg"><i class="fa-regular fa-file-image"></i> JPG</button>
+        <button class="modal-opt" data-kind="pdf"><i class="fa-regular fa-file-pdf"></i> PDF</button>
+        <button class="modal-close" id="dl-close">Batal</button>
+      </div>
+    </div>
+
+    <script>
+    (function () {
+      /* ── Toast ── */
+      function showToast(msg, type) {
+        const c = document.createElement("div");
+        c.className = "toast" + (type === "error" ? " toast-error" : "");
+        c.textContent = msg;
+        document.getElementById("toast-container").appendChild(c);
+        requestAnimationFrame(() => c.classList.add("show"));
+        setTimeout(() => { c.classList.remove("show"); setTimeout(() => c.remove(), 250); }, 2200);
+      }
+
+      /* ── DOM refs ── */
+      const uploadZone = document.getElementById("upload-zone");
+      const fileInput = document.getElementById("file-input");
+      const previewWrap = document.getElementById("preview-wrap");
+      const canvas = document.getElementById("canvas");
+      const canvasStage = document.getElementById("canvas-stage");
+      const result = document.getElementById("result");
+      const resultStage = document.getElementById("result-stage");
+      const overlay = document.getElementById("overlay");
+      const guide = document.getElementById("guide");
+      const actionRow = document.getElementById("action-row");
+      const lightbox = document.getElementById("lightbox");
+      const lightboxImg = document.getElementById("lightbox-img");
+      const filterGroup = document.getElementById("filter-group");
+      const topbarReset = document.getElementById("topbar-action-reset");
+      const topbarDl = document.getElementById("topbar-action-dl");
+      const dlModal = document.getElementById("dl-modal");
+      const dlClose = document.getElementById("dl-close");
+      const cvStatus = document.getElementById("cv-status");
+      const corners = [...document.querySelectorAll(".corner")];
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+      let cvReady = false;
+      let srcMat = null;        // gambar asli (cv.Mat)
+      let docMat = null;        // hasil crop lurus (cv.Mat)
+      let outMat = null;        // hasil filter (cv.Mat)
+      let selectedFile = null;
+      let pathPoints = null;    // [[x,y]x4] path dokumen dlm koordinat gambar asli (image px)
+
+      // filter state
+      let gray = false, sharp = false, thrMode = "none";
+      let contrast = 1.1, bright = 0;
+
+      /* ── OpenCV ready ── */
+      window.__opencvOnLoad = function () {
+        cvStatus.textContent = "siap";
+        cvReady = true;
+      };
+      // fallback: jika onload lewat (cache), cek tiap 200ms
+      const cvTimer = setInterval(() => {
+        if (typeof cv !== "undefined" && cv.getPerspectiveTransform) {
+          cvStatus.textContent = "siap"; cvReady = true; clearInterval(cvTimer);
+        }
+      }, 200);
+      setTimeout(() => { if (!cvReady) cvStatus.textContent = "gagal load (cek koneksi)"; }, 12000);
+
+      /* ── Upload handlers ── */
+      uploadZone.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", (e) => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+      ["dragover", "dragenter"].forEach(ev => uploadZone.addEventListener(ev, (e) => { e.preventDefault(); uploadZone.classList.add("drag-over"); }));
+      ["dragleave", "dragend"].forEach(ev => uploadZone.addEventListener(ev, () => uploadZone.classList.remove("drag-over")));
+      uploadZone.addEventListener("drop", (e) => {
+        e.preventDefault(); uploadZone.classList.remove("drag-over");
+        const f = e.dataTransfer.files[0];
+        if (f && f.type.startsWith("image/")) handleFile(f);
+      });
+      window.addEventListener("paste", (e) => {
+        const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith("image/"));
+        if (it) handleFile(it.getAsFile());
+      });
+
+      function handleFile(file) {
+        selectedFile = file;
+        if (!cvReady) { showToast("OpenCV.js belum siap, tunggu sebentar…", "error"); return; }
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          ctx.drawImage(img, 0, 0);
+          if (srcMat) srcMat.delete();
+          if (docMat) docMat.delete();
+          if (outMat) outMat.delete();
+          srcMat = cv.imread(canvas);
+          docMat = null; outMat = null;
+          pathPoints = null;
+          previewWrap.classList.add("show");
+          resultStage.classList.remove("show");
+          actionRow.style.display = "flex";
+          filterGroup.style.display = "";
+          topbarReset.style.display = "";
+          topbarDl.style.display = "";
+          uploadZone.style.display = "none";
+          corners.forEach(c => c.style.display = "none");
+          autoCrop();
+        };
+        img.onerror = () => showToast("Gagal membaca gambar", "error");
+        img.src = URL.createObjectURL(file);
+      }
+
+      /* ── Auto crop (Canny + contours + perspective, fallback white-margin) ── */
+      function autoCrop() {
+        if (!srcMat) return;
+        let grayM, blurM, edge, contours, hier, dilated;
+        try {
+          grayM = new cv.Mat();
+          blurM = new cv.Mat();
+          cv.cvtColor(srcMat, grayM, cv.COLOR_RGBA2GRAY, 0);
+          cv.GaussianBlur(grayM, blurM, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+
+          // equalizeHist: boost kontras global supaya tepi dokumen (gradien rendah
+          // di latar gelap/bertekstur) muncul untuk Canny. (cv.createCLAHE gak ada
+          // di build opencv.js ini, jadi pakai equalizeHist yang selalu tersedia.)
+          const cl = new cv.Mat();
+          cv.equalizeHist(blurM, cl);
+
+          // Canny ganda: normal + inverted. Dokumen = terang di atas latar gelap;
+          // di inverted jadi gelap-di-atas-terang → batasnya jauh lebih kontras.
+          // Gabungkan via OR supaya tepi yang lewat di salah satu tetap keambil.
+          const med = medianGray(cl);
+          const lo = Math.max(0, Math.floor(0.66 * med));
+          const hi = Math.min(255, Math.floor(1.33 * med));
+          const e1 = new cv.Mat();
+          cv.Canny(cl, e1, lo, hi, 3, false);
+          const inv = new cv.Mat();
+          cv.bitwise_not(cl, inv);
+          const e2 = new cv.Mat();
+          cv.Canny(inv, e2, lo, hi, 3, false);
+          edge = new cv.Mat();
+          cv.bitwise_or(e1, e2, edge);
+          cl.delete(); e1.delete(); inv.delete(); e2.delete();
+
+          // dilasi + close supaya tepi dokumen yang putus nyambung jadi 1 kontur
+          // tertutup → quad perspektif rapi (bukan fallback kotak axis-aligned).
+          const k = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+          dilated = new cv.Mat();
+          cv.dilate(edge, dilated, k, new cv.Point(-1, -1), 1);
+          cv.morphologyEx(dilated, dilated, cv.MORPH_CLOSE, k, new cv.Point(-1, -1), 1);
+          k.delete();
+
+          contours = new cv.MatVector();
+          hier = new cv.Mat();
+          // RETR_LIST: ambil SEMUA kontur (termasuk dokumen yang jadi "lubang"
+          // di dalam latar gelap). RETR_EXTERNAL cuma ambil kontur terluar →
+          // dokumen di atas latar gelap kelewat & hasilnya jadi kotak full-frame.
+          cv.findContours(dilated, contours, hier, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+
+          const total = srcMat.rows * srcMat.cols;
+          const W = srcMat.cols, H = srcMat.rows;
+          const T = Math.max(4, Math.floor(Math.min(W, H) * 0.015)); // toleransi tepi
+
+          // Kumpulkan semua kontur layak, urutkan area menurun, lalu COBA
+          // contourToQuad satu per satu — pakai yang PERTAMA berhasil membentuk
+          // kuadrilateral perspektif. Penting: buat foto dokumen di tangan di
+          // atas latar gelap, kontur terbesar = LATAR (frame penuh) yang ditolak,
+          // jadi kita harus lanjut ke kontur dokumen (lebih kecil) bukan langsung
+          // fallback kotak axis-aligned.
+          const cands = [];
+          for (let i = 0; i < contours.size(); i++) {
+            const c = contours.get(i);
+            const area = cv.contourArea(c);
+            if (area < total * 0.02) { c.delete(); continue; }
+            const bb = cv.boundingRect(c);
+            const isBg = area > total * 0.97 &&
+              bb.x <= T && bb.x + bb.width >= W - T &&
+              bb.y <= T && bb.y + bb.height >= H - T;
+            if (isBg) { c.delete(); continue; }
+            cands.push({ c, area });
+          }
+          cands.sort((a, b) => b.area - a.area);
+
+          let found = false;
+          for (const { c } of cands) {
+            const pts = contourToQuad(c, W, H, T);
+            c.delete();                  // selalu bebaskan kontur kandidat
+            if (pts) {
+              pathPoints = pts;          // simpan path terdeteksi, biarkan user edit
+              editPath();
+              renderResult();
+              showToast("Dokumen terdeteksi — geser titik biru untuk rapikan");
+              found = true;
+              break;
+            }
+          }
+          if (found) return;
+
+          // Fallback: crop margin lewat proyeksi tepi (paper di atas meja terang/bertekstur)
+          const box = whiteMarginCrop(dilated);
+          if (box) {
+            const pts = [
+              [box.x, box.y], [box.x + box.w, box.y],
+              [box.x + box.w, box.y + box.h], [box.x, box.y + box.h],
+            ];
+            pathPoints = pts;            // path default = bbox, user bisa rapikan
+            editPath();
+            renderResult();
+            const trimmed = 1 - (box.w * box.h) / (W * H);
+            if (trimmed > 0.02) showToast("Auto-crop (margin) — geser titik untuk rapikan");
+            else showToast("Tidak terdeteksi — geser titik biru manual", "error");
+            return;
+          }
+          // sama sekali tak terdeteksi: path = full frame, user yang atur
+          pathPoints = [[0,0],[W,0],[W,H],[0,H]];
+          editPath();
+          renderResult();
+          showToast("Auto gagal — atur 4 titik biru lalu Terapkan", "error");
+        } catch (err) {
+          showToast("Error crop: " + err.message, "error");
+          if (!docMat) docMat = srcMat.clone();
+          applyFilters();
+        } finally {
+          [grayM, blurM, edge, contours, hier, dilated].forEach(m => m && m && m.delete && m.delete());
+        }
+      }
+
+      // dari kontur → 4 titik [TL,TR,BR,BL]. Tahan perspektif miring (bukan
+      // sekadar persegi minAreaRect): pakai convex hull → kuadrilateral luas-maks
+      // agar jajar genjang/trapezoid dokumen foto ikut terdeteksi. Null kalau
+      // nempel ke tepi canvas.
+      function contourToQuad(c, W, H, T) {
+        const peri = cv.arcLength(c, true);
+        const approx = new cv.Mat();
+        cv.approxPolyDP(c, approx, 0.02 * peri, true);
+        let raw;
+        if (approx.rows === 4) {
+          raw = approx.clone();
+        } else {
+          const hull = new cv.Mat();
+          cv.convexHull(c, hull, false, true); // returnPoints = true
+          if (hull.rows >= 4) {
+            raw = hull.clone();
+          } else {
+            approx.delete(); hull.delete();
+            return null;
+          }
+          hull.delete();
+        }
+        approx.delete();
+        // konversi ke float 32FC2 supaya pembacaan koordinat aman
+        // (boxPoints = float, approxPolyDP = int32; baca via data8 salah total → warp hitam)
+        const flt = new cv.Mat();
+        raw.convertTo(flt, cv.CV_32FC2);
+        raw.delete();
+
+        let pts = [];
+        for (let i = 0; i < flt.rows; i++) pts.push({ x: flt.data32F[i * 2], y: flt.data32F[i * 2 + 1] });
+        if (pts.length > 4) pts = maxQuad(pts);   // cari 4 sudut terluar (perspektif)
+        if (pts.length !== 4) { flt.delete(); return null; }
+        // tolak HANYA kalau kuadrilateral menutupi SELURUH frame DENGAN rasio
+        // aspek = gambar (border penuh). Dokumen di tangan yang mepet ke tepi
+        // punya rasio beda (kertas panjang) → tetap lewat, biar jadi path miring.
+        const touchesAll = (s) => pts.every(p => (s === "l" ? p.x <= T : s === "r" ? p.x >= W - T : s === "t" ? p.y <= T : p.y >= H - T));
+        const bb = { x: Math.min(...pts.map(p => p.x)), y: Math.min(...pts.map(p => p.y)), x2: Math.max(...pts.map(p => p.x)), y2: Math.max(...pts.map(p => p.y)) };
+        const coversFrame = bb.x <= T && bb.x2 >= W - T && bb.y <= T && bb.y2 >= H - T;
+        const aspect = (bb.x2 - bb.x) / Math.max(1, bb.y2 - bb.y);
+        const imgAspect = W / H;
+        const fullAndRect = coversFrame && Math.abs(aspect - imgAspect) < 0.15;
+        if (fullAndRect) { flt.delete(); return null; }
+
+        const m = cv.matFromArray(4, 1, cv.CV_32FC2,
+          [pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[3].x, pts[3].y]);
+        const ordered = sortCorners(m);
+        m.delete(); flt.delete();
+        return ordered;
+      }
+
+      // dari titik hull (>4) → 4 sudut pembentuk kuadrilateral luas-maksimum
+      // (ikut perspektif, bukan kotak). Hull didownsample dulu biar O(n^4) aman.
+      function maxQuad(p) {
+        if (p.length > 40) {
+          const step = Math.ceil(p.length / 40), ds = [];
+          for (let i = 0; i < p.length; i += step) ds.push(p[i]);
+          p = ds;
+        }
+        const n = p.length; let best = null, ba = 0;
+        for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++)
+          for (let k = j + 1; k < n; k++) for (let l = k + 1; l < n; l++) {
+            const q = [p[i], p[j], p[k], p[l]], a = quadArea(q);
+            if (a > ba) { ba = a; best = q; }
+          }
+        return best || [];
+      }
+      function quadArea(q) {
+        let a = 0;
+        for (let i = 0; i < 4; i++) { const p = q[i], r = q[(i + 1) % 4]; a += p.x * r.y - r.x * p.y; }
+        return Math.abs(a) / 2;
+      }
+
+      // cari bbox dokumen lewat proyeksi tepi: baris/kolom yang gelap (ada
+      // banyak piksel tepi) dianggap DALAM dokumen; sisanya (background)
+      // dipotong. Tahan background bertekstur asal minim tepi.
+      function whiteMarginCrop(edge) {
+        const W = edge.cols, H = edge.rows;
+        const d = edge.data; // Uint8 0/255, row-major
+        const rowSum = new Array(H).fill(0), colSum = new Array(W).fill(0);
+        for (let y = 0; y < H; y++) {
+          const base = y * W;
+          for (let x = 0; x < W; x++) { const v = d[base + x] ? 1 : 0; rowSum[y] += v; colSum[x] += v; }
+        }
+        const rThr = Math.max(2, W * 0.04); // baris punya tepi ≥4% lebar = dokumen
+        const cThr = Math.max(2, H * 0.04);
+        let top = 0, bot = H - 1, lft = 0, rgt = W - 1;
+        while (top < bot && rowSum[top] < rThr) top++;
+        while (bot > top && rowSum[bot] < rThr) bot--;
+        while (lft < rgt && colSum[lft] < cThr) lft++;
+        while (rgt > lft && colSum[rgt] < cThr) rgt--;
+        if (bot - top < H * 0.3 || rgt - lft < W * 0.3) return null;
+        return { x: lft, y: top, w: rgt - lft, h: bot - top };
+      }
+      function srcMat_roi(src, out, box) {
+        const rect = new cv.Rect(box.x, box.y, box.w, box.h);
+        const roi = src.roi(rect);
+        roi.copyTo(out);
+        roi.delete();
+      }
+
+      // median piksel grayscale (untuk adaptive Canny threshold)
+      function medianGray(mat) {
+        const d = mat.data; // Uint8 single channel
+        const arr = new Array(d.length);
+        for (let i = 0; i < d.length; i++) arr[i] = d[i];
+        arr.sort((a, b) => a - b);
+        return arr[Math.floor(arr.length / 2)] || 128;
+      }
+
+      // urutkan jadi [TL, TR, BR, BL] (input mat = CV_32FC2)
+      function sortCorners(mat) {
+        const p = [];
+        for (let i = 0; i < 4; i++) p.push({ x: mat.data32F[i * 2], y: mat.data32F[i * 2 + 1] });
+        p.sort((a, b) => a.y - b.y);
+        const top = p.slice(0, 2).sort((a, b) => a.x - b.x);
+        const bot = p.slice(2, 4).sort((a, b) => a.x - b.x);
+        return [top[0], top[1], bot[1], bot[0]];
+      }
+
+      function warpFromPoints(pts) {
+        const w = Math.max(dist(pts[0], pts[1]), dist(pts[2], pts[3]));
+        const h = Math.max(dist(pts[0], pts[3]), dist(pts[1], pts[2]));
+        const src = cv.matFromArray(4, 1, cv.CV_32FC2, [pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[3].x, pts[3].y]);
+        const dst = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, w, 0, w, h, 0, h]);
+        const M = cv.getPerspectiveTransform(src, dst);
+        const out = new cv.Mat();
+        const dsize = new cv.Size(Math.round(w), Math.round(h));
+        cv.warpPerspective(srcMat, out, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+        if (docMat) docMat.delete();
+        docMat = out;
+        src.delete(); dst.delete(); M.delete();
+        applyFilters();
+        cv.imshow(result, outMat);
+        resultStage.classList.add("show");
+      }
+      // pathPoints bisa berupa [[x,y]x4] (array) atau [{x,y}x4]; normalisasi lalu warp
+      function renderResult() {
+        if (!pathPoints || !srcMat) return;
+        const norm = pathPoints.map(p => Array.isArray(p) ? { x: p[0], y: p[1] } : { x: p.x, y: p.y });
+        try { warpFromPoints(norm); } catch (err) { showToast("Error crop: " + err.message, "error"); }
+      }
+      function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+      /* ── Filters ── */
+      function applyFilters() {
+        if (!docMat) { resultStage.classList.remove("show"); return; }
+        if (outMat) outMat.delete();
+        let cur = docMat.clone();
+
+        if (gray && cur.channels() === 4) { const g = new cv.Mat(); cv.cvtColor(cur, g, cv.COLOR_RGBA2GRAY); cur.delete(); cur = g; }
+        else if (gray && cur.channels() === 3) { const g = new cv.Mat(); cv.cvtColor(cur, g, cv.COLOR_RGB2GRAY); cur.delete(); cur = g; }
+
+        // contrast / brightness
+        cur.convertTo(cur, cur.type(), contrast, bright);
+
+        if (thrMode === "otsu") {
+          if (cur.channels() !== 1) { const g = new cv.Mat(); cv.cvtColor(cur, g, cv.COLOR_RGBA2GRAY); cur.delete(); cur = g; }
+          const t = new cv.Mat(); cv.threshold(cur, t, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU); cur.delete(); cur = t;
+        } else if (thrMode === "adaptive") {
+          if (cur.channels() !== 1) { const g = new cv.Mat(); cv.cvtColor(cur, g, cv.COLOR_RGBA2GRAY); cur.delete(); cur = g; }
+          const bs = Math.max(3, Math.floor(Math.min(cur.cols, cur.rows) / 40) | 1);
+          const t = new cv.Mat(); cv.adaptiveThreshold(cur, t, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, bs, 8); cur.delete(); cur = t;
+        }
+
+        if (sharp) {
+          if (cur.channels() === 1) {
+            const k = cv.matFromArray(3, 3, cv.CV_32FC1, [0, -1, 0, -1, 5, -1, 0, -1, 0]);
+            const s = new cv.Mat(); cv.filter2D(cur, s, -1, k); cur.delete(); cur = s; k.delete();
+          } else {
+            const blur = new cv.Mat(); cv.GaussianBlur(cur, blur, new cv.Size(0, 0), 3);
+            const s = new cv.Mat(); cv.addWeighted(cur, 1.6, blur, -0.6, 0, s); cur.delete(); cur = s; blur.delete();
+          }
+        }
+
+        outMat = cur;
+        cv.imshow(result, outMat);
+        resultStage.classList.add("show");
+      }
+
+      /* ── Path editor: garis panduan di atas gambar asli + handle drag (ala Photoshop) ── */
+      // pathPoints = [[x,y]x4] ATAU [{x,y}x4] dalam koordinat GAMBAR ASLI.
+      // Sumber beda-beda: contourToQuad/sortCorners → objek {x,y}, white-margin
+      // & full-frame → array [x,y]. Normalisasi di satu tempat supaya handle &
+      // guide gak hilang (NaN) saat formatnya beda.
+      const normPt = (p) => Array.isArray(p) ? { x: p[0], y: p[1] } : { x: p.x, y: p.y };
+      function editPath() {
+        if (!pathPoints) return;
+        const rect = canvas.getBoundingClientRect();
+        const sx = rect.width / canvas.width, sy = rect.height / canvas.height;
+        corners.forEach((el, i) => {
+          const p = normPt(pathPoints[i]);
+          el.style.display = "block";
+          el.style.left = (p.x * sx) + "px";
+          el.style.top = (p.y * sy) + "px";
+        });
+        drawGuide();
+      }
+      // gambar polygon biru di overlay (koordinat viewBox 0..100, preserveAspectRatio=none)
+      function drawGuide() {
+        const W = canvas.width, H = canvas.height;
+        const pts = pathPoints
+          .map(normPt)
+          .map(p => [(p.x / W) * 100, (p.y / H) * 100])
+          .map(p => p.map(n => n.toFixed(2)).join(",")).join(" ");
+        guide.setAttribute("points", pts);
+      }
+      let dragIdx = -1;
+      corners.forEach(el => {
+        el.addEventListener("pointerdown", (e) => {
+          dragIdx = +el.dataset.c;
+          el.setPointerCapture(e.pointerId);
+          e.stopPropagation();
+        });
+        el.addEventListener("pointermove", (e) => {
+          if (dragIdx !== +el.dataset.c) return;
+          const rect = canvas.getBoundingClientRect();
+          const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+          let x = (e.clientX - rect.left) * sx, y = (e.clientY - rect.top) * sy;
+          x = Math.max(0, Math.min(canvas.width, x));
+          y = Math.max(0, Math.min(canvas.height, y));
+          pathPoints[dragIdx] = { x, y };
+          el.style.left = (x / sx) + "px"; el.style.top = (y / sy) + "px";
+          drawGuide();
+        });
+        el.addEventListener("pointerup", (e) => { el.releasePointerCapture(e.pointerId); dragIdx = -1; renderResult(); });
+      });
+
+      function applyManualCorners() {
+        if (!pathPoints || !srcMat) return;
+        renderResult();
+        showToast("Sudut diterapkan — hasil rapi tegak lurus");
+      }
+
+      /* ── Controls ── */
+      function bindSwitch(id, setter) {
+        const b = document.getElementById(id);
+        b.addEventListener("click", () => {
+          const on = !b.classList.contains("on");
+          b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); setter(on); applyFilters();
+        });
+      }
+      bindSwitch("sw-gray", v => gray = v);
+      bindSwitch("sw-sharp", v => sharp = v);
+
+      document.getElementById("seg-thr").addEventListener("click", (e) => {
+        const b = e.target.closest("button"); if (!b) return;
+        thrMode = b.dataset.mode;
+        document.querySelectorAll("#seg-thr button").forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        document.getElementById("thr-label").textContent = b.textContent;
+        applyFilters();
+      });
+      const rc = document.getElementById("rng-contrast"), rb = document.getElementById("rng-bright");
+      rc.addEventListener("input", () => { contrast = +rc.value; document.getElementById("con-val").textContent = contrast.toFixed(2); applyFilters(); });
+      rb.addEventListener("input", () => { bright = +rb.value; document.getElementById("bri-val").textContent = bright; applyFilters(); });
+
+      /* ── Buttons ── */
+      document.getElementById("btn-recrop").addEventListener("click", () => { pathPoints = null; corners.forEach(c => c.style.display = "none"); resultStage.classList.remove("show"); autoCrop(); });
+      document.getElementById("btn-apply-corners").addEventListener("click", applyManualCorners);
+      document.getElementById("btn-reset").addEventListener("click", resetAll);
+      document.getElementById("btn-clear").addEventListener("click", resetAll);
+
+      function resetAll() {
+        if (srcMat) srcMat.delete(); if (docMat) docMat.delete(); if (outMat) outMat.delete();
+        srcMat = docMat = outMat = null; selectedFile = null; pathPoints = null;
+        previewWrap.classList.remove("show");
+        resultStage.classList.remove("show");
+        actionRow.style.display = "none";
+        filterGroup.style.display = "none";
+        topbarReset.style.display = "none";
+        topbarDl.style.display = "none";
+        uploadZone.style.display = "";
+        closeDlModal();
+        corners.forEach(c => c.style.display = "none");
+        fileInput.value = "";
+      }
+
+      const fileNameEl = document.getElementById("file-name");
+      const dlNameEl = document.getElementById("dl-name");
+      // ambil nama file: prioritas input di popover download, fallback input panel
+      function getFileName() {
+        const raw = (dlNameEl.value || fileNameEl.value || "").trim().replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, "_");
+        return raw || "scan-dokumen";
+      }
+      function download(kind) {
+        if (!outMat) { showToast("Belum ada hasil", "error"); return; }
+        const mime = kind === "png" ? "image/png" : "image/jpeg";
+        const q = kind === "png" ? undefined : 0.92;
+        result.toBlob((blob) => {
+          if (!blob) { showToast("Gagal export", "error"); return; }
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = getFileName() + "." + kind;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }, mime, q);
+      }
+      // tombol download tunggal (icon) → buka popover pilih format.
+      // Nama diisi di popover dulu; input panel jadi cadangan & otomatis sinkron.
+      function openDlModal() {
+        if (!outMat) { showToast("Belum ada hasil", "error"); return; }
+        if (!dlNameEl.value) dlNameEl.value = fileNameEl.value || "scan-dokumen";
+        dlModal.classList.add("show");
+        dlNameEl.focus();
+      }
+      function closeDlModal() { dlModal.classList.remove("show"); }
+      fileNameEl.addEventListener("input", () => { if (!dlNameEl.value) dlNameEl.value = fileNameEl.value; });
+      dlNameEl.addEventListener("input", () => { fileNameEl.value = dlNameEl.value; });
+      document.getElementById("btn-dl").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (dlModal.classList.contains("show")) closeDlModal(); else openDlModal();
+      });
+      dlClose.addEventListener("click", closeDlModal);
+      // klik di luar card (backdrop) → tutup
+      dlModal.addEventListener("click", (e) => { if (e.target === dlModal) closeDlModal(); });
+      dlModal.querySelectorAll(".modal-opt").forEach(b => {
+        b.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const kind = b.dataset.kind;
+          fileNameEl.value = dlNameEl.value; // simpan nama ke panel juga
+          closeDlModal();
+          if (kind === "pdf") downloadPdf(); else download(kind);
+        });
+      });
+      // Esc tutup popover
+      window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDlModal(); });
+
+      // PDF tanpa lib: embed JPEG hasil sebagai DCTDecode image-XObject (JPEG
+      // masuk mentah, gak perlu zlib). Tiap halaman = 1 gambar penuh, ukuran A4.
+      function downloadPdf() {
+        if (!outMat) { showToast("Belum ada hasil", "error"); return; }
+        result.toBlob(async (blob) => {
+          if (!blob) { showToast("Gagal export", "error"); return; }
+          const jpg = new Uint8Array(await blob.arrayBuffer());
+          const w = result.width, h = result.height;
+          // FULL WIDTH: isi lebar A4 (595), hilangkan putih kiri-kanan.
+          // Kalau hasil lebih tinggi dari halaman, terpotong vertikal & center.
+          const PW = 595, PH = 842;
+          const s = PW / w;
+          const dw = PW, dh = h * s;
+          const x = 0, y = (PH - dh) / 2;
+          const content = `q ${dw.toFixed(2)} 0 0 ${dh.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im0 Do Q`;
+          const full = buildPdf(w, h, PW, PH, jpg, content);
+          // full SUDAH array BlobParts (Uint8Array-2); jangan dibungkus lagi,
+          // kalau [full] Blob gak flatten → byte JPEG hilang → PDF korup gak kebuka
+          const pdfBlob = new Blob(full, { type: "application/pdf" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(pdfBlob);
+          a.download = getFileName() + ".pdf";
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+          showToast("PDF terunduh");
+        }, "image/jpeg", 0.92);
+      }
+
+      // build PDF dengan xref benar (offset tiap objek). Objek:
+      // 1=catalog, 2=pages, 3=image, 4=page, 5=contents
+      function buildPdf(w, h, PW, PH, jpg, content) {
+        const imgObj = 3, pageObj = 4, contentsObj = 5;
+        const toStr = (s) => new TextEncoder().encode(s);
+        // body objek dalam urutan nomor 1..5 (tiap entri = [headerStr, bin?, tailStr?])
+        const objs = [
+          `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`,
+          `2 0 obj\n<< /Type /Pages /Kids [${pageObj} 0 R] /Count 1 >>\nendobj\n`,
+          `3 0 obj\n<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`,
+          `4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /XObject << /Im0 ${imgObj} 0 R >> >> /Contents ${contentsObj} 0 R >>\nendobj\n`,
+          `5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`,
+        ];
+        // hitung offset awal tiap objek (setelah %PDF header)
+        let pos = toStr("%PDF-1.4\n").length;
+        const off = [];
+        objs.forEach((o, i) => {
+          off[i] = pos;
+          const isImg = (i === 2);
+          pos += toStr(o).length + (isImg ? jpg.length + toStr("\nendstream\nendobj\n").length : 0);
+        });
+        const xrefStart = pos;
+        let xref = "xref\n0 6\n0000000000 65535 f \n";
+        for (let n = 1; n <= 5; n++) xref += String(off[n - 1]).padStart(10, "0") + " 00000 n \n";
+        const trailer = `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+        const out = [toStr("%PDF-1.4\n")];
+        objs.forEach((o, i) => {
+          out.push(toStr(o));
+          if (i === 2) out.push(jpg, toStr("\nendstream\nendobj\n"));
+        });
+        out.push(toStr(xref + trailer));
+        return out;
+      }
+
+      /* ── Klik hasil → buka lightbox ── */
+      result.addEventListener("click", () => {
+        if (!outMat) return;
+        lightboxImg.src = result.toDataURL("image/png");
+        lightbox.classList.add("show");
+      });
+      function closeLightbox() { lightbox.classList.remove("show"); lightboxImg.src = ""; }
+      lightbox.addEventListener("click", closeLightbox);
+      window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+    })();
+    </script>
+    <script src="../theme-splash.js"></script>
+  </body>
+</html>

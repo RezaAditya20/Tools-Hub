@@ -34,6 +34,7 @@
     { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "fa-code" },
     { label: "HTML Report Inspector", href: "page/HTML-Report-Inspector.html", c1: "#f472b6", icon: "fa-file-code" },
     { label: "OCR", href: "page/OCR.html", c1: "#38bdf8", icon: "fa-camera" },
+    { label: "Document Scanner", href: "page/Document-Scanner.html", c1: "#34d399", icon: "fa-crop-simple" },
   ];
 
   function getHidden() {
@@ -43,7 +44,63 @@
       return [];
     }
   }
+  function escapeHtml(s) {
+    return (s || "").replace(/[&<"'>]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m]));
+  }
+
+  // ── School Notes: navbar jadi daftar catatan (view 2 & 3) ──
+  let snState = { view: "home", schoolId: null, activeNoteId: null };
+  const isSchoolNotes = location.pathname.split("/").pop() === "School-Notes-&-To-Do.html";
+  function getSchoolNotes() {
+    try {
+      return JSON.parse(localStorage.getItem("school-notes-db") || "{}");
+    } catch {
+      return {};
+    }
+  }
+  function buildNoteItems() {
+    const school = getSchoolNotes()[snState.schoolId];
+    if (!school) return "";
+    const notes = (school.notes || [])
+      .filter((n) => !n.done)
+      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    let html = "";
+    notes.forEach((n) => {
+      const active = n.id === snState.activeNoteId ? " active" : "";
+      html += `<a class="nav-item${active}" data-note-id="${n.id}" style="--icon-bg:#2dd4bf"><span class="nav-ico"><i class="fa-regular fa-note-sticky"></i></span><span class="label">${escapeHtml(n.text)}</span></a>`;
+    });
+    return html;
+  }
+
+  function buildSchoolItems() {
+    const db = getSchoolNotes();
+    const schools = Object.keys(db)
+      .map((id) => ({ id, school: db[id] }))
+      .sort((a, b) => (a.school.order || 0) - (b.school.order || 0));
+    let html = "";
+    schools.forEach(({ id, school }) => {
+      const active = id === snState.schoolId ? " active" : "";
+      const count = (school.notes || []).filter((n) => !n.done).length;
+      html += `<a class="nav-item${active}" data-school-id="${id}" style="--icon-bg:#22d3ee"><span class="nav-ico"><i class="fa-regular fa-school"></i></span><span class="label">${escapeHtml(school.name)}${count ? ` <span style="opacity:.6">(${count})</span>` : ""}</span></a>`;
+    });
+    return html;
+  }
+
   function buildItems() {
+    const nav = mount.querySelector(".nav-items");
+    if (!nav) return;
+    if (isSchoolNotes && snState.schoolId && snState.view === "desc") {
+      nav.innerHTML = buildNoteItems();
+      const s = mount.querySelector("#nav-search");
+      if (s) s.placeholder = "Cari catatan...";
+      return;
+    }
+    if (isSchoolNotes && snState.schoolId && snState.view === "detail") {
+      nav.innerHTML = buildSchoolItems();
+      const s = mount.querySelector("#nav-search");
+      if (s) s.placeholder = "Cari sekolah...";
+      return;
+    }
     const hidden = getHidden();
     const items = TOOLS
       .slice()
@@ -57,8 +114,9 @@
         </a>`;
       })
       .join("");
-    const nav = mount.querySelector(".nav-items");
-    if (nav) nav.innerHTML = items;
+    nav.innerHTML = items;
+    const s = mount.querySelector("#nav-search");
+    if (s) s.placeholder = "Cari program...";
   }
 
   mount.className = "navbar";
@@ -90,6 +148,30 @@
   // Isi item (sudah difilter hide) + sync saat berubah
   buildItems();
   window.addEventListener("tools-hidden-change", buildItems);
+
+  // ── School Notes: klik item catatan → beritahu page ──
+  const navEl = mount.querySelector(".nav-items");
+  if (navEl) {
+    navEl.addEventListener("click", (e) => {
+      const item = e.target.closest(".nav-item");
+      if (!item) return;
+      e.preventDefault();
+      if (item.dataset.schoolId) {
+        window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "school", schoolId: item.dataset.schoolId } }));
+      } else if (item.dataset.noteId) {
+        window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "note", noteId: item.dataset.noteId } }));
+      }
+    });
+  }
+
+  // ── School Notes: page kabari navbar soal view/sekolah/catatan aktif ──
+  window.addEventListener("sn-view", (e) => {
+    const d = e.detail || {};
+    if (d.view !== undefined) snState.view = d.view;
+    if (d.schoolId !== undefined) snState.schoolId = d.schoolId;
+    if (d.activeNoteId !== undefined) snState.activeNoteId = d.activeNoteId;
+    buildItems();
+  });
 
   // Tampilkan navbar SEKETIKA setelah build (sinkron) — jangan via setTimeout.
   // Class ini (opacity:1) harus sudah ada saat collapse-warm dilepas, supaya

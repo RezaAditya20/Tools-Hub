@@ -1665,6 +1665,7 @@
         function showHome() {
           currentSchoolId = null;
           currentNoteId = null;
+          window.dispatchEvent(new CustomEvent("sn-view", { detail: { view: "home", schoolId: null, activeNoteId: null } }));
           topbarTitle.textContent = "School Notes & To Do";
           schoolQuery = "";
           const sInput = document.getElementById("search-school");
@@ -1679,6 +1680,7 @@
         function showDetail(id) {
           currentSchoolId = id;
           currentNoteId = null;
+          window.dispatchEvent(new CustomEvent("sn-view", { detail: { view: "detail", schoolId: id, activeNoteId: null } }));
           topbarTitle.textContent = db[id].name;
           document.getElementById("btn-del-pin").style.display = db[id].pin ? "" : "none";
           noteQuery = "";
@@ -1694,6 +1696,7 @@
         function showDesc(schoolId, noteId) {
           currentSchoolId = schoolId;
           currentNoteId = noteId;
+          window.dispatchEvent(new CustomEvent("sn-view", { detail: { view: "desc", schoolId: schoolId, activeNoteId: noteId } }));
           const note = db[schoolId].notes.find((n) => n.id === noteId);
           topbarTitle.textContent = note.text;
           descInput.value = note.desc || "";
@@ -2111,6 +2114,8 @@
         }
 
         function renderNotes() {
+          // Sync navbar (daftar catatan) — jangan nimpa view aktif (bisa dipanggil dr view 3)
+          window.dispatchEvent(new CustomEvent("sn-view", { detail: { schoolId: currentSchoolId, activeNoteId: currentNoteId } }));
           const allNotes = db[currentSchoolId].notes;
           const notes = noteQuery
             ? allNotes.filter((n) =>
@@ -2361,6 +2366,21 @@
         // Search state
         let schoolQuery = "";
         let noteQuery = "";
+
+        // Navbar (daftar catatan) → page
+        window.addEventListener("sn-nav", (e) => {
+          const d = e.detail || {};
+          if (d.action === "home") {
+            showHome();
+          } else if (d.action === "school" && d.schoolId) {
+            if (!db[d.schoolId]) return;
+            showDetail(d.schoolId);
+          } else if (d.action === "note" && d.noteId) {
+            if (!db[currentSchoolId]) return;
+            if (!db[currentSchoolId].notes.some((n) => n.id === d.noteId)) return;
+            openNote(d.noteId);
+          }
+        });
 
         // 1. Add School (modal)
         document.getElementById("btn-add-school").addEventListener("click", async () => {
