@@ -4,20 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      try { var t = localStorage.getItem("theme"); if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000"; } catch (e) { document.documentElement.style.background = "#000000"; }
+      try {
+        var t = localStorage.getItem("theme");
+        if (t !== "light" && t !== "dark") t = "dark";
+        document.documentElement.setAttribute("data-theme", t);
+        document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000";
+      } catch (e) {
+        document.documentElement.style.background = "#000000";
+      }
     </script>
 
     <link rel="stylesheet" href="shared.css" />
-        <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="../fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="../fontawesome/webfonts/fa-duotone-900.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
     <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
     <link rel="stylesheet" href="../fontawesome/css/regular.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.3.0/css/thin.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.3.0/css/thin.css" />
     <title>School Notes & To Do</title>
     <meta name="description" content="Manajemen catatan tiap sekolah." />
     <style>
@@ -78,7 +82,7 @@
         border: none;
         box-shadow: none;
       }
-      }
+
       .topbar-action-group {
         display: flex;
         align-items: center;
@@ -713,6 +717,18 @@
       .desc-split-layout.tasks-hidden .desc-split-right {
         width: 100%;
       }
+      .desc-split-layout.desc-hidden {
+        gap: 0;
+      }
+      .desc-split-layout.desc-hidden .desc-split-right {
+        width: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .desc-split-layout.desc-hidden .desc-split-left {
+        width: 100%;
+      }
       .desc-area {
         width: 100%;
         min-height: 417px;
@@ -842,7 +858,9 @@
         padding: 4px;
         margin: -4px;
       }
-      .recent-badges::-webkit-scrollbar { display: none; }
+      .recent-badges::-webkit-scrollbar {
+        display: none;
+      }
       .recent-badge-arrow {
         width: 24px;
         height: 24px;
@@ -863,7 +881,9 @@
         border-color: var(--primary);
         color: var(--fg);
       }
-      .recent-badge-arrow.hidden { display: none; }
+      .recent-badge-arrow.hidden {
+        display: none;
+      }
       .recent-badge {
         display: inline-flex;
         align-items: center;
@@ -1343,10 +1363,15 @@
         animation: overlay-box-out 0.18s ease forwards;
       }
       @keyframes overlay-fade-out {
-        to { opacity: 0; }
+        to {
+          opacity: 0;
+        }
       }
       @keyframes overlay-box-out {
-        to { opacity: 0; transform: scale(0.95); }
+        to {
+          opacity: 0;
+          transform: scale(0.95);
+        }
       }
     </style>
   </head>
@@ -1398,6 +1423,7 @@
                 <button class="btn btn-icon btn-del-done" id="btn-del-done" title="Hapus Selesai"><i class="fa-regular fa-trash"></i></button>
               </div>
             </div>
+
             <div class="topbar-action-group">
               <div class="topbar-action" id="topbar-action-export">
                 <button class="btn btn-icon btn-liquid" id="btn-export" title="Backup (JSON)"><i class="fa-regular fa-file-export"></i></button>
@@ -1413,7 +1439,11 @@
                   <button class="btn-icon" id="btn-del-school" title="Hapus Sekolah Ini"><i class="fa-regular fa-trash"></i></button>
                 </span>
               </div>
-              <div class="topbar-action" id="topbar-action-desc-done" style="display: none">
+              <div class="topbar-action" id="topbar-action-panel-toggle" style="display: none">
+                <button class="btn-icon" id="btn-task-toggle" title="Sembunyikan/tampilkan List Pengerjaan"><i class="far fa-rectangle-list task-toggle-ico"></i></button>
+                <button class="btn-icon" id="btn-desc-toggle" title="Sembunyikan/tampilkan Deskripsi"><i class="far fa-align-left desc-toggle-ico"></i></button>
+              </div>
+              <div class="topbar-action no-anim" id="topbar-action-desc-done" style="display: none">
                 <button class="btn btn-icon" id="btn-edit-note" title="Edit nama & subname"><i class="fa-regular fa-pencil"></i></button>
                 <button class="btn btn-icon btn-desc-done" id="btn-desc-done" title="Tandai selesai"><i class="fa-regular fa-circle-check"></i></button>
               </div>
@@ -1475,8 +1505,7 @@
             <div class="desc-split-right">
               <div style="margin-bottom: 8px; font-size: 0.875rem; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 8px">
                 <span>Deskripsi / Catatan Tambahan</span>
-                <button id="btn-task-toggle" type="button" style="background:var(--row-hover);color:var(--muted);border:none;border-radius: 30px;width:20px;height:20px;font-size:0.7rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;transition:background 0.2s" title="Sembunyikan/tampilkan List Pengerjaan"><i class="far fa-eye task-toggle-ico"></i></button>
-                <button id="btn-shortcut-info" type="button" style="background:var(--row-hover);color:var(--muted);border:none;border-radius: 30px;width:20px;height:20px;font-size:0.7rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;transition:background 0.2s" title="Lihat semua shortcut">i</button>
+                <button id="btn-shortcut-info" type="button" style="background: var(--row-hover); color: var(--muted); border: none; border-radius: 30px; width: 20px; height: 20px; font-size: 0.7rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.2s" title="Lihat semua shortcut">i</button>
               </div>
               <textarea id="desc-input" class="desc-area" placeholder="Ketik deskripsi lengkap di sini... otomatis tersimpan saat Anda mengetik."></textarea>
             </div>
@@ -1498,22 +1527,46 @@
       </div>
     </div>
 
-    <div id="shortcut-modal" class="shortcut-overlay" style="display:none">
+    <div id="shortcut-modal" class="shortcut-overlay" style="display: none">
       <div class="shortcut-box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="margin:0;font-size:1rem;font-weight:600;color:var(--fg)">Keyboard Shortcuts — Deskripsi</h3>
-          <button id="shortcut-close" style="background:transparent;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius: 30px;transition:background 0.2s;color:var(--fg)">✕</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+          <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg)">Keyboard Shortcuts — Deskripsi</h3>
+          <button id="shortcut-close" style="background: transparent; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 30px; transition: background 0.2s; color: var(--fg)">✕</button>
         </div>
-        <table style="width:100%;font-size:0.8rem;border-collapse:collapse">
+        <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse">
           <tbody>
-            <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;color:var(--muted)">Auto-close pasangan</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">{ [ ( ` ' "</code></td></tr>
-            <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;color:var(--muted)">Hapus pasangan kosong</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">Backspace</code></td></tr>
-            <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;color:var(--muted)">Enter — auto lanjut list</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">Enter</code></td></tr>
-            <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;color:var(--muted)">Tab → sub item berdot</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">Tab</code> di <code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">- </code></td></tr>
-            <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;color:var(--muted)">Duplikat baris ke bawah</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">Shift + Alt + ↓</code></td></tr>
-            <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;color:var(--muted)">Duplikat baris ke atas</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">Shift + Alt + ↑</code></td></tr>
-            <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;color:var(--muted)">Pindah baris ke bawah</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">Alt + ↓</code></td></tr>
-            <tr><td style="padding:8px 0;color:var(--muted)">Pindah baris ke atas</td><td style="padding:8px 0;text-align:right"><code style="background:var(--input);padding:2px 8px;border-radius: 30px;font-size:0.75rem">Alt + ↑</code></td></tr>
+            <tr style="border-bottom: 1px solid var(--border)">
+              <td style="padding: 8px 0; color: var(--muted)">Auto-close pasangan</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">{ [ ( ` ' "</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border)">
+              <td style="padding: 8px 0; color: var(--muted)">Hapus pasangan kosong</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Backspace</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border)">
+              <td style="padding: 8px 0; color: var(--muted)">Enter — auto lanjut list</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Enter</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border)">
+              <td style="padding: 8px 0; color: var(--muted)">Tab → sub item berdot</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Tab</code> di <code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">- </code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border)">
+              <td style="padding: 8px 0; color: var(--muted)">Duplikat baris ke bawah</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Shift + Alt + ↓</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border)">
+              <td style="padding: 8px 0; color: var(--muted)">Duplikat baris ke atas</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Shift + Alt + ↑</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border)">
+              <td style="padding: 8px 0; color: var(--muted)">Pindah baris ke bawah</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Alt + ↓</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: var(--muted)">Pindah baris ke atas</td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Alt + ↑</code></td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -1534,11 +1587,15 @@
         // mode: "remove" (default) = hapus dari DOM, "hide" = sembunyikan via display:none
         window.closeOverlay = function (overlay, resolveVal, callback, mode) {
           overlay.classList.add("overlay-closing");
-          overlay.addEventListener("animationend", () => {
-            overlay.classList.remove("overlay-closing");
-            if (mode === "hide") overlay.style.display = "none";
-            else overlay.remove();
-          }, { once: true });
+          overlay.addEventListener(
+            "animationend",
+            () => {
+              overlay.classList.remove("overlay-closing");
+              if (mode === "hide") overlay.style.display = "none";
+              else overlay.remove();
+            },
+            { once: true },
+          );
           if (typeof callback === "function") setTimeout(() => callback(resolveVal), 180);
         };
 
@@ -1633,7 +1690,7 @@
           document.getElementById("btn-back").style.display = which === "detail" ? "" : "none";
           document.getElementById("btn-back-desc").style.display = which === "desc" ? "" : "none";
           const topbarBack = document.querySelector(".topbar-back");
-          if (topbarBack) topbarBack.style.display = (which === "detail" || which === "desc") ? "" : "none";
+          if (topbarBack) topbarBack.style.display = which === "detail" || which === "desc" ? "" : "none";
           topbarActionDetail.style.display = which === "detail" ? "" : "none";
           topbarActionDetail.classList.toggle("show", which === "detail");
           const topbarActionDetailDone = document.getElementById("topbar-action-detail-done");
@@ -1650,6 +1707,9 @@
           const topbarActionDescDone = document.getElementById("topbar-action-desc-done");
           topbarActionDescDone.style.display = which === "desc" ? "" : "none";
           topbarActionDescDone.classList.toggle("show", which === "desc");
+          const topbarActionPanelToggle = document.getElementById("topbar-action-panel-toggle");
+          topbarActionPanelToggle.style.display = which === "desc" ? "" : "none";
+          topbarActionPanelToggle.classList.toggle("show", which === "desc");
           // Collapse groups that have no visible action so flex gap doesn't leave a hole.
           document.querySelectorAll(".topbar-action-group").forEach((g) => {
             const visible = [...g.querySelectorAll(".topbar-action")].some((a) => a.style.display !== "none");
@@ -1742,6 +1802,14 @@
           viewDetail.classList.remove("active");
           activateView(viewDesc);
           setSubtitle("desc");
+          // Apply panel visibility tersimpan per note
+          const descSplit = document.querySelector(".desc-split-layout");
+          descSplit.classList.toggle("tasks-hidden", !!note.tasksHidden);
+          descSplit.classList.toggle("desc-hidden", !!note.descHidden);
+          taskToggleIco.classList.toggle("fa-rectangle-list", !note.tasksHidden);
+          taskToggleIco.classList.toggle("fa-text-slash", !!note.tasksHidden);
+          descToggleIco.classList.toggle("fa-align-left", !note.descHidden);
+          descToggleIco.classList.toggle("fa-text-slash", !!note.descHidden);
           renderTasks();
         }
 
@@ -1758,10 +1826,7 @@
 
           // Apply search
           if (schoolQuery) {
-            entries = entries.filter(({ school }) =>
-              school.name.toLowerCase().includes(schoolQuery) ||
-              (school.category || "").toLowerCase().includes(schoolQuery)
-            );
+            entries = entries.filter(({ school }) => school.name.toLowerCase().includes(schoolQuery) || (school.category || "").toLowerCase().includes(schoolQuery));
           }
 
           if (entries.length === 0 && schoolQuery) {
@@ -2121,12 +2186,7 @@
           // Sync navbar (daftar catatan) — jangan nimpa view aktif (bisa dipanggil dr view 3)
           window.dispatchEvent(new CustomEvent("sn-view", { detail: { schoolId: currentSchoolId, activeNoteId: currentNoteId } }));
           const allNotes = db[currentSchoolId].notes;
-          const notes = noteQuery
-            ? allNotes.filter((n) =>
-                n.text.toLowerCase().includes(noteQuery) ||
-                (n.subname || "").toLowerCase().includes(noteQuery)
-              )
-            : allNotes;
+          const notes = noteQuery ? allNotes.filter((n) => n.text.toLowerCase().includes(noteQuery) || (n.subname || "").toLowerCase().includes(noteQuery)) : allNotes;
           const pending = notes.filter((n) => !n.done);
           const done = notes.filter((n) => n.done);
 
@@ -2137,9 +2197,7 @@
 
           noteTbody.innerHTML = "";
           if (notes.length === 0) {
-            noteTbody.innerHTML = noteQuery
-              ? `<tr><td colspan="7" class="empty-state">Tidak ada catatan yang cocok dengan "${escapeHtml(noteQuery)}".</td></tr>`
-              : `<tr><td colspan="7" class="empty-state">Belum ada catatan.</td></tr>`;
+            noteTbody.innerHTML = noteQuery ? `<tr><td colspan="7" class="empty-state">Tidak ada catatan yang cocok dengan "${escapeHtml(noteQuery)}".</td></tr>` : `<tr><td colspan="7" class="empty-state">Belum ada catatan.</td></tr>`;
             return;
           }
 
@@ -2397,7 +2455,13 @@
 
         // 1. Add School (modal)
         document.getElementById("btn-add-school").addEventListener("click", async () => {
-          const cats = [...new Set(Object.values(db).map((s) => s.category).filter(Boolean))];
+          const cats = [
+            ...new Set(
+              Object.values(db)
+                .map((s) => s.category)
+                .filter(Boolean),
+            ),
+          ];
           window.__categories = cats;
           const res = await showSchoolAdd();
           if (!res || !res.name) return;
@@ -2415,7 +2479,10 @@
           const res = await showNoteAdd();
           if (!res || !res.name) return;
           const exists = db[currentSchoolId].notes.some((n) => n.text.toLowerCase() === res.name.toLowerCase());
-          if (exists) { showToast("Catatan sudah ada!", "error"); return; }
+          if (exists) {
+            showToast("Catatan sudah ada!", "error");
+            return;
+          }
           db[currentSchoolId].notes.push({
             id: generateId(),
             text: res.name,
@@ -2702,9 +2769,15 @@
           if (!note) return;
           const res = await showNoteEdit(note.text, note.subname || "");
           if (!res) return;
-          if (!res.name) { showToast("Nama tidak boleh kosong", "error"); return; }
+          if (!res.name) {
+            showToast("Nama tidak boleh kosong", "error");
+            return;
+          }
           const exists = db[currentSchoolId].notes.some((n) => n.id !== currentNoteId && n.text.toLowerCase() === res.name.toLowerCase());
-          if (exists) { showToast("Catatan sudah ada!", "error"); return; }
+          if (exists) {
+            showToast("Catatan sudah ada!", "error");
+            return;
+          }
           note.text = res.name;
           note.subname = res.subname;
           note.updatedAt = formatDate(new Date());
@@ -3347,14 +3420,32 @@
         showHome();
 
         // ── Scroll: compact topbar + blur gradual ──
-        // === Task container collapse (default open) ===
+        // === Panel collapse — tersimpan per note ===
         const taskToggle = document.getElementById("btn-task-toggle");
         const taskToggleIco = taskToggle.querySelector(".task-toggle-ico");
+        const descToggle = document.getElementById("btn-desc-toggle");
+        const descToggleIco = descToggle.querySelector(".desc-toggle-ico");
         const descSplit = document.querySelector(".desc-split-layout");
+        function persistPanel() {
+          if (!currentSchoolId || !currentNoteId) return;
+          const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
+          if (!note) return;
+          // Baca state dari DOM (toggle class)
+          note.tasksHidden = descSplit.classList.contains("tasks-hidden");
+          note.descHidden = descSplit.classList.contains("desc-hidden");
+          saveData();
+        }
         taskToggle.addEventListener("click", () => {
           const hidden = descSplit.classList.toggle("tasks-hidden");
-          taskToggleIco.classList.toggle("fa-eye", !hidden);
-          taskToggleIco.classList.toggle("fa-eye-slash", hidden);
+          taskToggleIco.classList.toggle("fa-rectangle-list", !hidden);
+          taskToggleIco.classList.toggle("fa-text-slash", hidden);
+          persistPanel();
+        });
+        descToggle.addEventListener("click", () => {
+          const hidden = descSplit.classList.toggle("desc-hidden");
+          descToggleIco.classList.toggle("fa-align-left", !hidden);
+          descToggleIco.classList.toggle("fa-text-slash", hidden);
+          persistPanel();
         });
 
         // Shortcut info modal
@@ -3370,6 +3461,6 @@
         });
       })();
     </script>
-      <script src="../theme-splash.js"></script>
+    <script src="../theme-splash.js"></script>
   </body>
 </html>
