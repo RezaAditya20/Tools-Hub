@@ -686,6 +686,11 @@
         flex-direction: column;
         border-radius: 12px;
       }
+      .liquid-in-panel {
+        background: color-mix(in srgb, var(--bg) 92%, var(--fg)) !important;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
       .desc-split-left #task-container {
         flex: 1;
         min-height: 0;
@@ -1538,13 +1543,12 @@
             </div>
             <div id="task-container">
               <form id="form-task" class="form-inline">
-                <input type="text" id="input-task" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
+                <input type="text" id="input-task" class="liquid-in-panel" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
                 <button type="submit" class="btn btn-primary">Tambah</button>
               </form>
               <div id="task-list" class="task-list"></div>
             </div>
           </div>
-          <div class="panel"></div>
         </div>
       </div>
     </div>
