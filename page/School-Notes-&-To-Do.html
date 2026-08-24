@@ -684,6 +684,7 @@
         min-width: 0;
         display: flex;
         flex-direction: column;
+        border-radius: 12px;
       }
       .desc-split-left #task-container {
         flex: 1;
@@ -694,7 +695,7 @@
         scrollbar-color: var(--border) transparent;
       }
       .desc-split-left {
-        width: 40%;
+        /* width: 40%; */
         flex-shrink: 0;
         opacity: 1;
         transition:
@@ -722,9 +723,16 @@
       }
       .desc-split-layout.desc-hidden .desc-split-right {
         width: 0;
+        height: 0;
+        min-height: 0;
         opacity: 0;
         overflow: hidden;
         pointer-events: none;
+      }
+      .desc-split-layout.desc-hidden .desc-area {
+        min-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
       }
       .desc-split-layout.desc-hidden .desc-split-left {
         width: 100%;
@@ -732,23 +740,38 @@
       .desc-area {
         width: 100%;
         min-height: 417px;
-        padding: 12px;
-        border: 1px solid transparent;
-        background: color-mix(in srgb, var(--bg) 92%, var(--fg));
+        padding: 0px 3px;
+        border: none;
+        background: transparent !important;
         color: var(--fg);
         font-family: inherit;
         font-size: 0.875rem;
         resize: vertical;
         outline: none;
+        border-radius: 12px;
         transition:
           border-color 0.15s,
           box-shadow 0.15s;
+        box-shadow: none;
+      }
+      .desc-split-right {
+        display: flex;
+        flex-direction: column;
       }
       .desc-area:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
       }
 
+      @media (max-width: 1048px) {
+        .desc-split-layout {
+          flex-direction: column;
+        }
+        .desc-split-left,
+        .desc-split-right {
+          width: 100%;
+          min-width: 0;
+        }
+      }
       @media (max-width: 768px) {
         .desc-split-layout {
           flex-direction: column;
@@ -758,7 +781,7 @@
           width: 100%;
         }
         .desc-area {
-          min-height: 200px;
+          min-height: 400px;
         }
       }
 
@@ -1439,9 +1462,12 @@
                   <button class="btn-icon" id="btn-del-school" title="Hapus Sekolah Ini"><i class="fa-regular fa-trash"></i></button>
                 </span>
               </div>
+              <div class="topbar-action topbar-action-single" id="topbar-action-shortcut" style="display: none">
+                <button class="btn btn-icon-only btn-liquid" id="btn-shortcut-info" title="Lihat semua shortcut"><i class="fa-regular fa-keyboard"></i></button>
+              </div>
               <div class="topbar-action" id="topbar-action-panel-toggle" style="display: none">
-                <button class="btn-icon" id="btn-task-toggle" title="Sembunyikan/tampilkan List Pengerjaan"><i class="far fa-rectangle-list task-toggle-ico"></i></button>
                 <button class="btn-icon" id="btn-desc-toggle" title="Sembunyikan/tampilkan Deskripsi"><i class="far fa-align-left desc-toggle-ico"></i></button>
+                <button class="btn-icon" id="btn-task-toggle" title="Sembunyikan/tampilkan List Pengerjaan"><i class="far fa-rectangle-list task-toggle-ico"></i></button>
               </div>
               <div class="topbar-action no-anim" id="topbar-action-desc-done" style="display: none">
                 <button class="btn btn-icon" id="btn-edit-note" title="Edit nama & subname"><i class="fa-regular fa-pencil"></i></button>
@@ -1500,29 +1526,25 @@
 
       <!-- VIEW 3: DESKRIPSI CATATAN -->
       <div id="view-desc" class="view">
-        <div class="panel">
-          <div class="desc-split-layout">
-            <div class="desc-split-right">
-              <div style="margin-bottom: 8px; font-size: 0.875rem; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 8px">
-                <span>Deskripsi / Catatan Tambahan</span>
-                <button id="btn-shortcut-info" type="button" style="background: var(--row-hover); color: var(--muted); border: none; border-radius: 30px; width: 20px; height: 20px; font-size: 0.7rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.2s" title="Lihat semua shortcut">i</button>
-              </div>
-              <textarea id="desc-input" class="desc-area" placeholder="Ketik deskripsi lengkap di sini... otomatis tersimpan saat Anda mengetik."></textarea>
+        <div style="height: 1px; background: var(--border); margin-bottom: 16px"></div>
+        <div class="desc-split-layout">
+          <div class="desc-split-right">
+            <textarea id="desc-input" class="desc-area" placeholder="Ketik deskripsi lengkap di sini... otomatis tersimpan saat Anda mengetik."></textarea>
+          </div>
+          <div class="desc-split-left liquid-glass">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px; margin-bottom: 8px" class="section-title">
+              <span>List Pengerjaan</span>
+              <span id="task-count" style="font-size: 0.875rem; font-weight: 500; color: var(--primary)"></span>
             </div>
-            <div class="desc-split-left">
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px; margin-bottom: 8px" class="section-title">
-                <span>List Pengerjaan</span>
-                <span id="task-count" style="font-size: 0.875rem; font-weight: 500; color: var(--primary)"></span>
-              </div>
-              <div id="task-container">
-                <form id="form-task" class="form-inline">
-                  <input type="text" id="input-task" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
-                  <button type="submit" class="btn btn-primary">Tambah</button>
-                </form>
-                <div id="task-list" class="task-list"></div>
-              </div>
+            <div id="task-container">
+              <form id="form-task" class="form-inline">
+                <input type="text" id="input-task" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
+                <button type="submit" class="btn btn-primary">Tambah</button>
+              </form>
+              <div id="task-list" class="task-list"></div>
             </div>
           </div>
+          <div class="panel"></div>
         </div>
       </div>
     </div>
@@ -1530,7 +1552,7 @@
     <div id="shortcut-modal" class="shortcut-overlay" style="display: none">
       <div class="shortcut-box">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
-          <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg)">Keyboard Shortcuts — Deskripsi</h3>
+          <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg)">Keyboard Shortcuts - Deskripsi</h3>
           <button id="shortcut-close" style="background: transparent; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 30px; transition: background 0.2s; color: var(--fg)">✕</button>
         </div>
         <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse">
@@ -1544,7 +1566,7 @@
               <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Backspace</code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
-              <td style="padding: 8px 0; color: var(--muted)">Enter — auto lanjut list</td>
+              <td style="padding: 8px 0; color: var(--muted)">Enter - auto lanjut list</td>
               <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Enter</code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
@@ -1710,6 +1732,9 @@
           const topbarActionPanelToggle = document.getElementById("topbar-action-panel-toggle");
           topbarActionPanelToggle.style.display = which === "desc" ? "" : "none";
           topbarActionPanelToggle.classList.toggle("show", which === "desc");
+          const topbarActionShortcut = document.getElementById("topbar-action-shortcut");
+          topbarActionShortcut.style.display = which === "desc" ? "" : "none";
+          topbarActionShortcut.classList.toggle("show", which === "desc");
           // Collapse groups that have no visible action so flex gap doesn't leave a hole.
           document.querySelectorAll(".topbar-action-group").forEach((g) => {
             const visible = [...g.querySelectorAll(".topbar-action")].some((a) => a.style.display !== "none");
