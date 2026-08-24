@@ -1288,7 +1288,7 @@ input[type="text"].letter-input.dup {
     align-items: center;
     gap: 16px;
     margin-bottom: 24px;
-    padding: 14px 20px;
+    padding: 20px;
     min-height: 62px;
     background: var(--card);
     border: 1px;
@@ -1532,6 +1532,9 @@ textarea {
     display: flex;
     gap: 8px;
     justify-content: center;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
 }
 
 .confirm-actions button {
