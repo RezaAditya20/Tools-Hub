@@ -1626,7 +1626,7 @@ textarea {
 .nav-items {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 1px;
     flex: 1;
     overflow-y: auto;
 }
@@ -1833,7 +1833,7 @@ textarea {
 
 .nav-item .label {
     opacity: 1;
-    font-size: 0.8125rem;
+    font-size: 0.85rem;
     font-weight: 500;
     transition: opacity 0.2s ease 0.05s;
 }
