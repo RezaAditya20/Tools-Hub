@@ -2759,10 +2759,6 @@
                 opt.selected = true;
                 sel.insertBefore(opt, sel.firstChild);
               }
-              const customOpt = document.createElement("option");
-              customOpt.value = "__custom__";
-              customOpt.textContent = "Custom...";
-              sel.appendChild(customOpt);
               badge.replaceWith(wrap);
               wrap.appendChild(sel);
               sel.focus();
@@ -2771,12 +2767,6 @@
               sel.addEventListener("change", async () => {
                 if (sel.value === "__custom__") {
                   handled = true;
-                  const custom = await showPrompt("Masukkan status custom:");
-                  if (custom && custom.trim()) {
-                    note.progress = custom.trim();
-                    note.updatedAt = formatDate(new Date());
-                    saveData();
-                  }
                   renderNotes();
                 } else {
                   note.progress = sel.value;
