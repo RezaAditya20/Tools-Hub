@@ -783,6 +783,12 @@
         border-color: var(--primary);
       }
 
+      @media (min-width: 1049px) {
+        .desc-area {
+          resize: none;
+        }
+      }
+
       @media (max-width: 1048px) {
         .desc-split-layout {
           flex-direction: column;
@@ -1945,7 +1951,23 @@
           descToggleIco.classList.toggle("fa-align-left", !note.descHidden);
           descToggleIco.classList.toggle("fa-text-slash", !!note.descHidden);
           renderTasks();
+          fitDescHeight();
         }
+
+        // Di layar lebar (>1048px) buat desc-area setinggi sisa viewport (tanpa scroll).
+        // Ukur dari posisi .desc-split-layout (sudah lewat topbar + divider + margin) → akurat.
+        function fitDescHeight() {
+          if (window.innerWidth <= 1048) { descInput.style.height = ""; return; }
+          const layout = document.querySelector(".desc-split-layout");
+          const container = document.querySelector(".container");
+          if (!layout) return;
+          const top = layout.getBoundingClientRect().top;
+          const cs = container ? getComputedStyle(container) : null;
+          const padBottom = cs ? parseFloat(cs.paddingBottom) || 0 : 0;
+          const avail = window.innerHeight - top - padBottom - 4;
+          descInput.style.height = Math.max(200, avail) + "px";
+        }
+        window.addEventListener("resize", fitDescHeight);
 
         // === Renders ===
         function renderSchools() {
