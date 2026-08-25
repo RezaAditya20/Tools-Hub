@@ -134,6 +134,22 @@
         width: 16px;
         height: 16px;
       }
+      /* Import combo: icon + caret bawah, mirip select */
+      .btn-import-combo {
+        position: relative;
+        width: auto;
+        min-width: 40px;
+        padding: 0 12px;
+        gap: 6px;
+      }
+      .btn-import-combo i.fa-file-import {
+        font-size: 1rem;
+      }
+      .btn-import-caret {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        transform: translateY(1px);
+      }
       /* Forms */
       .form-inline {
         display: flex;
@@ -1383,6 +1399,50 @@
         animation: confirm-pop-in 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
 
+      /* Import dropdown: popover kecil di bawah tombol (seperti btn-dl Document Scanner) */
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .modal-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 0;
+      }
+      .modal-close {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 0.8rem;
+        cursor: pointer;
+        border-radius: 10px;
+      }
+      .modal-close:hover { color: var(--fg); }
+      .import-dropdown {
+        display: none;
+      }
+      .import-dropdown.show {
+        display: block;
+      }
+      .import-dropdown .modal-card {
+        position: fixed;
+        width: auto;
+        min-width: 180px;
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.45);
+        animation: fade-in 0.12s ease;
+        z-index: 9999;
+      }
+
       /* Global modal close animation */
       .overlay-closing {
         animation: overlay-fade-out 0.18s ease forwards;
@@ -1469,6 +1529,9 @@
               </div>
               <div class="topbar-action topbar-action-single" id="topbar-action-shortcut" style="display: none">
                 <button class="btn btn-icon-only btn-liquid" id="btn-shortcut-info" title="Lihat semua shortcut"><i class="fa-regular fa-keyboard"></i></button>
+              </div>
+              <div class="topbar-action topbar-action-single" id="topbar-action-import" style="display: none">
+                <button class="btn btn-icon-only btn-liquid btn-import-combo" id="btn-import" title="Import"><i class="fa-regular fa-file-import"></i><i class="fa-solid fa-chevron-down btn-import-caret"></i></button>
               </div>
               <div class="topbar-action" id="topbar-action-panel-toggle" style="display: none">
                 <button class="btn-icon" id="btn-desc-toggle" title="Sembunyikan/tampilkan Deskripsi"><i class="far fa-align-left desc-toggle-ico"></i></button>
@@ -1595,6 +1658,45 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- IMPORT DROPDOWN (popover seperti btn-dl) -->
+    <div class="modal popover import-dropdown" id="import-modal">
+      <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px">
+          <p class="modal-title">Import</p>
+          <button id="import-close" class="modal-close" style="padding: 4px 8px">✕</button>
+        </div>
+        <button class="modal-opt liquid-in-panel" data-import="clipboard"><i class="fa-regular fa-clipboard"></i> Clipboard</button>
+        <button class="modal-opt liquid-in-panel" data-import="ocr"><i class="fa-regular fa-image"></i> OCR</button>
+        <button class="modal-opt liquid-in-panel" data-import="audio"><i class="fa-solid fa-microphone"></i> Audio</button>
+      </div>
+    </div>
+    <input type="file" id="import-ocr-file" accept="image/*" style="display: none" />
+
+    <!-- OCR CROP MODAL -->
+    <div id="ocr-modal" class="shortcut-overlay" style="display: none">
+      <div class="shortcut-box" style="max-width: 520px">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+          <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg)">Crop & OCR</h3>
+          <button id="ocr-close" style="background: transparent; border: none; color: var(--fg); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 30px">✕</button>
+        </div>
+        <div id="ocr-stage" style="position: relative; display: inline-block; max-width: 100%; line-height: 0">
+          <img id="ocr-img" style="display: block; max-width: 100%; max-height: 60vh; border-radius: 12px; user-select: none" draggable="false" />
+          <svg id="ocr-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none">
+            <polygon id="ocr-guide" points="0,0 100,0 100,100 0,100" fill="rgba(0,122,255,0.12)" stroke="var(--primary)" stroke-width="0.6" stroke-linejoin="round" />
+          </svg>
+          <div class="ocr-corner" data-c="0" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
+          <div class="ocr-corner" data-c="1" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
+          <div class="ocr-corner" data-c="2" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
+          <div class="ocr-corner" data-c="3" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
+        </div>
+        <div id="ocr-progress" style="display: none; margin-top: 12px; font-size: 0.8rem; color: var(--muted)">Mengenali teks... 0%</div>
+        <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end">
+          <button class="btn" id="ocr-cancel">Batal</button>
+          <button class="btn btn-primary" id="ocr-apply">Terapkan & OCR</button>
+        </div>
       </div>
     </div>
 
@@ -1739,6 +1841,9 @@
           const topbarActionShortcut = document.getElementById("topbar-action-shortcut");
           topbarActionShortcut.style.display = which === "desc" ? "" : "none";
           topbarActionShortcut.classList.toggle("show", which === "desc");
+          const topbarActionImport = document.getElementById("topbar-action-import");
+          topbarActionImport.style.display = which === "desc" ? "" : "none";
+          topbarActionImport.classList.toggle("show", which === "desc");
           // Collapse groups that have no visible action so flex gap doesn't leave a hole.
           document.querySelectorAll(".topbar-action-group").forEach((g) => {
             const visible = [...g.querySelectorAll(".topbar-action")].some((a) => a.style.display !== "none");
@@ -3485,6 +3590,200 @@
         document.getElementById("shortcut-close").addEventListener("click", () => {
           closeOverlay(shortcutModal, null, null, "hide");
         });
+
+        // Import dropdown (popover seperti btn-dl)
+        const importModal = document.getElementById("import-modal");
+        const importCard = importModal.querySelector(".modal-card");
+        function openImportModal() {
+          const r = document.getElementById("btn-import").getBoundingClientRect();
+          importCard.style.top = r.bottom + 8 + "px";
+          importCard.style.left = "auto";
+          importCard.style.right = Math.max(8, window.innerWidth - r.right) + "px";
+          importModal.classList.add("show");
+        }
+        function closeImportModal() { importModal.classList.remove("show"); }
+        document.getElementById("btn-import").addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (importModal.classList.contains("show")) closeImportModal(); else openImportModal();
+        });
+        document.getElementById("import-close").addEventListener("click", closeImportModal);
+        importModal.addEventListener("click", (e) => { if (e.target === importModal) closeImportModal(); });
+        importModal.querySelectorAll(".modal-opt").forEach((item) => {
+          item.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const kind = item.dataset.import;
+            closeImportModal();
+            if (kind === "clipboard") {
+              navigator.clipboard.readText().then((t) => {
+                if (!t) { showToast("Clipboard kosong", "error"); return; }
+                appendToDesc(t.trim());
+                showToast("Clipboard disisipkan");
+              }).catch(() => showToast("Tidak bisa baca clipboard", "error"));
+            } else if (kind === "ocr") {
+              importOcrFile.click();
+            } else if (kind === "audio") {
+              // TODO: implementasi import audio
+              showToast("Import audio menyusul");
+            }
+          });
+        });
+        window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeImportModal(); });
+
+        // Sisipkan teks ke desc-input: cari row terakhir, tambah 1 baris kosong lalu teks.
+        function appendToDesc(text) {
+          if (!text) return;
+          const cur = descInput.value;
+          const sep = cur && !cur.endsWith("\n") ? "\n" : "";
+          const insert = sep + "\n" + text;
+          const pos = descInput.value.length;
+          descInput.value = cur + insert;
+          descInput.focus();
+          descInput.setSelectionRange(pos + insert.length, pos + insert.length);
+          descInput.dispatchEvent(new Event("input")); // trigger autosave
+        }
+
+        const importOcrFile = document.getElementById("import-ocr-file");
+        importOcrFile.addEventListener("change", () => {
+          const file = importOcrFile.files[0];
+          importOcrFile.value = "";
+          if (!file) return;
+          openOcrModal(file);
+        });
+
+        // === OCR crop modal (manual 4-sudut + perspective warp) ===
+        const ocrModal = document.getElementById("ocr-modal");
+        const ocrImg = document.getElementById("ocr-img");
+        const ocrStage = document.getElementById("ocr-stage");
+        const ocrOverlay = document.getElementById("ocr-overlay");
+        const ocrGuide = document.getElementById("ocr-guide");
+        const ocrCorners = [...ocrModal.querySelectorAll(".ocr-corner")];
+        const ocrProgress = document.getElementById("ocr-progress");
+        let ocrFile = null;
+        let ocrPts = null; // [[x,y] percentage 0..100] tl,tr,br,bl
+
+        function openOcrModal(file) {
+          ocrFile = file;
+          const url = URL.createObjectURL(file);
+          ocrImg.onload = () => {
+            ocrPts = [[8, 8], [92, 8], [92, 92], [8, 92]];
+            drawOcrCorners();
+            ocrModal.style.display = "flex";
+          };
+          ocrImg.src = url;
+        }
+        function closeOcrModal() {
+          ocrModal.style.display = "none";
+          if (ocrImg.src) URL.revokeObjectURL(ocrImg.src);
+          ocrImg.src = "";
+          ocrFile = null;
+        }
+        function drawOcrCorners() {
+          ocrCorners.forEach((c, i) => {
+            const [px, py] = ocrPts[i];
+            c.style.left = px + "%";
+            c.style.top = py + "%";
+          });
+          ocrGuide.setAttribute("points", ocrPts.map((p) => p.join(",")).join(" "));
+        }
+        ocrCorners.forEach((c) => {
+          c.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            const idx = +c.dataset.c;
+            const move = (ev) => {
+              const r = ocrImg.getBoundingClientRect();
+              let px = ((ev.clientX - r.left) / r.width) * 100;
+              let py = ((ev.clientY - r.top) / r.height) * 100;
+              px = Math.max(0, Math.min(100, px));
+              py = Math.max(0, Math.min(100, py));
+              ocrPts[idx] = [px, py];
+              drawOcrCorners();
+            };
+            const up = () => {
+              window.removeEventListener("pointermove", move);
+              window.removeEventListener("pointerup", up);
+            };
+            window.addEventListener("pointermove", move);
+            window.addEventListener("pointerup", up);
+          });
+        });
+        document.getElementById("ocr-close").addEventListener("click", closeOcrModal);
+        document.getElementById("ocr-cancel").addEventListener("click", closeOcrModal);
+        ocrModal.addEventListener("click", (e) => { if (e.target === ocrModal) closeOcrModal(); });
+
+        // Perspective warp: ambil crop dari titik (persen) → canvas hasil.
+        function warpOcr() {
+          const nw = ocrImg.naturalWidth, nh = ocrImg.naturalHeight;
+          const pts = ocrPts.map(([px, py]) => [px / 100 * nw, py / 100 * nh]);
+          // Lebar/tinggi hasil dari rata-rata sisi (approx, anggap segiempat).
+          const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+          const w = Math.round((dist(pts[0], pts[1]) + dist(pts[3], pts[2])) / 2);
+          const h = Math.round((dist(pts[0], pts[3]) + dist(pts[1], pts[2])) / 2);
+          const cv = document.createElement("canvas");
+          cv.width = w; cv.height = h;
+          const ctx = cv.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+          // Source → dest quad mapping via transform (bilinear)
+          const src = pts;
+          const dst = [[0, 0], [w, 0], [w, h], [0, h]];
+          const ia = adj(src);
+          // affine per-triangle fallback: map full src via clip + drawImage dengan transform.
+          // Sederhana & cukup: gunakan getImageData + mapping perspektif per piksel.
+          const sctx = document.createElement("canvas");
+          sctx.width = nw; sctx.height = nh;
+          sctx.getContext("2d").drawImage(ocrImg, 0, 0);
+          const sd = sctx.getContext("2d").getImageData(0, 0, nw, nh).data;
+          const out = ctx.createImageData(w, h);
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              const u = x / (w - 1), v = y / (h - 1);
+              const sx = Math.round(bilerp(src, u, v, 0));
+              const sy = Math.round(bilerp(src, u, v, 1));
+              let si = (sy * nw + sx) * 4;
+              if (sx < 0 || sy < 0 || sx >= nw || sy >= nh) si = 0;
+              const di = (y * w + x) * 4;
+              out.data[di] = sd[si]; out.data[di + 1] = sd[si + 1];
+              out.data[di + 2] = sd[si + 2]; out.data[di + 3] = 255;
+            }
+          }
+          ctx.putImageData(out, 0, 0);
+          return cv.toDataURL("image/png");
+          function bilerp(p, u, v, k) {
+            const a = p[0][k] + (p[1][k] - p[0][k]) * u;
+            const b = p[3][k] + (p[2][k] - p[3][k]) * u;
+            return a + (b - a) * v;
+          }
+          function adj() { return null; }
+        }
+
+        document.getElementById("ocr-apply").addEventListener("click", async () => {
+          if (!ocrFile) return;
+          const dataUrl = warpOcr();
+          closeOcrModal();
+          if (!window.Tesseract) {
+            showToast("Memuat OCR...", "info");
+            await new Promise((res, rej) => {
+              const s = document.createElement("script");
+              s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+              s.onload = res;
+              s.onerror = () => rej(new Error("Gagal muat Tesseract"));
+              document.head.appendChild(s);
+            });
+          }
+          ocrProgress.style.display = "block";
+          ocrProgress.textContent = "Mengenali teks... 0%";
+          try {
+            const result = await window.Tesseract.recognize(dataUrl, "ind+eng", {
+              logger: (m) => { if (m.status === "recognizing text") ocrProgress.textContent = "Mengenali teks... " + Math.round(m.progress * 100) + "%"; },
+            });
+            ocrProgress.style.display = "none";
+            appendToDesc(result.data.text.trim());
+            showToast("Teks OCR disisipkan");
+          } catch (err) {
+            ocrProgress.style.display = "none";
+            showToast("Gagal OCR: " + err.message, "error");
+          }
+        });
+
         shortcutModal.addEventListener("click", (e) => {
           if (e.target === shortcutModal) closeOverlay(shortcutModal, null, null, "hide");
         });
