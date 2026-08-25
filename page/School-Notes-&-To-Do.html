@@ -1674,9 +1674,8 @@
           <p class="modal-title">Import</p>
           <button id="import-close" class="modal-close" style="padding: 4px 8px">✕</button>
         </div>
-        <button class="modal-opt liquid-in-panel" data-import="clipboard"><i class="fa-regular fa-clipboard"></i> Clipboard</button>
-        <button class="modal-opt liquid-in-panel" data-import="ocr"><i class="fa-regular fa-image"></i> OCR</button>
-        <button class="modal-opt liquid-in-panel" data-import="audio"><i class="fa-solid fa-microphone"></i> Audio</button>
+        <button class="modal-opt liquid-in-panel" data-import="clipboard">Clipboard</button>
+        <button class="modal-opt liquid-in-panel" data-import="ocr">Gambar</button>
       </div>
     </div>
     <input type="file" id="import-ocr-file" accept="image/*" style="display: none" />
@@ -3643,9 +3642,6 @@
               }).catch(() => showToast("Tidak bisa baca clipboard", "error"));
             } else if (kind === "ocr") {
               importOcrFile.click();
-            } else if (kind === "audio") {
-              // TODO: implementasi import audio
-              showToast("Import audio menyusul");
             }
           });
         });
