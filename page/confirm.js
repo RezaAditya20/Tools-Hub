@@ -242,8 +242,10 @@ function showSchoolAdd() {
   });
 }
 
-/* showNoteAdd() → Promise<{name, subname}|null>. Modal tambah catatan. */
-function showNoteAdd() {
+/* showNoteAdd(defaultProgress?) → Promise<{name, subname, progress}|null>.
+   Bila defaultProgress diisi, pilihan Progress disembunyikan & nilai tsb yang dipakai. */
+function showNoteAdd(defaultProgress) {
+  const hideProgress = defaultProgress !== undefined;
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
     overlay.className = "confirm-overlay";
@@ -254,6 +256,13 @@ function showNoteAdd() {
         <input type="text" id="add-note-name" placeholder="Nama Catatan..." autocomplete="off" />
         <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Subname (opsional)</label>
         <input type="text" id="add-note-subname" placeholder="Subname" autocomplete="off" />
+        ${hideProgress ? "" : `<label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Progress</label>
+        <select id="add-note-progress" class="progress-edit liquid-in-panel add-note-progress">
+          <option value="">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Testing">Testing</option>
+          <option value="Done">Done</option>
+        </select>`}
         <div class="confirm-actions">
           <button class="btn-confirm-ok">Tambah</button>
           <button class="btn-confirm-cancel">Batal</button>
@@ -262,15 +271,19 @@ function showNoteAdd() {
     document.body.appendChild(overlay);
     const nameInput = overlay.querySelector("#add-note-name");
     const subInput = overlay.querySelector("#add-note-subname");
+    const progInput = overlay.querySelector("#add-note-progress");
     nameInput.focus();
     const close = (val) => { if (window.closeOverlay) closeOverlay(overlay, val, resolve); else { overlay.remove(); resolve(val); } };
-    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim() });
+    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim(), progress: progInput ? progInput.value : defaultProgress });
     nameInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); save(); }
       if (e.key === "Escape") close(null);
     });
     subInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    if (progInput) progInput.addEventListener("keydown", (e) => {
       if (e.key === "Escape") close(null);
     });
     overlay.querySelector(".btn-confirm-ok").onclick = save;
