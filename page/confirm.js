@@ -260,6 +260,7 @@ function showNoteAdd(defaultProgress) {
         <select id="add-note-progress" class="progress-edit liquid-in-panel add-note-progress">
           <option value="">Pending</option>
           <option value="In Progress">In Progress</option>
+          <option value="On Hold">On Hold</option>
           <option value="Testing">Testing</option>
           <option value="Done">Done</option>
         </select>`}

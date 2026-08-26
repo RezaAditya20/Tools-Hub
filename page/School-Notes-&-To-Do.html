@@ -311,7 +311,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: color 0.2s, background 0.2s, border-color 0.2s;
+        transition:
+          color 0.2s,
+          background 0.2s,
+          border-color 0.2s;
       }
       .btn-col-add:hover {
         color: var(--fg);
@@ -341,7 +344,10 @@
         background: var(--card);
         padding: 14px;
         box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
-        transition: border-color 0.18s, box-shadow 0.18s, transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1);
+        transition:
+          border-color 0.18s,
+          box-shadow 0.18s,
+          transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1);
         will-change: transform;
       }
       .note-card.row-clickable:hover {
@@ -431,7 +437,11 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s;
+        transition:
+          color 0.2s,
+          background 0.2s,
+          border-color 0.2s,
+          transform 0.2s;
       }
       .btn-status-note:hover {
         color: var(--fg);
@@ -486,7 +496,7 @@
           max-width: 50%;
           flex: 1 1 calc(50% - 7px);
           margin-bottom: 20px;
-          max-height: 470px;
+          max-height: 485px;
         }
         .note-card {
           /* height: 150px; */
@@ -593,6 +603,10 @@
       .status-testing {
         background: rgba(168, 85, 247, 0.15);
         color: #a855f7;
+      }
+      .status-onhold {
+        background: rgba(249, 115, 22, 0.15);
+        color: #f97316;
       }
       .status-done {
         background: rgba(34, 197, 94, 0.15);
@@ -952,14 +966,34 @@
       .desc-split-layout {
         display: flex;
         gap: 20px;
-        align-items: flex-start;
+        align-items: stretch;
         overflow: hidden;
       }
       .desc-split-left {
-        flex: 1;
+        flex: 0 0 40%;
+        max-width: 40%;
         min-width: 0;
         display: flex;
         flex-direction: column;
+        gap: 12px;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .panel-half {
+        flex: 0 1 auto;
+        min-height: 0;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .glass-panel {
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        background: var(--card) !important;
+        backdrop-filter: saturate(180%) blur(20px);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        padding: 10px !important;
+        box-shadow: var(--liquid-shadow);
         border-radius: 12px;
       }
       .liquid-in-panel {
@@ -990,7 +1024,6 @@
         flex: 1;
         min-height: 0;
         overflow-y: auto;
-        max-height: 419px;
         scrollbar-width: thin;
         scrollbar-color: var(--border) transparent;
       }
@@ -1022,9 +1055,11 @@
         gap: 0;
       }
       .desc-split-layout.desc-hidden .desc-split-right {
+        flex: 0 0 0;
         width: 0;
         height: 0;
         min-height: 0;
+        min-width: 0;
         opacity: 0;
         overflow: hidden;
         pointer-events: none;
@@ -1035,7 +1070,19 @@
         padding-bottom: 0;
       }
       .desc-split-layout.desc-hidden .desc-split-left {
+        flex: 1 1 100%;
         width: 100%;
+        max-width: 100%;
+        min-height: 460px;
+      }
+      .desc-split-layout.desc-hidden .panel-half.glass-panel {
+        background: transparent !important;
+        border: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        border-radius: 0;
       }
       .desc-area {
         width: 100%;
@@ -1074,8 +1121,17 @@
         }
         .desc-split-left,
         .desc-split-right {
+          flex: 1 1 100%;
+          max-width: 100%;
           width: 100%;
           min-width: 0;
+        }
+        .desc-split-layout.desc-hidden .desc-split-right {
+          flex: 0 0 0;
+        }
+        .panel-half {
+          min-height: 220px;
+          max-height: 360px;
         }
       }
       @media (max-width: 768px) {
@@ -1085,6 +1141,10 @@
         .desc-split-left,
         .desc-split-right {
           width: 100%;
+        }
+        .panel-half {
+          min-height: 200px;
+          max-height: 320px;
         }
         .desc-area {
           min-height: 400px;
@@ -1391,6 +1451,7 @@
           background 0.15s,
           border-color 0.15s,
           box-shadow 0.15s;
+        margin-left:;
       }
       .task-item:hover {
         border-color: var(--primary);
@@ -1686,8 +1747,12 @@
 
       /* Import dropdown: popover kecil di bawah tombol (seperti btn-dl Document Scanner) */
       @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
       .modal-title {
         font-size: 0.8rem;
@@ -1703,7 +1768,9 @@
         cursor: pointer;
         border-radius: 10px;
       }
-      .modal-close:hover { color: var(--fg); }
+      .modal-close:hover {
+        color: var(--fg);
+      }
       .import-dropdown {
         display: none;
       }
@@ -1880,17 +1947,19 @@
           <div class="desc-split-right">
             <textarea id="desc-input" class="desc-area" placeholder="Ketik deskripsi lengkap di sini... otomatis tersimpan saat Anda mengetik."></textarea>
           </div>
-          <div class="desc-split-left liquid-glass">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px; margin-bottom: 8px" class="section-title">
-              <span>List Pengerjaan</span>
-              <span id="task-count" style="font-size: 0.875rem; font-weight: 500; color: var(--primary)"></span>
-            </div>
-            <div id="task-container">
-              <form id="form-task" class="form-inline">
-                <input type="text" id="input-task" class="liquid-in-panel" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
-                <button type="submit" class="btn btn-primary">Tambah</button>
-              </form>
-              <div id="task-list" class="task-list"></div>
+          <div class="desc-split-left">
+            <div class="panel-half glass-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px; margin-bottom: 8px" class="section-title">
+                <span>List Pengerjaan</span>
+                <span id="task-count" style="font-size: 0.875rem; font-weight: 500; color: var(--primary)"></span>
+              </div>
+              <div id="task-container">
+                <form id="form-task" class="form-inline">
+                  <input type="text" id="input-task" class="liquid-in-panel" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
+                  <button type="submit" class="btn btn-primary">Tambah</button>
+                </form>
+                <div id="task-list" class="task-list"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1964,6 +2033,7 @@
         </div>
         <button class="modal-opt liquid-in-panel" data-status="Pending">Pending</button>
         <button class="modal-opt liquid-in-panel" data-status="In Progress">In Progress</button>
+        <button class="modal-opt liquid-in-panel" data-status="On Hold">On Hold</button>
         <button class="modal-opt liquid-in-panel" data-status="Testing">Testing</button>
         <button class="modal-opt liquid-in-panel" data-status="Done">Done</button>
       </div>
@@ -1981,10 +2051,10 @@
           <svg id="ocr-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none">
             <polygon id="ocr-guide" points="0,0 100,0 100,100 0,100" fill="rgba(0,122,255,0.12)" stroke="var(--primary)" stroke-width="0.6" stroke-linejoin="round" />
           </svg>
-          <div class="ocr-corner" data-c="0" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
-          <div class="ocr-corner" data-c="1" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
-          <div class="ocr-corner" data-c="2" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
-          <div class="ocr-corner" data-c="3" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.4)"></div>
+          <div class="ocr-corner" data-c="0" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4)"></div>
+          <div class="ocr-corner" data-c="1" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4)"></div>
+          <div class="ocr-corner" data-c="2" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4)"></div>
+          <div class="ocr-corner" data-c="3" style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4)"></div>
         </div>
         <div id="ocr-progress" style="display: none; margin-top: 12px; font-size: 0.8rem; color: var(--muted)">Mengenali teks... 0%</div>
         <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end">
@@ -1998,6 +2068,7 @@
     <datalist id="status-options">
       <option value="Pending"></option>
       <option value="In Progress"></option>
+      <option value="On Hold"></option>
       <option value="Testing"></option>
       <option value="Done"></option>
     </datalist>
@@ -2253,7 +2324,10 @@
         // Di layar lebar (>1048px) buat desc-area setinggi sisa viewport (tanpa scroll).
         // Ukur dari posisi .desc-split-layout (sudah lewat topbar + divider + margin) → akurat.
         function fitDescHeight() {
-          if (window.innerWidth <= 1048) { descInput.style.height = ""; return; }
+          if (window.innerWidth <= 1048) {
+            descInput.style.height = "";
+            return;
+          }
           const layout = document.querySelector(".desc-split-layout");
           const container = document.querySelector(".container");
           if (!layout) return;
@@ -2655,7 +2729,7 @@
 
           // Kolom berdasarkan progres (Kanban). Catatan selesai (done) selalu
           // masuk kolom "Selesai" terlepas dari nilai progress-nya.
-          const STANDARD = ["Pending", "In Progress", "Testing"];
+          const STANDARD = ["Pending", "In Progress", "On Hold", "Testing"];
           const customVals = new Set();
           notes.forEach((n) => {
             if (n.done) return;
@@ -2665,6 +2739,7 @@
           const columns = [
             { key: "__pending", label: "Pending", dot: "status-pending" },
             { key: "In Progress", label: "In Progress", dot: "status-inprogress" },
+            { key: "On Hold", label: "On Hold", dot: "status-onhold" },
             { key: "Testing", label: "Testing", dot: "status-testing" },
             { key: "__done", label: "Selesai", dot: "status-done" },
           ];
@@ -2751,9 +2826,7 @@
           const card = document.createElement("div");
           card.className = "note-card row-clickable" + (isDone ? " row-done" : "") + (n.pinned ? " row-pinned" : "");
           card.dataset.id = n.id;
-          const subname = n.subname
-            ? `<span class="note-subname">${escapeHtml(n.subname)}</span>`
-            : "";
+          const subname = n.subname ? `<span class="note-subname">${escapeHtml(n.subname)}</span>` : "";
           card.innerHTML = `
             <div class="note-card-head">
               <span class="note-title">${escapeHtml(n.text)}</span>
@@ -2889,6 +2962,7 @@
           if (v === "pending") return "status-pending";
           if (v === "in progress") return "status-inprogress";
           if (v === "testing") return "status-testing";
+          if (v === "on hold") return "status-onhold";
           if (v === "done") return "status-done";
           return "status-custom";
         }
@@ -2898,6 +2972,7 @@
           if (v === "pending") return { bg: "rgba(59,130,246,0.15)", fg: "#3b82f6" };
           if (v === "in progress") return { bg: "rgba(234,179,8,0.15)", fg: "#eab308" };
           if (v === "testing") return { bg: "rgba(168,85,247,0.15)", fg: "#a855f7" };
+          if (v === "on hold") return { bg: "rgba(249,115,22,0.15)", fg: "#f97316" };
           if (v === "done") return { bg: "rgba(34,197,94,0.15)", fg: "#22c55e" };
           return { bg: "rgba(59,130,246,0.15)", fg: "#3b82f6" };
         }
@@ -3129,7 +3204,7 @@
             closeProgressPop();
             const note = db[currentSchoolId].notes.find((n) => n.id === id);
             if (!note) return;
-            const statuses = ["Pending", "In Progress", "Testing", "Done"];
+            const statuses = ["Pending", "In Progress", "On Hold", "Testing", "Done"];
             const cur = note.progress || "";
             const isCustom = cur && !statuses.includes(cur);
             const pop = document.createElement("div");
@@ -3186,6 +3261,7 @@
             const badge = e.target.closest(".progress-badge");
             if (badge) openProgressSelect(badge.dataset.id, badge);
           });
+
           tbody.addEventListener("click", async (e) => {
             const pinBtn = e.target.closest(".btn-pin");
             if (pinBtn) {
@@ -3353,6 +3429,18 @@
           const before = val.substring(0, start);
           const after = val.substring(start);
           const currentLine = before.split("\n").pop();
+
+          // Ketik akhiran "w" dari "/now" → ganti dengan tanggal & jam sekarang
+          if (e.key.toLowerCase() === "w" && currentLine.endsWith("/no")) {
+            e.preventDefault();
+            const stamp = formatDate(new Date());
+            const at = start - 3; // posisi awal "/no"
+            descInput.value = before.substring(0, at) + stamp + " " + after;
+            const pos = at + stamp.length + 1;
+            descInput.selectionStart = descInput.selectionEnd = pos;
+            descInput.dispatchEvent(new Event("input"));
+            return;
+          }
 
           // Shift+Alt+Down: duplicate line ke bawah
           if (e.shiftKey && e.altKey && (e.key === "ArrowDown" || e.key === "Down")) {
@@ -3871,7 +3959,7 @@
             div.querySelector(".task-progress").addEventListener("click", (e) => {
               e.stopPropagation();
               const badge = e.currentTarget;
-              const statuses = ["Pending", "In Progress", "Testing", "Done"];
+              const statuses = ["Pending", "In Progress", "On Hold", "Testing", "Done"];
               const cur = t.progress || "";
               const isCustom = cur && !statuses.includes(cur);
               const wrap = document.createElement("span");
@@ -4021,30 +4109,43 @@
           importCard.style.right = Math.max(8, window.innerWidth - r.right) + "px";
           importModal.classList.add("show");
         }
-        function closeImportModal() { importModal.classList.remove("show"); }
+        function closeImportModal() {
+          importModal.classList.remove("show");
+        }
         document.getElementById("btn-import").addEventListener("click", (e) => {
           e.stopPropagation();
-          if (importModal.classList.contains("show")) closeImportModal(); else openImportModal();
+          if (importModal.classList.contains("show")) closeImportModal();
+          else openImportModal();
         });
         document.getElementById("import-close").addEventListener("click", closeImportModal);
-        importModal.addEventListener("click", (e) => { if (e.target === importModal) closeImportModal(); });
+        importModal.addEventListener("click", (e) => {
+          if (e.target === importModal) closeImportModal();
+        });
         importModal.querySelectorAll(".modal-opt").forEach((item) => {
           item.addEventListener("click", (e) => {
             e.stopPropagation();
             const kind = item.dataset.import;
             closeImportModal();
             if (kind === "clipboard") {
-              navigator.clipboard.readText().then((t) => {
-                if (!t) { showToast("Clipboard kosong", "error"); return; }
-                appendToDesc(t.trim());
-                showToast("Clipboard disisipkan");
-              }).catch(() => showToast("Tidak bisa baca clipboard", "error"));
+              navigator.clipboard
+                .readText()
+                .then((t) => {
+                  if (!t) {
+                    showToast("Clipboard kosong", "error");
+                    return;
+                  }
+                  appendToDesc(t.trim());
+                  showToast("Clipboard disisipkan");
+                })
+                .catch(() => showToast("Tidak bisa baca clipboard", "error"));
             } else if (kind === "ocr") {
               importOcrFile.click();
             }
           });
         });
-        window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeImportModal(); });
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeImportModal();
+        });
 
         // Note status dropdown (popover seperti import)
         const noteStatusModal = document.getElementById("note-status-modal");
@@ -4055,19 +4156,24 @@
           noteStatusCard.style.left = "auto";
           noteStatusCard.style.right = Math.max(8, window.innerWidth - r.right) + "px";
           const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
-          const cur = note ? (note.progress || "Pending") : "Pending";
+          const cur = note ? note.progress || "Pending" : "Pending";
           noteStatusModal.querySelectorAll(".modal-opt").forEach((o) => {
             o.classList.toggle("is-current", o.dataset.status === cur);
           });
           noteStatusModal.classList.add("show");
         }
-        function closeNoteStatusModal() { noteStatusModal.classList.remove("show"); }
+        function closeNoteStatusModal() {
+          noteStatusModal.classList.remove("show");
+        }
         document.getElementById("btn-note-status").addEventListener("click", (e) => {
           e.stopPropagation();
-          if (noteStatusModal.classList.contains("show")) closeNoteStatusModal(); else openNoteStatusModal();
+          if (noteStatusModal.classList.contains("show")) closeNoteStatusModal();
+          else openNoteStatusModal();
         });
         document.getElementById("note-status-close").addEventListener("click", closeNoteStatusModal);
-        noteStatusModal.addEventListener("click", (e) => { if (e.target === noteStatusModal) closeNoteStatusModal(); });
+        noteStatusModal.addEventListener("click", (e) => {
+          if (e.target === noteStatusModal) closeNoteStatusModal();
+        });
         noteStatusModal.querySelectorAll(".modal-opt").forEach((item) => {
           item.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -4076,14 +4182,21 @@
             const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
             if (!note) return;
             note.progress = val;
-            if (val === "Done") { note.done = true; note.doneDate = formatDate(new Date()); }
-            else { note.done = false; note.doneDate = ""; }
+            if (val === "Done") {
+              note.done = true;
+              note.doneDate = formatDate(new Date());
+            } else {
+              note.done = false;
+              note.doneDate = "";
+            }
             note.updatedAt = formatDate(new Date());
             saveData();
             showDesc(currentSchoolId, currentNoteId);
           });
         });
-        window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeNoteStatusModal(); });
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeNoteStatusModal();
+        });
 
         // Sisipkan teks ke desc-input: cari row terakhir, tambah 1 baris kosong lalu teks.
         function appendToDesc(text) {
@@ -4121,7 +4234,12 @@
           ocrFile = file;
           const url = URL.createObjectURL(file);
           ocrImg.onload = () => {
-            ocrPts = [[8, 8], [92, 8], [92, 92], [8, 92]];
+            ocrPts = [
+              [8, 8],
+              [92, 8],
+              [92, 92],
+              [8, 92],
+            ];
             drawOcrCorners();
             ocrModal.style.display = "flex";
           };
@@ -4164,41 +4282,55 @@
         });
         document.getElementById("ocr-close").addEventListener("click", closeOcrModal);
         document.getElementById("ocr-cancel").addEventListener("click", closeOcrModal);
-        ocrModal.addEventListener("click", (e) => { if (e.target === ocrModal) closeOcrModal(); });
+        ocrModal.addEventListener("click", (e) => {
+          if (e.target === ocrModal) closeOcrModal();
+        });
 
         // Perspective warp: ambil crop dari titik (persen) → canvas hasil.
         function warpOcr() {
-          const nw = ocrImg.naturalWidth, nh = ocrImg.naturalHeight;
-          const pts = ocrPts.map(([px, py]) => [px / 100 * nw, py / 100 * nh]);
+          const nw = ocrImg.naturalWidth,
+            nh = ocrImg.naturalHeight;
+          const pts = ocrPts.map(([px, py]) => [(px / 100) * nw, (py / 100) * nh]);
           // Lebar/tinggi hasil dari rata-rata sisi (approx, anggap segiempat).
           const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
           const w = Math.round((dist(pts[0], pts[1]) + dist(pts[3], pts[2])) / 2);
           const h = Math.round((dist(pts[0], pts[3]) + dist(pts[1], pts[2])) / 2);
           const cv = document.createElement("canvas");
-          cv.width = w; cv.height = h;
+          cv.width = w;
+          cv.height = h;
           const ctx = cv.getContext("2d");
-          ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, w, h);
           // Source → dest quad mapping via transform (bilinear)
           const src = pts;
-          const dst = [[0, 0], [w, 0], [w, h], [0, h]];
+          const dst = [
+            [0, 0],
+            [w, 0],
+            [w, h],
+            [0, h],
+          ];
           const ia = adj(src);
           // affine per-triangle fallback: map full src via clip + drawImage dengan transform.
           // Sederhana & cukup: gunakan getImageData + mapping perspektif per piksel.
           const sctx = document.createElement("canvas");
-          sctx.width = nw; sctx.height = nh;
+          sctx.width = nw;
+          sctx.height = nh;
           sctx.getContext("2d").drawImage(ocrImg, 0, 0);
           const sd = sctx.getContext("2d").getImageData(0, 0, nw, nh).data;
           const out = ctx.createImageData(w, h);
           for (let y = 0; y < h; y++) {
             for (let x = 0; x < w; x++) {
-              const u = x / (w - 1), v = y / (h - 1);
+              const u = x / (w - 1),
+                v = y / (h - 1);
               const sx = Math.round(bilerp(src, u, v, 0));
               const sy = Math.round(bilerp(src, u, v, 1));
               let si = (sy * nw + sx) * 4;
               if (sx < 0 || sy < 0 || sx >= nw || sy >= nh) si = 0;
               const di = (y * w + x) * 4;
-              out.data[di] = sd[si]; out.data[di + 1] = sd[si + 1];
-              out.data[di + 2] = sd[si + 2]; out.data[di + 3] = 255;
+              out.data[di] = sd[si];
+              out.data[di + 1] = sd[si + 1];
+              out.data[di + 2] = sd[si + 2];
+              out.data[di + 3] = 255;
             }
           }
           ctx.putImageData(out, 0, 0);
@@ -4208,7 +4340,9 @@
             const b = p[3][k] + (p[2][k] - p[3][k]) * u;
             return a + (b - a) * v;
           }
-          function adj() { return null; }
+          function adj() {
+            return null;
+          }
         }
 
         document.getElementById("ocr-apply").addEventListener("click", async () => {
@@ -4229,7 +4363,9 @@
           ocrProgress.textContent = "Mengenali teks... 0%";
           try {
             const result = await window.Tesseract.recognize(dataUrl, "ind+eng", {
-              logger: (m) => { if (m.status === "recognizing text") ocrProgress.textContent = "Mengenali teks... " + Math.round(m.progress * 100) + "%"; },
+              logger: (m) => {
+                if (m.status === "recognizing text") ocrProgress.textContent = "Mengenali teks... " + Math.round(m.progress * 100) + "%";
+              },
             });
             ocrProgress.style.display = "none";
             appendToDesc(result.data.text.trim());
