@@ -353,7 +353,6 @@
       .note-card.row-clickable:hover {
         border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
         box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
       }
       .note-card.row-clickable:hover .note-title {
         color: var(--primary);
@@ -448,6 +447,18 @@
       }
       .note-card:hover .note-head-actions,
       .note-card:hover .note-card-actions {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .note-card.row-pinned .note-head-actions {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .note-card.row-pinned .note-head-actions .cb-wrap {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .note-card.row-pinned:hover .note-head-actions .cb-wrap {
         opacity: 1;
         pointer-events: auto;
       }
