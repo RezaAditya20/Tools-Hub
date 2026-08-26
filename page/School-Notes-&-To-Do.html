@@ -439,6 +439,26 @@
         gap: 2px;
         margin-left: auto;
       }
+      /* Sembunyikan aksi kartu, tampilkan saat hover kartu */
+      .note-head-actions,
+      .note-card-actions {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        pointer-events: none;
+      }
+      .note-card:hover .note-head-actions,
+      .note-card:hover .note-card-actions {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      /* Perangkat sentuh (tanpa hover): selalu tampilkan */
+      @media (hover: none) {
+        .note-head-actions,
+        .note-card-actions {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
       .btn-status-note {
         background: transparent;
         border: 1px solid var(--border);
