@@ -3085,6 +3085,12 @@
           }
           const prog = res.progress || "";
           const isDone = prog === "Done";
+          let onHoldReason = "";
+          if (prog.toLowerCase() === "on hold") {
+            const r = await showPrompt("Kenapa di-On Hold?");
+            if (r === null) return; // batal → jangan tambah
+            onHoldReason = (r || "").trim();
+          }
           db[currentSchoolId].notes.push({
             id: generateId(),
             text: res.name,
@@ -3096,6 +3102,7 @@
             desc: "",
             doneDate: isDone ? formatDate(new Date()) : "",
             progress: isDone ? "Done" : prog,
+            onHoldReason: prog.toLowerCase() === "on hold" ? onHoldReason : "",
             tasks: [],
           });
           saveData();
@@ -3122,6 +3129,12 @@
             return;
           }
           const isDone = colProgress === "Done";
+          let onHoldReason = "";
+          if (colProgress.toLowerCase() === "on hold") {
+            const r = await showPrompt("Kenapa di-On Hold?");
+            if (r === null) return; // batal → jangan tambah
+            onHoldReason = (r || "").trim();
+          }
           db[currentSchoolId].notes.push({
             id: generateId(),
             text: name,
@@ -3133,6 +3146,7 @@
             desc: "",
             doneDate: isDone ? formatDate(new Date()) : "",
             progress: colProgress,
+            onHoldReason: colProgress.toLowerCase() === "on hold" ? onHoldReason : "",
             tasks: [],
           });
           saveData();
