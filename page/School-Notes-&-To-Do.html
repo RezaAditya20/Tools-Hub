@@ -1026,6 +1026,18 @@
         border-radius: 12px;
         overflow: hidden;
       }
+      .desc-split-divider {
+        flex: 0 0 auto;
+        align-self: stretch;
+        width: 1px;
+        margin: 0 0 16px;
+        background: rgb(255 255 255 / 12%);
+        pointer-events: none;
+      }
+      .desc-split-layout.tasks-hidden .desc-split-divider,
+      .desc-split-layout.desc-hidden .desc-split-divider {
+        display: none;
+      }
       .panel-half {
         flex: 0 1 auto;
         min-height: 0;
@@ -1078,8 +1090,7 @@
         /* width: 40%; */
         flex-shrink: 0;
         opacity: 1;
-        transition:
-          width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+        transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
           opacity 0.25s ease;
       }
       .desc-split-right {
@@ -1122,15 +1133,6 @@
         max-width: 100%;
         min-height: 460px;
       }
-      .desc-split-layout.desc-hidden .panel-half.glass-panel {
-        background: transparent !important;
-        border: none !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        border-radius: 0;
-      }
       .desc-area {
         width: 100%;
         min-height: 417px;
@@ -1172,6 +1174,10 @@
           max-width: 100%;
           width: 100%;
           min-width: 0;
+        }
+        .desc-split-divider {
+          width: auto;
+          height: 1px;
         }
         .desc-split-layout.desc-hidden .desc-split-right {
           flex: 0 0 0;
@@ -1994,15 +2000,16 @@
           <div class="desc-split-right">
             <textarea id="desc-input" class="desc-area" placeholder="Ketik deskripsi lengkap di sini... otomatis tersimpan saat Anda mengetik."></textarea>
           </div>
+          <div class="desc-split-divider"></div>
           <div class="desc-split-left">
-            <div class="panel-half glass-panel">
+            <div class="panel-half">
               <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px; margin-bottom: 8px" class="section-title">
                 <span>List Pengerjaan</span>
                 <span id="task-count" style="font-size: 0.875rem; font-weight: 500; color: var(--primary)"></span>
               </div>
               <div id="task-container">
                 <form id="form-task" class="form-inline">
-                  <input type="text" id="input-task" class="liquid-in-panel" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
+                  <input type="text" id="input-task" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
                   <button type="submit" class="btn btn-primary">Tambah</button>
                 </form>
                 <div id="task-list" class="task-list"></div>
