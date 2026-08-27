@@ -421,14 +421,82 @@
         margin-top: 6px;
         font-size: 0.78rem;
         line-height: 1.4;
-        color: #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
-        border: 1px solid rgba(59, 130, 246, 0.25);
+        color: #eab308;
+        background: rgba(234, 179, 8, 0.1);
+        border: 1px solid rgba(234, 179, 8, 0.25);
         border-radius: 8px;
         padding: 5px 8px;
       }
       .note-progress-reason i {
         flex-shrink: 0;
+      }
+      .modal-card.has-reason {
+        min-width: 280px;
+      }
+      #note-status-history {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 200px;
+        overflow: auto;
+      }
+      .reason-history-item {
+        font-size: 0.76rem;
+        line-height: 1.4;
+        color: var(--fg);
+        background: var(--input, rgba(255, 255, 255, 0.04));
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 6px 8px;
+      }
+      .reason-history-date {
+        color: var(--muted);
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+      }
+      .reason-history-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .modal-reason-badge {
+        flex-shrink: 0;
+        padding: 1px 7px;
+        border-radius: 30px;
+        font-size: 0.66rem;
+        font-weight: 600;
+        background: rgba(249, 115, 22, 0.15);
+        color: #f97316;
+        border: 1px solid rgba(249, 115, 22, 0.3);
+      }
+      .reason-history-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .reason-history-row {
+        flex: 1;
+      }
+      .reason-history-text {
+        cursor: text;
+      }
+      .reason-history-text:hover {
+        text-decoration: underline;
+      }
+      .reason-history-del {
+        flex-shrink: 0;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 0.72rem;
+        padding: 2px 5px;
+        border-radius: 6px;
+        line-height: 1.2;
+      }
+      .reason-history-del:hover {
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.12);
       }
       .note-card-meta {
         display: flex;
@@ -1870,6 +1938,19 @@
         font-weight: 600;
         border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
       }
+      .reason-save-btn {
+        padding: 7px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .reason-save-btn:hover {
+        filter: brightness(1.08);
+      }
 
       /* Global modal close animation */
       .overlay-closing {
@@ -2084,7 +2165,7 @@
 
     <!-- IMPORT DROPDOWN (popover seperti btn-dl) -->
     <div class="modal popover import-dropdown" id="import-modal">
-      <div class="modal-card">
+      <div class="modal-card liquid-glass">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px">
           <p class="modal-title">Import</p>
           <button id="import-close" class="modal-close" style="padding: 4px 8px">✕</button>
@@ -2097,16 +2178,23 @@
 
     <!-- NOTE STATUS DROPDOWN (mirip import) -->
     <div class="modal popover import-dropdown" id="note-status-modal">
-      <div class="modal-card">
+      <div class="modal-card has-reason liquid-glass">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px">
           <p class="modal-title">Status</p>
           <button id="note-status-close" class="modal-close" style="padding: 4px 8px">✕</button>
         </div>
-        <button class="modal-opt liquid-in-panel" data-status="Pending">Pending</button>
-        <button class="modal-opt liquid-in-panel" data-status="In Progress">In Progress</button>
-        <button class="modal-opt liquid-in-panel" data-status="On Hold">On Hold</button>
-        <button class="modal-opt liquid-in-panel" data-status="Testing">Testing</button>
-        <button class="modal-opt liquid-in-panel" data-status="Done">Done</button>
+        <div id="note-status-opts">
+          <button class="modal-opt liquid-in-panel" data-status="Pending">Pending</button>
+          <button class="modal-opt liquid-in-panel" data-status="In Progress">In Progress</button>
+          <button class="modal-opt liquid-in-panel" data-status="On Hold">On Hold</button>
+          <button class="modal-opt liquid-in-panel" data-status="Testing">Testing</button>
+          <button class="modal-opt liquid-in-panel" data-status="Done">Done</button>
+        </div>
+        <div id="note-status-reason" style="display: none; flex-direction: column; gap: 8px; margin-top: 4px">
+          <input type="text" id="note-status-reason-input" class="liquid-in-panel" placeholder="" autocomplete="off" style="width: 100%; box-sizing: border-box; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--input); color: var(--fg); font-size: 0.82rem" />
+          <button id="note-status-reason-save" class="reason-save-btn liquid-in-panel" style="text-align: center">Simpan</button>
+          <div id="note-status-history"></div>
+        </div>
       </div>
     </div>
 
@@ -2895,7 +2983,7 @@
 
         function buildNoteCard(n, idx, isDone, showPin) {
           const card = document.createElement("div");
-          card.className = "note-card row-clickable" + (isDone ? " row-done" : "") + (n.pinned ? " row-pinned" : "");
+          card.className = "note-card liquid-glass row-clickable" + (isDone ? " row-done" : "") + (n.pinned ? " row-pinned" : "");
           card.dataset.id = n.id;
           const subname = n.subname ? `<span class="note-subname">${escapeHtml(n.subname)}</span>` : "";
           card.innerHTML = `
@@ -3062,6 +3150,8 @@
               return;
             }
             target.onHoldReason = reason.trim();
+            target.onHoldHistory = Array.isArray(target.onHoldHistory) ? target.onHoldHistory : [];
+            target.onHoldHistory.push({ date: formatDate(new Date()), text: reason.trim() });
           } else if (prog === "in progress") {
             if ((target.inProgressReason || "").trim()) return;
             const reason = await showPrompt("Update perkembangan");
@@ -3071,6 +3161,8 @@
               return;
             }
             target.inProgressReason = reason.trim();
+            target.inProgressHistory = Array.isArray(target.inProgressHistory) ? target.inProgressHistory : [];
+            target.inProgressHistory.push({ date: formatDate(new Date()), text: reason.trim() });
           }
         }
         function progressHtml(n) {
@@ -3176,7 +3268,9 @@
             doneDate: isDone ? formatDate(new Date()) : "",
             progress: isDone ? "Done" : prog,
             onHoldReason: progL === "on hold" ? onHoldReason : "",
+            onHoldHistory: progL === "on hold" && onHoldReason ? [{ date: formatDate(new Date()), text: onHoldReason }] : [],
             inProgressReason: progL === "in progress" ? inProgressReason : "",
+            inProgressHistory: progL === "in progress" && inProgressReason ? [{ date: formatDate(new Date()), text: inProgressReason }] : [],
             tasks: [],
           });
           saveData();
@@ -3227,7 +3321,9 @@
             doneDate: isDone ? formatDate(new Date()) : "",
             progress: colProgress,
             onHoldReason: colL === "on hold" ? onHoldReason : "",
+            onHoldHistory: colL === "on hold" && onHoldReason ? [{ date: formatDate(new Date()), text: onHoldReason }] : [],
             inProgressReason: colL === "in progress" ? inProgressReason : "",
+            inProgressHistory: colL === "in progress" && inProgressReason ? [{ date: formatDate(new Date()), text: inProgressReason }] : [],
             tasks: [],
           });
           saveData();
@@ -3456,35 +3552,23 @@
               return;
             }
             const holdReason = e.target.closest(".note-hold-reason");
-            if (holdReason) {
-              const id = holdReason.dataset.id;
-              const note = db[currentSchoolId].notes.find((n) => n.id === id);
-              if (!note) return;
-              const updated = await showPrompt("Kenapa di-On Hold?", note.onHoldReason || "");
-              if (updated !== null) {
-                note.onHoldReason = updated.trim();
-                note.updatedAt = formatDate(new Date());
-                saveData();
-                renderNotesAnimated();
-              }
-              return;
-            }
             const progReason = e.target.closest(".note-progress-reason");
-            if (progReason) {
-              const id = progReason.dataset.id;
+            if (holdReason || progReason) {
+              const id = (holdReason || progReason).dataset.id;
               const note = db[currentSchoolId].notes.find((n) => n.id === id);
               if (!note) return;
-              const updated = await showPrompt("Update perkembangan", note.inProgressReason || "");
-              if (updated !== null) {
-                note.inProgressReason = updated.trim();
-                note.updatedAt = formatDate(new Date());
-                saveData();
-                renderNotesAnimated();
+              // Toggle: bila modal status sudah terbuka untuk catatan ini, tutup.
+              if (noteStatusModal.classList.contains("show") && currentNoteId === id) {
+                closeNoteStatusModal();
+                return;
               }
+              // Buka modal status (berisi input + riwayat) pada status saat ini.
+              currentNoteId = id;
+              openNoteStatusModal(holdReason || progReason, true);
               return;
             }
             const cell = e.target.closest(".note-title, .note-card");
-            if (cell && !e.target.closest(".btn-pin, .btn-status-note, .cb-wrap, .note-actions, .progress-edit, .note-hold-reason")) {
+            if (cell && !e.target.closest(".btn-pin, .btn-status-note, .cb-wrap, .note-actions, .progress-edit, .note-hold-reason, .note-progress-reason")) {
               const card = cell.closest(".note-card");
               const cb = card.querySelector(".cb-done");
               if (cb) {
@@ -4314,8 +4398,36 @@
         // Note status dropdown (popover seperti import)
         const noteStatusModal = document.getElementById("note-status-modal");
         const noteStatusCard = noteStatusModal.querySelector(".modal-card");
-        function openNoteStatusModal() {
-          const r = document.getElementById("btn-note-status").getBoundingClientRect();
+        let statusModalFromCard = false;
+        const reasonBox = document.getElementById("note-status-reason");
+        const reasonInput = document.getElementById("note-status-reason-input");
+        const reasonSave = document.getElementById("note-status-reason-save");
+        const reasonHistory = document.getElementById("note-status-history");
+        function noteHistory(note, kind) {
+          if (!note) return [];
+          if (kind === "onhold") return Array.isArray(note.onHoldHistory) ? note.onHoldHistory : (note.onHoldReason ? [{ date: note.updatedAt || "", text: note.onHoldReason }] : []);
+          return Array.isArray(note.inProgressHistory) ? note.inProgressHistory : (note.inProgressReason ? [{ date: note.updatedAt || "", text: note.inProgressReason }] : []);
+        }
+        function renderReasonHistory(note) {
+          const all = [
+            ...(note.onHoldHistory || []).map((it, idx) => ({ ...it, kind: "onhold", idx })),
+            ...(note.inProgressHistory || []).map((it, idx) => ({ ...it, kind: "inprogress", idx })),
+          ].sort((a, b) => {
+            const da = parseStamp(a.date), db = parseStamp(b.date);
+            return (db ? db.getTime() : 0) - (da ? da.getTime() : 0);
+          });
+          reasonHistory.innerHTML = all.length
+            ? all.map((it) => {
+                const badge = it.kind === "onhold"
+                  ? '<span class="modal-reason-badge" style="margin-left:auto">On Hold</span>'
+                  : '<span class="modal-reason-badge" style="margin-left:auto;background:rgba(234,179,8,0.15);color:#eab308;border-color:rgba(234,179,8,0.3)">In Progress</span>';
+                return `<div class="reason-history-item"><div class="reason-history-row"><span class="reason-history-date" style="margin:0">${escapeHtml(it.date || "")}</span><span class="reason-history-text" data-kind="${it.kind}" data-idx="${it.idx}">${escapeHtml(it.text)}</span></div>${badge}<button class="reason-history-del" data-kind="${it.kind}" data-idx="${it.idx}" title="Hapus">✕</button></div>`;
+              }).join("")
+            : '<div class="reason-history-date" style="text-align:center">Belum ada riwayat</div>';
+        }
+        function openNoteStatusModal(anchorEl, fromCard, keepInput) {
+          statusModalFromCard = !!fromCard;
+          const r = (anchorEl || document.getElementById("btn-note-status")).getBoundingClientRect();
           noteStatusCard.style.top = r.bottom + 8 + "px";
           noteStatusCard.style.left = "auto";
           noteStatusCard.style.right = Math.max(8, window.innerWidth - r.right) + "px";
@@ -4324,6 +4436,13 @@
           noteStatusModal.querySelectorAll(".modal-opt").forEach((o) => {
             o.classList.toggle("is-current", o.dataset.status === cur);
           });
+          const canAdd = cur.toLowerCase() === "on hold" || cur.toLowerCase() === "in progress";
+          reasonBox.style.display = "flex";
+          reasonInput.style.display = canAdd ? "block" : "none";
+          reasonSave.style.display = canAdd ? "block" : "none";
+          reasonInput.placeholder = cur.toLowerCase() === "on hold" ? "Kenapa di-On Hold?" : "Update perkembangan";
+          if (!keepInput) reasonInput.value = "";
+          renderReasonHistory(note);
           noteStatusModal.classList.add("show");
         }
         function closeNoteStatusModal() {
@@ -4338,16 +4457,104 @@
         noteStatusModal.addEventListener("click", (e) => {
           if (e.target === noteStatusModal) closeNoteStatusModal();
         });
-        noteStatusModal.querySelectorAll(".modal-opt").forEach((item) => {
+        reasonSave.addEventListener("click", () => {
+          const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
+          if (!note) return;
+          const text = reasonInput.value.trim();
+          if (!text) return;
+          const kind = (note.progress || "").toLowerCase() === "on hold" ? "onhold" : "inprogress";
+          const key = kind === "onhold" ? "onHoldHistory" : "inProgressHistory";
+          note[key] = noteHistory(note, kind);
+          note[key].push({ date: formatDate(new Date()), text });
+          if (kind === "onhold") note.onHoldReason = text;
+          else note.inProgressReason = text;
+          note.updatedAt = formatDate(new Date());
+          saveData();
+          reasonInput.value = "";
+          renderReasonHistory(note);
+          if (statusModalFromCard) renderNotes();
+          else showDesc(currentSchoolId, currentNoteId);
+        });
+        reasonHistory.addEventListener("click", async (e) => {
+          const del = e.target.closest(".reason-history-del");
+          if (del) {
+            e.stopPropagation();
+            const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
+            if (!note) return;
+            const key = del.dataset.kind === "onhold" ? "onHoldHistory" : "inProgressHistory";
+            const arr = note[key] || [];
+            arr.splice(Number(del.dataset.idx), 1);
+            // Sync field aktif ke entri terakhir (atau kosong bila habis).
+            const last = arr[arr.length - 1];
+            if (key === "onHoldHistory") note.onHoldReason = last ? last.text : "";
+            else note.inProgressReason = last ? last.text : "";
+            note.updatedAt = formatDate(new Date());
+            saveData();
+            renderReasonHistory(note);
+            if (statusModalFromCard) renderNotes();
+            else showDesc(currentSchoolId, currentNoteId);
+            return;
+          }
+          const txt = e.target.closest(".reason-history-text");
+          if (txt) {
+            e.stopPropagation();
+            const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
+            if (!note) return;
+            const key = txt.dataset.kind === "onhold" ? "onHoldHistory" : "inProgressHistory";
+            const arr = note[key] || [];
+            const i = Number(txt.dataset.idx);
+            if (!arr[i]) return;
+            const updated = await showPrompt("Edit isi", arr[i].text);
+            if (updated !== null && updated.trim()) {
+              arr[i].text = updated.trim();
+              // Sync field aktif ke entri terakhir agar card ikut update.
+              const last = arr[arr.length - 1];
+              if (key === "onHoldHistory") note.onHoldReason = last ? last.text : "";
+              else note.inProgressReason = last ? last.text : "";
+              note.updatedAt = formatDate(new Date());
+              saveData();
+              renderReasonHistory(note);
+              if (statusModalFromCard) renderNotes();
+              else showDesc(currentSchoolId, currentNoteId);
+            }
+          }
+        });
+        noteStatusModal.querySelectorAll(".modal-opt[data-status]").forEach((item) => {
           item.addEventListener("click", async (e) => {
             e.stopPropagation();
             const val = item.dataset.status;
-            closeNoteStatusModal();
+            if (!val) return;
             const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
             if (!note) return;
             const prev = note.progress;
             note.progress = val;
-            await ensureProgressReason(note, prev);
+            // Ganti status: kosongkan reason "aktif" status lama, tapi riwayat tetap tersimpan.
+            if (val.toLowerCase() !== "on hold") note.onHoldReason = "";
+            if (val.toLowerCase() !== "in progress") note.inProgressReason = "";
+            // Bila pindah ke On Hold / In Progress, minta alasan bila belum ada.
+            if (val.toLowerCase() === "on hold" && !(note.onHoldReason || "").trim()) {
+              const r = await showPrompt("Kenapa di-On Hold?");
+              if (r === null || !r.trim()) {
+                note.progress = prev || "Pending";
+                if (statusModalFromCard) renderNotes();
+                else showDesc(currentSchoolId, currentNoteId);
+                return;
+              }
+              note.onHoldReason = r.trim();
+              note.onHoldHistory = note.onHoldHistory || [];
+              note.onHoldHistory.push({ date: formatDate(new Date()), text: r.trim() });
+            } else if (val.toLowerCase() === "in progress" && !(note.inProgressReason || "").trim()) {
+              const r = await showPrompt("Update perkembangan");
+              if (r === null || !r.trim()) {
+                note.progress = prev || "Pending";
+                if (statusModalFromCard) renderNotes();
+                else showDesc(currentSchoolId, currentNoteId);
+                return;
+              }
+              note.inProgressReason = r.trim();
+              note.inProgressHistory = note.inProgressHistory || [];
+              note.inProgressHistory.push({ date: formatDate(new Date()), text: r.trim() });
+            }
             if (val === "Done") {
               note.done = true;
               note.doneDate = formatDate(new Date());
@@ -4357,11 +4564,45 @@
             }
             note.updatedAt = formatDate(new Date());
             saveData();
-            showDesc(currentSchoolId, currentNoteId);
+            closeNoteStatusModal();
+            if (statusModalFromCard) {
+              renderNotes();
+            } else {
+              showDesc(currentSchoolId, currentNoteId);
+              if (val.toLowerCase() === "on hold" || val.toLowerCase() === "in progress") openNoteStatusModal(undefined, false, true);
+            }
           });
         });
         window.addEventListener("keydown", (e) => {
           if (e.key === "Escape") closeNoteStatusModal();
+        });
+
+        // Tutup semua popover/mini-modal melayang bila klik di luar atau window kehilangan fokus.
+        function closeAllPopovers(except) {
+          if (noteStatusModal.classList.contains("show") && except !== noteStatusModal) closeNoteStatusModal();
+          if (importModal.classList.contains("show") && except !== importModal) closeImportModal();
+          if (progressPop) closeProgressPop();
+          if (ocrModal.style.display !== "none" && except !== ocrModal) closeOcrModal();
+          if (shortcutModal.style.display !== "none" && except !== shortcutModal) closeOverlay(shortcutModal, null, null, "hide");
+        }
+        document.addEventListener("mousedown", (e) => {
+          if (noteStatusModal.contains(e.target)) return;
+          if (importModal.contains(e.target)) return;
+          if (progressPop && progressPop.contains(e.target)) return;
+          if (ocrModal.contains(e.target)) return;
+          if (shortcutModal.contains(e.target)) return;
+          if (e.target.closest(".modal-opt, .topbar-action, #btn-note-status, #btn-import, #btn-shortcut-info, #btn-import-trigger, #import-ocr-file, .btn-import-caret, .note-hold-reason, .note-progress-reason")) return; // biarkan tombol pembuka / reason card menangani
+          closeAllPopovers();
+        }, true);
+        window.addEventListener("blur", () => closeAllPopovers());
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) closeAllPopovers();
+        });
+        // Tutup modal status bila fokus keluar dari dalam modal (klik elemen luar / pindah jendela).
+        noteStatusModal.addEventListener("focusout", (e) => {
+          if (!noteStatusModal.contains(e.relatedTarget) && !noteStatusModal.contains(document.activeElement)) {
+            closeNoteStatusModal();
+          }
         });
 
         // Sisipkan teks ke desc-input: cari row terakhir, tambah 1 baris kosong lalu teks.
