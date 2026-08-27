@@ -407,7 +407,7 @@
         line-height: 1.4;
         color: #f97316;
         background: rgba(249, 115, 22, 0.1);
-        border: 1px solid rgba(249, 115, 22, 0.25);
+        border: 1px solid transparent;
         border-radius: 8px;
         padding: 5px 8px;
       }
@@ -423,7 +423,7 @@
         line-height: 1.4;
         color: #eab308;
         background: rgba(234, 179, 8, 0.1);
-        border: 1px solid rgba(234, 179, 8, 0.25);
+        border: 1px solid transparent;
         border-radius: 8px;
         padding: 5px 8px;
       }
@@ -467,7 +467,7 @@
         font-weight: 600;
         background: rgba(249, 115, 22, 0.15);
         color: #f97316;
-        border: 1px solid rgba(249, 115, 22, 0.3);
+        border: 1px solid transparent;
       }
       .reason-history-item {
         display: flex;
@@ -4421,7 +4421,7 @@
             ? all.map((it) => {
                 const badge = it.kind === "onhold"
                   ? '<span class="modal-reason-badge" style="margin-left:auto">On Hold</span>'
-                  : '<span class="modal-reason-badge" style="margin-left:auto;background:rgba(234,179,8,0.15);color:#eab308;border-color:rgba(234,179,8,0.3)">In Progress</span>';
+                  : '<span class="modal-reason-badge" style="margin-left:auto;background:rgba(234,179,8,0.15);color:#eab308;border-color:transparent">In Progress</span>';
                 return `<div class="reason-history-item"><div class="reason-history-row"><span class="reason-history-date" style="margin:0">${escapeHtml(it.date || "")}</span><span class="reason-history-text" data-kind="${it.kind}" data-idx="${it.idx}">${escapeHtml(it.text)}</span></div>${badge}<button class="reason-history-del" data-kind="${it.kind}" data-idx="${it.idx}" title="Hapus">✕</button></div>`;
               }).join("")
             : '<div class="reason-history-date" style="text-align:center">Belum ada riwayat</div>';
