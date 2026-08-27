@@ -2328,6 +2328,7 @@
 
         let currentNoteId = null;
         let hideDone = true;
+        let progressPop = null;
 
         const topbarTitle = document.getElementById("topbar-title");
         const subHome = document.getElementById("sub-home");
@@ -2381,6 +2382,7 @@
         // Play the view transition via WAAPI so it runs every time the view
         // is shown, even when it was previously display:none (views 2 & 3).
         function activateView(el) {
+          closeAllPopovers(); // tutup popover melayang saat ganti view
           el.classList.add("active");
           el.classList.remove("view-anim");
           void el.offsetWidth; // reflow: drop the old animation
@@ -3413,7 +3415,7 @@
             }
           });
           // Buka select ubah progres sebagai popover di bawah tombol (mirip import)
-          let progressPop = null;
+          progressPop = null;
           function closeProgressPop() {
             if (progressPop) {
               progressPop.remove();
@@ -4307,7 +4309,6 @@
         loadData();
         loadCatOrder();
         updateStorageInfo();
-        showHome();
 
         // ── Scroll: compact topbar + blur gradual ──
         // === Panel collapse — tersimpan per note ===
@@ -4786,6 +4787,9 @@
         shortcutModal.addEventListener("click", (e) => {
           if (e.target === shortcutModal) closeOverlay(shortcutModal, null, null, "hide");
         });
+
+        // === Init: panggil setelah semua const modal siap (hindari TDZ di closeAllPopovers) ===
+        showHome();
       })();
     </script>
     <script src="../theme-splash.js"></script>
