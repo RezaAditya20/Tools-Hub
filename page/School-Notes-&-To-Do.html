@@ -1089,13 +1089,13 @@
       .desc-split-left {
         /* width: 40%; */
         flex-shrink: 0;
+        margin-left: auto;
         opacity: 1;
-        transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
-          opacity 0.25s ease;
+        transition: opacity 0.4s ease;
       }
       .desc-split-right {
         width: 60%;
-        transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        transition: opacity 0.4s ease;
       }
       .desc-split-layout.tasks-hidden {
         gap: 0;
@@ -1128,9 +1128,10 @@
         padding-bottom: 0;
       }
       .desc-split-layout.desc-hidden .desc-split-left {
-        flex: 1 1 100%;
+        flex: 0 0 auto;
         width: 100%;
         max-width: 100%;
+        margin-left: auto;
         min-height: 460px;
       }
       .desc-area {
@@ -3389,6 +3390,8 @@
             const btn = e.target.closest(".btn-del-note");
             if (btn) {
               const id = btn.dataset.id;
+              const note = db[currentSchoolId].notes.find((n) => n.id === id);
+              if (!(await showConfirm(`Hapus catatan "${note ? note.text : ""}"?`))) return;
               db[currentSchoolId].notes = db[currentSchoolId].notes.filter((n) => n.id !== id);
               saveData();
               renderNotes();
