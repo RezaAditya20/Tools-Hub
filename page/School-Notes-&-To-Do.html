@@ -414,6 +414,22 @@
       .note-hold-reason i {
         flex-shrink: 0;
       }
+      .note-progress-reason {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        font-size: 0.78rem;
+        line-height: 1.4;
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        border-radius: 8px;
+        padding: 5px 8px;
+      }
+      .note-progress-reason i {
+        flex-shrink: 0;
+      }
       .note-card-meta {
         display: flex;
         align-items: center;
@@ -2900,6 +2916,7 @@
               <span class="note-card-actions">${noteActionsHtml(n)}</span>
             </div>
             ${(n.progress || "").toLowerCase() === "on hold" && (n.onHoldReason || "").trim() ? `<div class="note-hold-reason" data-id="${n.id}" title="Klik untuk edit alasan"><i class="fad fa-pause-circle"></i> <span class="hold-reason-text">${escapeHtml(n.onHoldReason)}</span></div>` : ""}
+            ${(n.progress || "").toLowerCase() === "in progress" && (n.inProgressReason || "").trim() ? `<div class="note-progress-reason" data-id="${n.id}" title="Klik untuk edit perkembangan"><i class="fad fa-spinner-third"></i> <span class="progress-reason-text">${escapeHtml(n.inProgressReason)}</span></div>` : ""}
           `;
           return card;
         }
@@ -3032,18 +3049,29 @@
           if (v === "done") return { bg: "rgba(34,197,94,0.15)", fg: "#22c55e" };
           return { bg: "rgba(59,130,246,0.15)", fg: "#3b82f6" };
         }
-        // Bila pindah ke "On Hold", minta alasan (di-simpan di note/task.onHoldReason).
-        async function ensureOnHoldReason(target, prev) {
-          if ((target.progress || "").toLowerCase() !== "on hold") return;
-          if ((target.onHoldReason || "").trim()) return;
-          const reason = await showPrompt("Kenapa di-On Hold?");
-          if (reason === null || !reason.trim()) {
-            // Batal → kembalikan ke status sebelumnya (atau Pending)
-            target.progress = prev || "Pending";
-            target.onHoldReason = "";
-            return;
+        // Bila pindah ke "On Hold" / "In Progress", minta alasan.
+        async function ensureProgressReason(target, prev) {
+          const prog = (target.progress || "").toLowerCase();
+          if (prog === "on hold") {
+            if ((target.onHoldReason || "").trim()) return;
+            const reason = await showPrompt("Kenapa di-On Hold?");
+            if (reason === null || !reason.trim()) {
+              // Batal → kembalikan ke status sebelumnya (atau Pending)
+              target.progress = prev || "Pending";
+              target.onHoldReason = "";
+              return;
+            }
+            target.onHoldReason = reason.trim();
+          } else if (prog === "in progress") {
+            if ((target.inProgressReason || "").trim()) return;
+            const reason = await showPrompt("Update perkembangan");
+            if (reason === null || !reason.trim()) {
+              target.progress = prev || "Pending";
+              target.inProgressReason = "";
+              return;
+            }
+            target.inProgressReason = reason.trim();
           }
-          target.onHoldReason = reason.trim();
         }
         function progressHtml(n) {
           const allT = flattenTasks(n.tasks || []);
@@ -3123,12 +3151,18 @@
             return;
           }
           const prog = res.progress || "";
+          const progL = prog.toLowerCase();
           const isDone = prog === "Done";
           let onHoldReason = "";
-          if (prog.toLowerCase() === "on hold") {
+          let inProgressReason = "";
+          if (progL === "on hold") {
             const r = await showPrompt("Kenapa di-On Hold?");
             if (r === null) return; // batal → jangan tambah
             onHoldReason = (r || "").trim();
+          } else if (progL === "in progress") {
+            const r = await showPrompt("Update perkembangan");
+            if (r === null) return;
+            inProgressReason = (r || "").trim();
           }
           db[currentSchoolId].notes.push({
             id: generateId(),
@@ -3141,7 +3175,8 @@
             desc: "",
             doneDate: isDone ? formatDate(new Date()) : "",
             progress: isDone ? "Done" : prog,
-            onHoldReason: prog.toLowerCase() === "on hold" ? onHoldReason : "",
+            onHoldReason: progL === "on hold" ? onHoldReason : "",
+            inProgressReason: progL === "in progress" ? inProgressReason : "",
             tasks: [],
           });
           saveData();
@@ -3168,11 +3203,17 @@
             return;
           }
           const isDone = colProgress === "Done";
+          const colL = colProgress.toLowerCase();
           let onHoldReason = "";
-          if (colProgress.toLowerCase() === "on hold") {
+          let inProgressReason = "";
+          if (colL === "on hold") {
             const r = await showPrompt("Kenapa di-On Hold?");
             if (r === null) return; // batal → jangan tambah
             onHoldReason = (r || "").trim();
+          } else if (colL === "in progress") {
+            const r = await showPrompt("Update perkembangan");
+            if (r === null) return;
+            inProgressReason = (r || "").trim();
           }
           db[currentSchoolId].notes.push({
             id: generateId(),
@@ -3185,7 +3226,8 @@
             desc: "",
             doneDate: isDone ? formatDate(new Date()) : "",
             progress: colProgress,
-            onHoldReason: colProgress.toLowerCase() === "on hold" ? onHoldReason : "",
+            onHoldReason: colL === "on hold" ? onHoldReason : "",
+            inProgressReason: colL === "in progress" ? inProgressReason : "",
             tasks: [],
           });
           saveData();
@@ -3328,7 +3370,7 @@
               handled = true;
               const prev = note.progress;
               note.progress = sel.value;
-              await ensureOnHoldReason(note, prev);
+              await ensureProgressReason(note, prev);
               note.updatedAt = formatDate(new Date());
               saveData();
               closeProgressPop();
@@ -3421,6 +3463,20 @@
               const updated = await showPrompt("Kenapa di-On Hold?", note.onHoldReason || "");
               if (updated !== null) {
                 note.onHoldReason = updated.trim();
+                note.updatedAt = formatDate(new Date());
+                saveData();
+                renderNotesAnimated();
+              }
+              return;
+            }
+            const progReason = e.target.closest(".note-progress-reason");
+            if (progReason) {
+              const id = progReason.dataset.id;
+              const note = db[currentSchoolId].notes.find((n) => n.id === id);
+              if (!note) return;
+              const updated = await showPrompt("Update perkembangan", note.inProgressReason || "");
+              if (updated !== null) {
+                note.inProgressReason = updated.trim();
                 note.updatedAt = formatDate(new Date());
                 saveData();
                 renderNotesAnimated();
@@ -3910,7 +3966,7 @@
               <span class="drag-handle" title="Seret untuk urutkan">⠿</span>
               <button class="btn-task btn-task-done" title="${t.done ? "Batal selesai" : "Tandai selesai"}">${t.done ? "↩" : "✓"}</button>
               <span class="task-text">${escapeHtml(t.text)}</span>
-              <span class="task-progress ${statusClass(t.progress)}" data-id="${t.id}"${(t.progress || "").toLowerCase() === "on hold" && (t.onHoldReason || "").trim() ? ' title="On Hold: ' + escapeHtml(t.onHoldReason) + '"' : ""}>${escapeHtml(t.progress) || "Pending"}</span>
+              <span class="task-progress ${statusClass(t.progress)}" data-id="${t.id}"${(t.progress || "").toLowerCase() === "on hold" && (t.onHoldReason || "").trim() ? ' title="On Hold: ' + escapeHtml(t.onHoldReason) + '"' : (t.progress || "").toLowerCase() === "in progress" && (t.inProgressReason || "").trim() ? ' title="Perkembangan: ' + escapeHtml(t.inProgressReason) + '"' : ""}>${escapeHtml(t.progress) || "Pending"}</span>
               <button class="btn-task btn-task-del" title="Hapus">✕</button>
             `;
 
@@ -4107,7 +4163,7 @@
                 } else {
                   const prev = t.progress;
                   t.progress = sel.value;
-                  await ensureOnHoldReason(t, prev);
+                  await ensureProgressReason(t, prev);
                   const note2 = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
                   if (note2) note2.updatedAt = formatDate(new Date());
                   saveData();
@@ -4118,7 +4174,7 @@
                 if (handled) return;
                 const prev = t.progress;
                 t.progress = sel.value;
-                await ensureOnHoldReason(t, prev);
+                await ensureProgressReason(t, prev);
                 const note2 = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
                 if (note2) note2.updatedAt = formatDate(new Date());
                 saveData();
@@ -4291,7 +4347,7 @@
             if (!note) return;
             const prev = note.progress;
             note.progress = val;
-            await ensureOnHoldReason(note, prev);
+            await ensureProgressReason(note, prev);
             if (val === "Done") {
               note.done = true;
               note.doneDate = formatDate(new Date());
