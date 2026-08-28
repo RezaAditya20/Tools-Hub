@@ -4409,6 +4409,7 @@
         const noteStatusModal = document.getElementById("note-status-modal");
         const noteStatusCard = noteStatusModal.querySelector(".modal-card");
         let statusModalFromCard = false;
+        let reasonListRefreshing = false;
         const reasonBox = document.getElementById("note-status-reason");
         const reasonInput = document.getElementById("note-status-reason-input");
         const reasonSave = document.getElementById("note-status-reason-save");
@@ -4506,7 +4507,10 @@
             else note.inProgressReason = last ? last.text : "";
             note.updatedAt = formatDate(new Date());
             saveData();
+            reasonListRefreshing = true;
             renderReasonHistory(note);
+            reasonListRefreshing = false;
+            reasonInput.focus();
             if (statusModalFromCard) renderNotes();
             else showDesc(currentSchoolId, currentNoteId);
             return;
@@ -4616,6 +4620,7 @@
         });
         // Tutup modal status bila fokus keluar dari dalam modal (klik elemen luar / pindah jendela).
         noteStatusModal.addEventListener("focusout", (e) => {
+          if (reasonListRefreshing) return;
           if (!noteStatusModal.contains(e.relatedTarget) && !noteStatusModal.contains(document.activeElement)) {
             closeNoteStatusModal();
           }
