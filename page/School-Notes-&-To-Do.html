@@ -3149,7 +3149,9 @@
           return { bg: "rgba(59,130,246,0.15)", fg: "#3b82f6" };
         }
         // Bila pindah ke "On Hold" / "In Progress", minta alasan.
-        async function ensureProgressReason(target, prev) {
+        // skipReason=true → langsung skip prompt (untuk task di desc)
+        async function ensureProgressReason(target, prev, skipReason) {
+          if (skipReason) return;
           const prog = (target.progress || "").toLowerCase();
           if (prog === "on hold") {
             if ((target.onHoldReason || "").trim()) return;
@@ -3477,6 +3479,9 @@
               handled = true;
               const prev = note.progress;
               note.progress = sel.value;
+              // Kosongkan reason aktif supaya ensureProgressReason selalu tanya
+              note.onHoldReason = "";
+              note.inProgressReason = "";
               await ensureProgressReason(note, prev);
               note.updatedAt = formatDate(new Date());
               saveData();
@@ -4258,7 +4263,7 @@
                 } else {
                   const prev = t.progress;
                   t.progress = sel.value;
-                  await ensureProgressReason(t, prev);
+                  await ensureProgressReason(t, prev, true);
                   const note2 = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
                   if (note2) note2.updatedAt = formatDate(new Date());
                   saveData();
@@ -4269,7 +4274,7 @@
                 if (handled) return;
                 const prev = t.progress;
                 t.progress = sel.value;
-                await ensureProgressReason(t, prev);
+                await ensureProgressReason(t, prev, true);
                 const note2 = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
                 if (note2) note2.updatedAt = formatDate(new Date());
                 saveData();
