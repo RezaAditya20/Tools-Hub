@@ -4444,6 +4444,7 @@
         function openNoteStatusModal(anchorEl, fromCard, keepInput) {
           statusModalFromCard = !!fromCard;
           const r = (anchorEl || document.getElementById("btn-note-status")).getBoundingClientRect();
+          noteStatusCard.style.bottom = "auto";
           noteStatusCard.style.top = r.bottom + 8 + "px";
           noteStatusCard.style.left = "auto";
           noteStatusCard.style.right = Math.max(8, window.innerWidth - r.right) + "px";
@@ -4460,6 +4461,12 @@
           if (!keepInput) reasonInput.value = "";
           renderReasonHistory(note);
           noteStatusModal.classList.add("show");
+          // Flip above anchor bila modal terpotong di bawah viewport
+          const cardRect = noteStatusCard.getBoundingClientRect();
+          if (cardRect.bottom > window.innerHeight - 8) {
+            noteStatusCard.style.top = "auto";
+            noteStatusCard.style.bottom = Math.max(8, window.innerHeight - r.top + 8) + "px";
+          }
         }
         function closeNoteStatusModal() {
           noteStatusModal.classList.remove("show");
