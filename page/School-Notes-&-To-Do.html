@@ -3479,6 +3479,8 @@
               handled = true;
               const prev = note.progress;
               note.progress = sel.value;
+              note.done = sel.value === "Done";
+              note.doneDate = note.done ? formatDate(new Date()) : "";
               // Kosongkan reason aktif supaya ensureProgressReason selalu tanya
               note.onHoldReason = "";
               note.inProgressReason = "";
