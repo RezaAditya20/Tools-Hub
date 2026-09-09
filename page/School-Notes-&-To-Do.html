@@ -3237,6 +3237,11 @@
           window.__categories = cats;
           const res = await showSchoolAdd();
           if (!res || !res.name) return;
+          const exists = Object.values(db).some((s) => s.name.toLowerCase() === res.name.toLowerCase());
+          if (exists) {
+            showToast("Sekolah sudah ada!", "error");
+            return;
+          }
           const id = generateId();
           const maxOrder = Object.values(db).reduce((m, s) => Math.max(m, s.order || 0), -1);
           db[id] = { name: res.name, notes: [], order: maxOrder + 1, category: res.category };
@@ -3250,11 +3255,6 @@
           if (!currentSchoolId) return;
           const res = await showNoteAdd();
           if (!res || !res.name) return;
-          const exists = db[currentSchoolId].notes.some((n) => n.text.toLowerCase() === res.name.toLowerCase());
-          if (exists) {
-            showToast("Catatan sudah ada!", "error");
-            return;
-          }
           const prog = res.progress || "";
           const progL = prog.toLowerCase();
           const isDone = prog === "Done";
@@ -3304,11 +3304,6 @@
           const res = await showNoteAdd(colProgress);
           if (!res || !res.name) return;
           const name = res.name.trim();
-          const exists = db[currentSchoolId].notes.some((n) => n.text.toLowerCase() === name.toLowerCase());
-          if (exists) {
-            showToast("Catatan sudah ada!", "error");
-            return;
-          }
           const isDone = colProgress === "Done";
           const colL = colProgress.toLowerCase();
           let onHoldReason = "";
@@ -3663,11 +3658,6 @@
           if (!res) return;
           if (!res.name) {
             showToast("Nama tidak boleh kosong", "error");
-            return;
-          }
-          const exists = db[currentSchoolId].notes.some((n) => n.id !== currentNoteId && n.text.toLowerCase() === res.name.toLowerCase());
-          if (exists) {
-            showToast("Catatan sudah ada!", "error");
             return;
           }
           note.text = res.name;
