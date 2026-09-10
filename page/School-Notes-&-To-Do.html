@@ -2122,6 +2122,7 @@
               <div id="task-container">
                 <form id="form-task" class="form-inline">
                   <input type="text" id="input-task" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
+                  <button type="button" id="btn-paste-excel" class="btn" title="Paste dari Excel/Clipboard">📋 Paste</button>
                   <button type="submit" class="btn btn-primary">Tambah</button>
                 </form>
                 <div id="task-list" class="task-list"></div>
@@ -4313,17 +4314,34 @@
           e.preventDefault();
           if (!currentSchoolId || !currentNoteId) return;
           const input = document.getElementById("input-task");
-          const text = input.value.trim();
-          if (!text) return;
+          const lines = input.value.split("\n").map((l) => l.trim()).filter(Boolean);
+          if (!lines.length) return;
           const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
           if (!note) return;
           if (!note.tasks) note.tasks = [];
-          note.tasks.push({ id: generateId(), text, done: false, progress: "" });
+          lines.forEach((text) => note.tasks.push({ id: generateId(), text, done: false, progress: "" }));
           note.updatedAt = formatDate(new Date());
           saveData();
           input.value = "";
           renderTasks();
-          showToast("Tahapan ditambahkan");
+          showToast(`${lines.length} tahapan ditambahkan`);
+        });
+
+        // Paste Excel — ambil clipboard, split per baris, langsung buat task
+        document.getElementById("btn-paste-excel").addEventListener("click", async () => {
+          if (!currentSchoolId || !currentNoteId) return;
+          let text = "";
+          try { text = await navigator.clipboard.readText(); } catch { showToast("Tidak bisa akses clipboard", "error"); return; }
+          const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          if (!lines.length) return;
+          const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
+          if (!note) return;
+          if (!note.tasks) note.tasks = [];
+          lines.forEach((t) => note.tasks.push({ id: generateId(), text: t, done: false, progress: "" }));
+          note.updatedAt = formatDate(new Date());
+          saveData();
+          renderTasks();
+          showToast(`${lines.length} tahapan ditambahkan dari clipboard`);
         });
 
         // === Init ===
