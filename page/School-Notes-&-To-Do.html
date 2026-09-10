@@ -4453,6 +4453,7 @@
           if (!keepInput) reasonInput.value = "";
           renderReasonHistory(note);
           noteStatusModal.classList.add("show");
+          if (canAdd) reasonInput.focus();
           // Flip above anchor bila modal terpotong di bawah viewport
           const cardRect = noteStatusCard.getBoundingClientRect();
           if (cardRect.bottom > window.innerHeight - 8) {
