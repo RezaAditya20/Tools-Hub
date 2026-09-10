@@ -1225,14 +1225,15 @@
       }
       .desc-area {
         width: 100%;
-        min-height: 417px;
+        min-height: 120px;
+        flex: 1 1 0;
         padding: 0px 3px;
         border: none;
         background: transparent !important;
         color: var(--fg);
         font-family: inherit;
         font-size: 0.875rem;
-        resize: vertical;
+        resize: none;
         outline: none;
         border-radius: 12px;
         transition:
@@ -1246,6 +1247,42 @@
       }
       .desc-area:focus {
         border-color: var(--primary);
+      }
+      .desc-links-footer {
+        border-top: 1px solid var(--border);
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--input) 80%, var(--bg));
+        flex-shrink: 0;
+      }
+      .desc-links-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .desc-links-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .desc-links-list a {
+        font-size: 0.8rem;
+        color: var(--primary);
+        text-decoration: none;
+        padding: 4px 8px;
+        border-radius: 8px;
+        word-break: break-all;
+        transition: background 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .desc-links-list a:hover {
+        background: color-mix(in srgb, var(--primary) 10%, transparent);
       }
 
       @media (min-width: 1049px) {
@@ -2111,6 +2148,10 @@
         <div class="desc-split-layout">
           <div class="desc-split-right">
             <textarea id="desc-input" class="desc-area" placeholder="Ketik deskripsi lengkap di sini... otomatis tersimpan saat Anda mengetik."></textarea>
+            <div id="desc-links-footer" class="desc-links-footer" style="display:none">
+              <span class="desc-links-title"><i class="fa-regular fa-link"></i> Links</span>
+              <div id="desc-links-list" class="desc-links-list"></div>
+            </div>
           </div>
           <div class="desc-split-divider"></div>
           <div class="desc-split-left">
@@ -2442,6 +2483,7 @@
           const note = db[schoolId].notes.find((n) => n.id === noteId);
           topbarTitle.textContent = note.text;
           descInput.value = note.desc || "";
+          renderDescLinks();
           const doneDateEl = document.getElementById("desc-done-date");
           const dotEl = document.getElementById("desc-dot");
           const createdDateEl = document.getElementById("desc-created-date");
@@ -3843,7 +3885,23 @@
             note.updatedAt = formatDate(new Date());
             saveData();
           }
+          renderDescLinks();
         });
+
+        function renderDescLinks() {
+          var footer = document.getElementById("desc-links-footer");
+          var list = document.getElementById("desc-links-list");
+          var text = descInput.value || "";
+          var re = /https?:\/\/[^\s<>"\])]+/g;
+          var raw = text.match(re) || [];
+          var urls = [];
+          raw.forEach(function(u) { if (urls.indexOf(u) === -1) urls.push(u); });
+          if (!urls.length) { footer.style.display = "none"; return; }
+          list.innerHTML = urls.map(function(u) {
+            return '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener"><i class="fa-regular fa-arrow-up-right-from-square" style="font-size:0.7rem;flex-shrink:0"></i>' + escapeHtml(u) + '</a>';
+          }).join("");
+          footer.style.display = "";
+        }
 
         // 5b. Ubah Kategori Sekolah
         document.getElementById("btn-category-school").addEventListener("click", async () => {
