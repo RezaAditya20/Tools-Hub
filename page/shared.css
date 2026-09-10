@@ -1647,8 +1647,8 @@ textarea {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
     padding: 0;
     border: none;
@@ -1825,17 +1825,21 @@ textarea {
     height: 26px;
 }
 
-.nav-ico i {
-    font-size: 19px;
-    line-height: 1;
+.nav-ico i,
+.nav-ico svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.5;
     color: #fff;
 }
 
-[data-theme="light"] .nav-ico i {
+[data-theme="light"] .nav-ico i,
+[data-theme="light"] .nav-ico svg {
     color: #000;
 }
 
-.nav-item.active .nav-ico i {
+.nav-item.active .nav-ico i,
+.nav-item.active .nav-ico svg {
     color: var(--accent);
 }
 

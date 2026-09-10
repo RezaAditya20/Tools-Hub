@@ -20,21 +20,21 @@
   const ROOT = location.pathname.includes("/page/") ? "../" : "";
   const current = location.pathname.split("/").pop();
 
-  // Daftar tool — icon = FontAwesome regular (class name), diwarnai via --icon-bg.
+  // Daftar tool — icon = Lucide icon name, diwarnai via --icon-bg.
   const TOOLS = [
-    { label: "Data Comparer", href: "page/Data-Comparer.html", c1: "#f87171", icon: "fa-table" },
-    { label: "Excel Compare", href: "page/Excel-Compare.html", c1: "#34d399", icon: "fa-table-cells" },
-    { label: "Extract Subjects", href: "page/Extract-Subjects.html", c1: "#fb923c", icon: "fa-folder-tree" },
-    { label: "Fix Name", href: "page/Fix-Name.html", c1: "#f472b6", icon: "fa-user-pen" },
-    { label: "Kalender Akademik", href: "page/Kalender-Akademik.html", c1: "#60a5fa", icon: "fa-calendar" },
-    { label: "Query Data Update", href: "page/Query-Data-Update.html", c1: "#818cf8", icon: "fa-database" },
-    { label: "School Notes & To Do", href: "page/School-Notes-&-To-Do.html", c1: "#2dd4bf", icon: "fa-notebook" },
-    { label: "Subject Comparer", href: "page/Subject-Comparer.html", c1: "#c084fc", icon: "fa-layer-group" },
-    { label: "Username Maker", href: "page/Username-Maker.html", c1: "#22d3ee", icon: "fa-user" },
-    { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "fa-code" },
-    { label: "HTML Report Inspector", href: "page/HTML-Report-Inspector.html", c1: "#f472b6", icon: "fa-file-code" },
-    { label: "OCR", href: "page/OCR.html", c1: "#38bdf8", icon: "fa-camera" },
-    { label: "Document Scanner", href: "page/Document-Scanner.html", c1: "#34d399", icon: "fa-crop-simple" },
+    { label: "Data Comparer", href: "page/Data-Comparer.html", c1: "#f87171", icon: "table-2" },
+    { label: "Excel Compare", href: "page/Excel-Compare.html", c1: "#34d399", icon: "file-spreadsheet" },
+    { label: "Extract Subjects", href: "page/Extract-Subjects.html", c1: "#fb923c", icon: "folder-tree" },
+    { label: "Fix Name", href: "page/Fix-Name.html", c1: "#f472b6", icon: "user-pen" },
+    { label: "Kalender Akademik", href: "page/Kalender-Akademik.html", c1: "#60a5fa", icon: "calendar" },
+    { label: "Query Data Update", href: "page/Query-Data-Update.html", c1: "#818cf8", icon: "database" },
+    { label: "School Notes & To Do", href: "page/School-Notes-&-To-Do.html", c1: "#2dd4bf", icon: "notebook-pen" },
+    { label: "Subject Comparer", href: "page/Subject-Comparer.html", c1: "#c084fc", icon: "layers" },
+    { label: "Username Maker", href: "page/Username-Maker.html", c1: "#22d3ee", icon: "user" },
+    { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "code" },
+    { label: "HTML Report Inspector", href: "page/HTML-Report-Inspector.html", c1: "#f472b6", icon: "file-code" },
+    { label: "OCR", href: "page/OCR.html", c1: "#38bdf8", icon: "scan-eye" },
+    { label: "Document Scanner", href: "page/Document-Scanner.html", c1: "#34d399", icon: "scan" },
   ];
 
   function getHidden() {
@@ -67,7 +67,7 @@
     let html = "";
     notes.forEach((n) => {
       const active = n.id === snState.activeNoteId ? " active" : "";
-      html += `<a class="nav-item${active}" data-note-id="${n.id}" style="--icon-bg:#2dd4bf"><span class="nav-ico"><i class="fa-regular fa-note-sticky"></i></span><span class="label">${escapeHtml(n.text)}</span></a>`;
+      html += `<a class="nav-item${active}" data-note-id="${n.id}" style="--icon-bg:#2dd4bf"><span class="nav-ico"><i data-lucide="sticky-note"></i></span><span class="label">${escapeHtml(n.text)}</span></a>`;
     });
     return html;
   }
@@ -82,7 +82,7 @@
       const active = id === snState.schoolId ? " active" : "";
       const count = (school.notes || []).filter((n) => !n.done).length;
       const locked = !!school.pin;
-      html += `<a class="nav-item${active}" data-school-id="${id}"${locked ? ' data-locked="1"' : ""} style="--icon-bg:#22d3ee"><span class="nav-ico"><i class="fa-regular fa-school"></i></span><span class="label">${escapeHtml(school.name)}</span>${count ? `<span style="margin-left:auto;margin-right:8px;padding:2px 8px;border-radius:30px;background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary);font-size:0.8rem;font-weight:600">${count}</span>` : ""}</a>`;
+      html += `<a class="nav-item${active}" data-school-id="${id}"${locked ? ' data-locked="1"' : ""} style="--icon-bg:#22d3ee"><span class="nav-ico"><i data-lucide="school"></i></span><span class="label">${escapeHtml(school.name)}</span>${count ? `<span style="margin-left:auto;margin-right:8px;padding:2px 8px;border-radius:30px;background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary);font-size:0.8rem;font-weight:600">${count}</span>` : ""}</a>`;
     });
     return html;
   }
@@ -110,7 +110,7 @@
       .map((t) => {
         const active = current && t.href.split("/").pop() === current ? " active" : "";
         return `<a class="nav-item${active}" href="${ROOT}${t.href}" style="--icon-bg:${t.c1}">
-          <span class="nav-ico"><i class="fa-regular ${t.icon}"></i></span>
+          <span class="nav-ico"><i data-lucide="${t.icon}"></i></span>
           <span class="label">${t.label}</span>
         </a>`;
       })
@@ -139,16 +139,25 @@
         </button>
       </div>
       <button class="nav-collapse-btn" id="nav-collapse-btn" title="Ciutkan/Perlebar" aria-label="Ciutkan atau perlebar navbar">
-        <i class="fa-regular fa-bars"></i>
+        <i data-lucide="panel-left-close"></i>
       </button>
     </div>
     <input class="nav-search" id="nav-search" type="text" placeholder="Cari program..." autocomplete="off" />
     <nav class="nav-items"></nav>
   `;
 
+  // Load Lucide Icons
+  const lucideScript = document.createElement("script");
+  lucideScript.src = "https://unpkg.com/lucide@latest/dist/umd/lucide.js";
+  lucideScript.onload = () => { if (window.lucide) lucide.createIcons(); };
+  document.head.appendChild(lucideScript);
+
+  function refreshIcons() { if (window.lucide) lucide.createIcons(); }
+
   // Isi item (sudah difilter hide) + sync saat berubah
   buildItems();
-  window.addEventListener("tools-hidden-change", buildItems);
+  refreshIcons();
+  window.addEventListener("tools-hidden-change", () => { buildItems(); refreshIcons(); });
 
   // ── School Notes: klik item catatan → beritahu page ──
   const navEl = mount.querySelector(".nav-items");
@@ -175,6 +184,7 @@
     if (d.schoolId !== undefined) snState.schoolId = d.schoolId;
     if (d.activeNoteId !== undefined) snState.activeNoteId = d.activeNoteId;
     buildItems();
+    refreshIcons();
   });
 
   // Tampilkan navbar SEKETIKA setelah build (sinkron) — jangan via setTimeout.
