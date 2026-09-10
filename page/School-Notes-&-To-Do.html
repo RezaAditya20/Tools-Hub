@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="../fontawesome/css/regular.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.3.0/css/thin.css" />
     <title>School Notes & To Do</title>
+    <link rel="icon" type="image/svg+xml" href="../icon.svg" />
     <meta name="description" content="Manajemen catatan tiap sekolah." />
     <style>
       .topbar {
@@ -1957,8 +1958,12 @@
         font-weight: 500;
         cursor: pointer;
       }
-      .reason-save-btn:hover {
+      .reason-save-btn:hover:not(:disabled) {
         filter: brightness(1.08);
+      }
+      .reason-save-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
 
       /* Global modal close animation */
@@ -3468,10 +3473,15 @@
             setTimeout(() => document.addEventListener("mousedown", onProgressOutside, true), 0);
             sel.focus();
             if (sel.showPicker) sel.showPicker();
+            const origProgress = note.progress;
+            const origOnHoldReason = note.onHoldReason;
+            const origInProgressReason = note.inProgressReason;
             let handled = false;
             const commit = async () => {
               if (handled) return;
               handled = true;
+              // Skip kalau status ga berubah
+              if (sel.value === origProgress) { closeProgressPop(); return; }
               const prev = note.progress;
               note.progress = sel.value;
               note.done = sel.value === "Done";
@@ -3480,6 +3490,11 @@
               note.onHoldReason = "";
               note.inProgressReason = "";
               await ensureProgressReason(note, prev);
+              // Restore kalau batal
+              if (note.progress === (origProgress || "Pending") && !(note.onHoldReason || "").trim() && !(note.inProgressReason || "").trim()) {
+                note.onHoldReason = origOnHoldReason;
+                note.inProgressReason = origInProgressReason;
+              }
               note.updatedAt = formatDate(new Date());
               saveData();
               closeProgressPop();
@@ -4451,6 +4466,7 @@
           reasonSave.style.display = canAdd ? "block" : "none";
           reasonInput.placeholder = cur.toLowerCase() === "on hold" ? "Kenapa di-On Hold?" : "Update perkembangan";
           if (!keepInput) reasonInput.value = "";
+          reasonSave.disabled = !reasonInput.value.trim();
           renderReasonHistory(note);
           noteStatusModal.classList.add("show");
           if (canAdd) reasonInput.focus();
@@ -4494,8 +4510,11 @@
         reasonInput.addEventListener("keydown", (e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            reasonSave.click();
+            if (reasonInput.value.trim()) reasonSave.click();
           }
+        });
+        reasonInput.addEventListener("input", () => {
+          reasonSave.disabled = !reasonInput.value.trim();
         });
         reasonHistory.addEventListener("click", async (e) => {
           const del = e.target.closest(".reason-history-del");
@@ -4552,6 +4571,8 @@
             const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
             if (!note) return;
             const prev = note.progress;
+            const prevOnHoldReason = note.onHoldReason;
+            const prevInProgressReason = note.inProgressReason;
             note.progress = val;
             // Ganti status: kosongkan reason "aktif" status lama, tapi riwayat tetap tersimpan.
             if (val.toLowerCase() !== "on hold") note.onHoldReason = "";
@@ -4561,6 +4582,8 @@
               const r = await showPrompt("Kenapa di-On Hold?");
               if (r === null || !r.trim()) {
                 note.progress = prev || "Pending";
+                note.onHoldReason = prevOnHoldReason;
+                note.inProgressReason = prevInProgressReason;
                 if (statusModalFromCard) renderNotes();
                 else showDesc(currentSchoolId, currentNoteId);
                 return;
@@ -4572,6 +4595,8 @@
               const r = await showPrompt("Update perkembangan");
               if (r === null || !r.trim()) {
                 note.progress = prev || "Pending";
+                note.onHoldReason = prevOnHoldReason;
+                note.inProgressReason = prevInProgressReason;
                 if (statusModalFromCard) renderNotes();
                 else showDesc(currentSchoolId, currentNoteId);
                 return;

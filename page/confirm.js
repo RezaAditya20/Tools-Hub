@@ -35,14 +35,17 @@ function showPrompt(msg, def = "") {
       </div>`;
     document.body.appendChild(overlay);
     const input = overlay.querySelector("input");
+    const okBtn = overlay.querySelector(".btn-confirm-ok");
+    okBtn.disabled = true;
     input.focus();
     input.select();
     const close = (val) => { if (window.closeOverlay) closeOverlay(overlay, val, resolve); else { overlay.remove(); resolve(val); } };
+    input.addEventListener("input", () => { okBtn.disabled = !input.value.trim(); });
     input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { close(input.value); }
+      if (e.key === "Enter" && input.value.trim()) { close(input.value); }
       if (e.key === "Escape") { close(null); }
     });
-    overlay.querySelector(".btn-confirm-ok").onclick = () => close(input.value);
+    okBtn.onclick = () => close(input.value);
     overlay.querySelector(".btn-confirm-cancel").onclick = () => close(null);
     overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
   });
