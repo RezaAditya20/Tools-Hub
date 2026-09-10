@@ -82,7 +82,7 @@
       const active = id === snState.schoolId ? " active" : "";
       const count = (school.notes || []).filter((n) => !n.done).length;
       const locked = !!school.pin;
-      html += `<a class="nav-item${active}" data-school-id="${id}"${locked ? ' data-locked="1"' : ""} style="--icon-bg:#22d3ee"><span class="nav-ico"><i class="fa-regular fa-school"></i></span><span class="label">${escapeHtml(school.name)}${count ? ` <span style="opacity:.6">(${count})</span>` : ""}</span></a>`;
+      html += `<a class="nav-item${active}" data-school-id="${id}"${locked ? ' data-locked="1"' : ""} style="--icon-bg:#22d3ee"><span class="nav-ico"><i class="fa-regular fa-school"></i></span><span class="label">${escapeHtml(school.name)}</span>${count ? `<span style="margin-left:auto;margin-right:8px;padding:2px 8px;border-radius:30px;background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary);font-size:0.8rem;font-weight:600">${count}</span>` : ""}</a>`;
     });
     return html;
   }
