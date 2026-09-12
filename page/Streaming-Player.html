@@ -16,227 +16,149 @@
     <link rel="stylesheet" href="../fontawesome/css/regular.css" />
     <title>Streaming Player — Magnet Link</title>
     <link rel="icon" type="image/svg+xml" href="../icon.svg" />
-    <meta name="description" content="Streaming konten dari magnet link langsung di browser menggunakan WebTorrent." />
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@2/webtorrent.min.js"></script>
+    <meta name="description" content="Streaming konten dari magnet link menggunakan TorrServer." />
     <style>
       .topbar { margin-bottom: 20px; }
       .topbar-row { align-items: flex-start; }
 
+      /* ── Settings ── */
+      .settings-row {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 14px; flex-wrap: wrap;
+      }
+      .settings-row label { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+      .settings-row input {
+        flex: 1; min-width: 200px; padding: 10px 14px;
+        border-radius: 30px; border: 1px solid var(--border);
+        background: var(--input); color: var(--fg);
+        font-size: 0.85rem; font-family: inherit; outline: none;
+        transition: border-color 0.2s;
+      }
+      .settings-row input:focus { border-color: var(--primary); }
+      .conn-dot {
+        width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+        background: var(--red); transition: background 0.3s;
+      }
+      .conn-dot.ok { background: var(--green); }
+
       /* ── Input Area ── */
-      .input-area {
-        display: flex;
-        gap: 10px;
-        align-items: stretch;
-      }
+      .input-area { display: flex; gap: 10px; align-items: stretch; }
       .input-area input {
-        flex: 1;
-        padding: 14px 18px;
-        border-radius: 30px;
-        border: 1px solid var(--border);
-        background: var(--input);
-        color: var(--fg);
-        font-size: 0.95rem;
-        font-family: inherit;
-        outline: none;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        flex: 1; padding: 14px 18px; border-radius: 30px;
+        border: 1px solid var(--border); background: var(--input);
+        color: var(--fg); font-size: 0.95rem; font-family: inherit;
+        outline: none; transition: border-color 0.2s, box-shadow 0.2s;
       }
-      .input-area input::placeholder {
-        color: var(--muted);
-      }
+      .input-area input::placeholder { color: var(--muted); }
       .input-area input:focus {
         border-color: var(--primary);
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
       }
       .btn-stream {
-        padding: 14px 28px;
-        border-radius: 30px;
-        border: none;
-        background: var(--primary);
-        color: #fff;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.2s;
+        padding: 14px 28px; border-radius: 30px; border: none;
+        background: var(--primary); color: #fff;
+        font-size: 0.95rem; font-weight: 600; cursor: pointer;
+        white-space: nowrap; transition: all 0.2s;
       }
       .btn-stream:hover { filter: brightness(1.1); transform: translateY(-1px); }
       .btn-stream:active { transform: scale(0.97); }
-      .btn-stream:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
+      .btn-stream:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
       .btn-stop {
-        padding: 14px 28px;
-        border-radius: 30px;
-        border: 1px solid var(--red);
-        background: transparent;
-        color: var(--red);
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.2s;
+        padding: 14px 28px; border-radius: 30px;
+        border: 1px solid var(--red); background: transparent;
+        color: var(--red); font-size: 0.95rem; font-weight: 600;
+        cursor: pointer; white-space: nowrap; transition: all 0.2s;
       }
       .btn-stop:hover { background: color-mix(in srgb, var(--red) 10%, transparent); }
 
       /* ── Status ── */
       .status-bar {
-        margin-top: 14px;
-        padding: 12px 18px;
-        border-radius: 16px;
-        background: var(--card);
-        border: 1px solid var(--border);
-        font-size: 0.85rem;
-        color: var(--muted);
-        display: none;
-        gap: 6px;
-        align-items: center;
+        margin-top: 14px; padding: 12px 18px; border-radius: 16px;
+        background: var(--card); border: 1px solid var(--border);
+        font-size: 0.85rem; color: var(--muted);
+        display: none; gap: 8px; align-items: center;
       }
       .status-bar.show { display: flex; }
       .status-bar .spinner {
         width: 16px; height: 16px;
-        border: 2px solid var(--border);
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        flex-shrink: 0;
+        border: 2px solid var(--border); border-top-color: var(--primary);
+        border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
       }
       @keyframes spin { to { transform: rotate(360deg); } }
-      .status-bar.error {
-        border-color: var(--red);
-        color: var(--red);
-      }
-
-      /* ── Video Player ── */
-      .player-wrap {
-        margin-top: 20px;
-        display: none;
-      }
-      .player-wrap.show { display: block; }
-      .player-wrap video {
-        width: 100%;
-        max-height: 70vh;
-        border-radius: 20px;
-        background: #000;
-        outline: none;
-      }
-
-      /* ── File List ── */
-      .file-list {
-        margin-top: 20px;
-        display: none;
-      }
-      .file-list.show { display: block; }
-      .file-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 18px;
-        border-radius: 16px;
-        background: var(--card);
-        border: 1px solid var(--border);
-        margin-bottom: 8px;
-        transition: border-color 0.2s;
-      }
-      .file-item:hover {
-        border-color: var(--primary);
-      }
-      .file-item-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        font-size: 1.2rem;
-        flex-shrink: 0;
-        background: color-mix(in srgb, var(--primary) 12%, transparent);
-        color: var(--primary);
-      }
-      .file-item-info {
-        flex: 1;
-        min-width: 0;
-      }
-      .file-item-name {
-        font-weight: 500;
-        font-size: 0.9rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .file-item-size {
-        font-size: 0.8rem;
-        color: var(--muted);
-        margin-top: 2px;
-      }
-      .file-item-btns {
-        display: flex;
-        gap: 6px;
-        flex-shrink: 0;
-      }
-      .file-item-btns .btn {
-        padding: 8px 16px;
-        font-size: 0.8rem;
-        border-radius: 30px;
-      }
-
-      /* ── Stats ── */
-      .stats-bar {
-        margin-top: 16px;
-        display: none;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .stats-bar.show { display: flex; }
-      .stat-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        border-radius: 30px;
-        background: var(--card);
-        border: 1px solid var(--border);
-        font-size: 0.8rem;
-        color: var(--muted);
-      }
-      .stat-chip .stat-value {
-        font-weight: 600;
-        color: var(--fg);
-      }
+      .status-bar.error { border-color: var(--red); color: var(--red); }
 
       /* ── Progress ── */
-      .progress-wrap {
-        margin-top: 12px;
-        display: none;
-      }
+      .progress-wrap { margin-top: 12px; display: none; }
       .progress-wrap.show { display: block; }
-      .progress-track {
-        height: 6px;
-        border-radius: 3px;
-        background: var(--input);
-        overflow: hidden;
+      .progress-track { height: 6px; border-radius: 3px; background: var(--input); overflow: hidden; }
+      .progress-fill { height: 100%; border-radius: 3px; background: var(--primary); transition: width 0.3s; width: 0%; }
+
+      /* ── Stats ── */
+      .stats-bar { margin-top: 16px; display: none; gap: 12px; flex-wrap: wrap; }
+      .stats-bar.show { display: flex; }
+      .stat-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 14px; border-radius: 30px;
+        background: var(--card); border: 1px solid var(--border);
+        font-size: 0.8rem; color: var(--muted);
       }
-      .progress-fill {
-        height: 100%;
-        border-radius: 3px;
-        background: var(--primary);
-        transition: width 0.3s;
+      .stat-chip .stat-value { font-weight: 600; color: var(--fg); }
+
+      /* ── Cache Progress ── */
+      .cache-progress {
+        margin-top: 12px; display: none;
+      }
+      .cache-progress.show { display: block; }
+      .cache-progress-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 6px; font-size: 0.8rem; color: var(--muted);
+      }
+      .cache-progress-header .pct { font-weight: 700; color: var(--primary); font-size: 0.9rem; }
+      .cache-track {
+        height: 8px; border-radius: 4px; background: var(--input); overflow: hidden;
+      }
+      .cache-fill {
+        height: 100%; border-radius: 4px; transition: width 0.5s ease;
+        background: linear-gradient(90deg, var(--primary), var(--green));
         width: 0%;
       }
 
+      /* ── Video Player ── */
+      .player-wrap { margin-top: 20px; display: none; }
+      .player-wrap.show { display: block; }
+      .player-wrap video {
+        width: 100%; max-height: 70vh;
+        border-radius: 20px; background: #000; outline: none;
+      }
+
+      /* ── File List ── */
+      .file-list { margin-top: 20px; display: none; }
+      .file-list.show { display: block; }
+      .file-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 18px; border-radius: 16px;
+        background: var(--card); border: 1px solid var(--border);
+        margin-bottom: 8px; transition: border-color 0.2s;
+      }
+      .file-item:hover { border-color: var(--primary); }
+      .file-item-icon {
+        width: 40px; height: 40px; border-radius: 12px;
+        display: grid; place-items: center; font-size: 1.2rem; flex-shrink: 0;
+        background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary);
+      }
+      .file-item-info { flex: 1; min-width: 0; }
+      .file-item-name { font-weight: 500; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .file-item-size { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+      .file-item-btns { display: flex; gap: 6px; flex-shrink: 0; }
+      .file-item-btns .btn { padding: 8px 16px; font-size: 0.8rem; border-radius: 30px; }
+
       /* ── Note ── */
       .note {
-        margin-top: 16px;
-        padding: 14px 18px;
-        border-radius: 16px;
+        margin-top: 16px; padding: 14px 18px; border-radius: 16px;
         background: color-mix(in srgb, var(--yellow) 8%, transparent);
         border: 1px solid color-mix(in srgb, var(--yellow) 20%, transparent);
-        font-size: 0.82rem;
-        color: var(--muted);
-        line-height: 1.5;
-        display: none;
+        font-size: 0.82rem; color: var(--muted); line-height: 1.5;
       }
-      .note.show { display: block; }
       .note strong { color: var(--yellow); }
 
       @media (max-width: 600px) {
@@ -254,12 +176,21 @@
         <div class="topbar-row">
           <div class="title-block">
             <h1>Streaming Player</h1>
-            <p class="subtitle">Streaming konten dari magnet link langsung di browser (WebTorrent).</p>
+            <p class="subtitle">Streaming konten dari magnet link menggunakan TorrServer.</p>
           </div>
         </div>
       </div>
 
       <div class="panel">
+        <!-- Settings -->
+        <div class="settings-row" id="settings-row">
+          <label>TorrServer:</label>
+          <div class="conn-dot" id="conn-dot" title="Status koneksi"></div>
+          <input type="text" id="ts-url" placeholder="http://127.0.0.1:8090" spellcheck="false" />
+          <button class="btn" id="btn-check" title="Test koneksi">Check</button>
+        </div>
+
+        <!-- Magnet Input -->
         <div class="input-area">
           <input type="text" id="magnet-input" placeholder="Paste magnet link di sini..." spellcheck="false" autocomplete="off" />
           <button class="btn-stream" id="btn-stream">▶ Stream</button>
@@ -276,11 +207,19 @@
         </div>
 
         <div class="stats-bar" id="stats-bar">
-          <div class="stat-chip">⚡ Download: <span class="stat-value" id="stat-down">0 KB/s</span></div>
-          <div class="stat-chip">⬆ Upload: <span class="stat-value" id="stat-up">0 KB/s</span></div>
-          <div class="stat-chip">👥 Peers: <span class="stat-value" id="stat-peers">0</span></div>
-          <div class="stat-chip">📦 Downloaded: <span class="stat-value" id="stat-downloaded">0%</span></div>
-          <div class="stat-chip">🕐 ETA: <span class="stat-value" id="stat-eta">--</span></div>
+          <div class="stat-chip">⚡ Status: <span class="stat-value" id="stat-status">-</span></div>
+          <div class="stat-chip">🚀 Speed: <span class="stat-value" id="stat-speed">-</span></div>
+          <div class="stat-chip">👥 Peers: <span class="stat-value" id="stat-peers">-</span></div>
+          <div class="stat-chip">📦 Size: <span class="stat-value" id="stat-size">-</span></div>
+        </div>
+
+        <!-- Cache Progress -->
+        <div class="cache-progress" id="cache-progress">
+          <div class="cache-progress-header">
+            <span>📥 Cache: <span id="cache-mb">0 MB</span> / <span id="cache-total">0 MB</span></span>
+            <span class="pct" id="cache-pct">0%</span>
+          </div>
+          <div class="cache-track"><div class="cache-fill" id="cache-fill"></div></div>
         </div>
       </div>
 
@@ -294,7 +233,14 @@
 
       <!-- Note -->
       <div class="note" id="note">
-        <strong>Catatan:</strong> WebTorrent menggunakan WebRTC (peer-to-peer di browser). Streaming hanya bisa terhubung ke peer yang juga menggunakan WebTorrent (bukan client BitTorrent biasa). Kecepatan tergantung jumlah peers WebTorrent yang tersedia.
+        <strong>Catatan:</strong> Tool ini membutuhkan TorrServer + proxy server.
+        <br><br>
+        <strong>Setup (3 langkah):</strong>
+        <br>1. Download TorrServer dari <a href="https://github.com/YouROK/TorrServer/releases" target="_blank" style="color:var(--primary)">GitHub</a> → jalankan <code>TorrServer-windows-amd64.exe</code>
+        <br>2. Jalankan proxy: <code>node streaming-server.js</code> (atau double-click <code>start-streaming.bat</code>)
+        <br>3. Buka <code>http://localhost:8091</code> di browser
+        <br><br>
+        <strong>Kenapa proxy?</strong> Browser memblokir akses langsung ke TorrServer dari file HTML lokal (CORS). Proxy mengatasi ini.
       </div>
     </div>
 
@@ -316,6 +262,7 @@
       const magnetInput = document.getElementById("magnet-input");
       const btnStream = document.getElementById("btn-stream");
       const btnStop = document.getElementById("btn-stop");
+      const btnCheck = document.getElementById("btn-check");
       const statusBar = document.getElementById("status-bar");
       const statusText = document.getElementById("status-text");
       const progressWrap = document.getElementById("progress-wrap");
@@ -324,51 +271,34 @@
       const playerWrap = document.getElementById("player-wrap");
       const videoPlayer = document.getElementById("video-player");
       const fileList = document.getElementById("file-list");
-      const note = document.getElementById("note");
+      const tsUrlInput = document.getElementById("ts-url");
+      const connDot = document.getElementById("conn-dot");
 
-      let client = null;
+      let currentMagnet = "";
+      let throughProxy = false;
       let statsInterval = null;
-      let currentObjectURLs = [];
 
       /* ── Helpers ── */
+      function getBaseUrl() {
+        if (throughProxy) return location.origin + "/ts";
+        let url = (tsUrlInput.value || "").trim();
+        if (!url) url = "http://127.0.0.1:8090";
+        return url.replace(/\/+$/, "");
+      }
+
       function formatBytes(b) {
-        if (b === 0) return "0 B";
-        const k = 1024;
-        const s = ["B", "KB", "MB", "GB", "TB"];
+        if (!b || b === 0) return "0 B";
+        const k = 1024, s = ["B", "KB", "MB", "GB", "TB"];
         const i = Math.floor(Math.log(b) / Math.log(k));
         return (b / Math.pow(k, i)).toFixed(1) + " " + s[i];
       }
 
-      function formatSpeed(bps) {
-        return formatBytes(bps) + "/s";
-      }
-
-      function formatETA(seconds) {
-        if (!seconds || seconds === Infinity) return "--";
-        if (seconds < 60) return Math.round(seconds) + "s";
-        if (seconds < 3600) return Math.round(seconds / 60) + "m";
-        return (seconds / 3600).toFixed(1) + "h";
-      }
-
-      function isVideo(filename) {
-        return /\.(mp4|webm|mkv|avi|mov|ogg|ogv|flv|wmv|m4v)$/i.test(filename);
-      }
-
-      function isAudio(filename) {
-        return /\.(mp3|wav|flac|aac|ogg|opus|m4a|wma)$/i.test(filename);
-      }
-
-      function isSubtitle(filename) {
-        return /\.(srt|ass|ssa|vtt|sub)$/i.test(filename);
-      }
-
-      function getFileIcon(filename) {
-        if (isVideo(filename)) return "🎬";
-        if (isAudio(filename)) return "🎵";
-        if (isSubtitle(filename)) return "📝";
-        if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filename)) return "🖼️";
-        if (/\.(zip|rar|7z|tar|gz)$/i.test(filename)) return "📦";
-        if (/\.(pdf)$/i.test(filename)) return "📄";
+      function isVideo(n) { return /\.(mp4|webm|mkv|avi|mov|ogg|ogv|flv|wmv|m4v)$/i.test(n); }
+      function isAudio(n) { return /\.(mp3|wav|flac|aac|ogg|opus|m4a|wma)$/i.test(n); }
+      function getFileIcon(n) {
+        if (isVideo(n)) return "🎬";
+        if (isAudio(n)) return "🎵";
+        if (/\.(srt|ass|ssa|vtt)$/i.test(n)) return "📝";
         return "📄";
       }
 
@@ -377,128 +307,192 @@
         statusBar.classList.toggle("error", !!isError);
         statusText.textContent = text;
       }
+      function hideStatus() { statusBar.classList.remove("show"); }
 
-      function hideStatus() {
-        statusBar.classList.remove("show");
+      /* ── TorrServer API (all POST to /torrents) ── */
+      async function tsPost(body) {
+        const resp = await fetch(getBaseUrl() + "/torrents", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        return resp.json();
       }
 
-      function cleanupObjectURLs() {
-        currentObjectURLs.forEach(u => URL.revokeObjectURL(u));
-        currentObjectURLs = [];
+      async function tsGetStat() {
+        const resp = await fetch(getBaseUrl() + "/stream?link=" + encodeURIComponent(currentMagnet) + "&stat");
+        return resp.json();
       }
 
-      /* ── Start streaming ── */
-      function startStream() {
+      async function checkConnection() {
+        /* Via proxy: use /health */
+        if (throughProxy) {
+          try {
+            const resp = await fetch("/health");
+            const data = await resp.json();
+            if (data.torrserver) {
+              connDot.classList.add("ok");
+              connDot.title = "TorrServer terhubung via port " + data.port;
+              return true;
+            }
+          } catch (e) {}
+          connDot.classList.remove("ok");
+          return false;
+        }
+
+        /* Direct mode */
+        try {
+          const resp = await fetch(getBaseUrl() + "/stream?link=magnet:?xt=urn:btih:00&stat", { method: "GET" });
+          /* Even 400/500 means server is alive */
+          if (resp.ok || resp.status === 400 || resp.status === 500) {
+            connDot.classList.add("ok");
+            connDot.title = "TorrServer terhubung";
+            return true;
+          }
+        } catch (e) {}
+        connDot.classList.remove("ok");
+        connDot.title = "TorrServer tidak terjangkau";
+        return false;
+      }
+
+      /* ── Stream ── */
+      async function startStream() {
         const magnetURI = magnetInput.value.trim();
-        if (!magnetURI) {
-          showToast("Masukkan magnet link!", "error");
+        if (!magnetURI) { showToast("Masukkan magnet link!", "error"); return; }
+        if (!magnetURI.startsWith("magnet:")) { showToast("Format magnet link tidak valid", "error"); return; }
+
+        const ok = await checkConnection();
+        if (!ok) {
+          showToast("TorrServer tidak terjangkau! Pastikan TorrServer berjalan.", "error");
           return;
         }
 
-        if (!magnetURI.startsWith("magnet:")) {
-          showToast("Format magnet link tidak valid", "error");
+        if (useNoCors && !throughProxy) {
+          showToast("CORS terbatas — jalankan: node streaming-server.js", "error");
           return;
         }
 
-        cleanupObjectURLs();
+        currentMagnet = magnetURI;
+        btnStream.style.display = "none";
+        btnStop.style.display = "";
+        statsBar.classList.remove("show");
         playerWrap.classList.remove("show");
         fileList.classList.remove("show");
         fileList.innerHTML = "";
         videoPlayer.src = "";
-        statsBar.classList.remove("show");
-        progressWrap.classList.remove("show");
-        note.classList.remove("show");
 
-        btnStream.style.display = "none";
-        btnStop.style.display = "";
-        btnStream.disabled = true;
+        /* Step 1: Add torrent — response includes file_stats */
+        setStatus("Menambahkan torrent ke TorrServer...");
+        progressWrap.classList.add("show");
+        progressFill.style.width = "10%";
 
-        setStatus("Menyiapkan WebTorrent client...");
-
+        let addResult;
         try {
-          client = new WebTorrent();
-        } catch (err) {
-          setStatus("Gagal inisialisasi WebTorrent: " + err.message, true);
-          btnStream.style.display = "";
-          btnStop.style.display = "none";
-          btnStream.disabled = false;
-          showToast("Error: " + err.message, "error");
-          return;
-        }
-
-        client.on("error", function (err) {
-          setStatus("Error: " + err.message, true);
-          stopStream();
-        });
-
-        setStatus("Menghubungkan ke peers...");
-
-        let torrent;
-        try {
-          torrent = client.add(magnetURI);
-        } catch (err) {
-          setStatus("Gagal memproses magnet link: " + err.message, true);
+          addResult = await tsPost({ action: "add", link: magnetURI });
+          if (addResult.error) throw new Error(addResult.error);
+        } catch (e) {
+          setStatus("Gagal menambahkan torrent: " + e.message, true);
           stopStream();
           return;
         }
 
-        torrent.on("ready", function () {
-          const files = torrent.files;
-          setStatus("Tersambung! " + torrent.name + " (" + files.length + " file)");
+        /* file_stats langsung dari response add */
+        const files = (addResult.file_stats || []).map(f => ({ id: f.id, path: f.path, length: f.length }));
+        if (!files.length) {
+          setStatus("Tidak ada file dalam torrent.", true);
+          stopStream();
+          return;
+        }
 
-          progressWrap.classList.add("show");
-          statsBar.classList.add("show");
-          note.classList.add("show");
+        /* Step 2: Tunggu preload cukup (2 MB) lalu play */
+        setStatus("Mengunduh metadata & buffer...");
+        progressFill.style.width = "30%";
 
-          /* ── Stats updater ── */
-          statsInterval = setInterval(function () {
-            if (!torrent) return;
-            document.getElementById("stat-down").textContent = formatSpeed(torrent.downloadSpeed);
-            document.getElementById("stat-up").textContent = formatSpeed(torrent.uploadSpeed);
-            document.getElementById("stat-peers").textContent = torrent.numPeers;
-            const pct = torrent.progress ? Math.round(torrent.progress * 100) : 0;
-            document.getElementById("stat-downloaded").textContent = pct + "%";
-            document.getElementById("stat-eta").textContent = formatETA(torrent.timeRemaining / 1000);
-            progressFill.style.width = pct + "%";
-          }, 500);
+        let statData = null;
+        for (let i = 0; i < 120; i++) {
+          await new Promise(r => setTimeout(r, 1000));
+          try {
+            statData = await tsGetStat();
+            const preloaded = (statData && (statData.preloaded_bytes || statData.loaded_size)) || 0;
+            const dlSpeed = (statData && statData.download_speed) || 0;
+            const pct = Math.min(100, Math.round((preloaded / 2097152) * 100)); // 2MB target
+            progressFill.style.width = Math.min(30 + pct * 0.6, 90) + "%";
+            setStatus("Buffering... " + formatBytes(preloaded) + " / 2 MB" +
+              (dlSpeed > 0 ? " (" + formatBytes(dlSpeed) + "/s)" : "") + " [" + (i + 1) + "s]");
+            if (preloaded >= 2097152) break; // 2 MB cukup
+          } catch (e) {}
+        }
 
-          /* ── Render file list ── */
-          renderFileList(files, torrent);
-        });
+        /* Step 3: Show files and play */
+        progressFill.style.width = "100%";
 
-        torrent.on("done", function () {
-          setStatus("Download selesai! " + torrent.name);
-          progressFill.style.width = "100%";
-          if (statsInterval) clearInterval(statsInterval);
-          document.getElementById("stat-downloaded").textContent = "100%";
-          document.getElementById("stat-eta").textContent = "Selesai";
-        });
+        statsBar.classList.add("show");
+        if (statData) {
+          document.getElementById("stat-status").textContent = statData.stat_string || "-";
+          document.getElementById("stat-peers").textContent = statData.connected_seeders || "-";
+          document.getElementById("stat-size").textContent = formatBytes(statData.torrent_size);
+          document.getElementById("stat-speed").textContent = statData.download_speed ? formatBytes(statData.download_speed) + "/s" : "-";
+        }
 
-        torrent.on("warning", function (err) {
-          console.warn("Torrent warning:", err);
-        });
+        /* Show cache progress */
+        document.getElementById("cache-progress").classList.add("show");
+        function updateCache(s) {
+          const total = s.torrent_size || 0;
+          const cached = s.preloaded_bytes || s.loaded_size || 0;
+          const pct = total > 0 ? Math.min(100, Math.round((cached / total) * 100)) : 0;
+          document.getElementById("cache-mb").textContent = formatBytes(cached);
+          document.getElementById("cache-total").textContent = formatBytes(total);
+          document.getElementById("cache-pct").textContent = pct + "%";
+          document.getElementById("cache-fill").style.width = pct + "%";
+          if (s.download_speed) {
+            document.getElementById("stat-speed").textContent = formatBytes(s.download_speed) + "/s";
+          }
+          document.getElementById("stat-peers").textContent = s.connected_seeders || "-";
+        }
+        if (statData) updateCache(statData);
+
+        renderFileList(files);
+
+        /* Auto-play first video */
+        const firstVideo = files.findIndex(f => isVideo(f.path));
+        if (firstVideo !== -1) {
+          playFile(firstVideo, files[firstVideo].path);
+        } else {
+          setStatus("Tidak ada file video. Pilih file untuk diputar.");
+        }
+
+        setTimeout(() => { progressWrap.classList.remove("show"); }, 800);
+
+        /* Update stats + cache every 2s */
+        if (statsInterval) clearInterval(statsInterval);
+        statsInterval = setInterval(async () => {
+          try {
+            const stat = await tsGetStat();
+            if (stat) {
+              document.getElementById("stat-status").textContent = stat.stat_string || "-";
+              document.getElementById("stat-peers").textContent = stat.connected_seeders || "-";
+              updateCache(stat);
+            }
+          } catch (e) {}
+        }, 2000);
       }
 
       /* ── Render file list ── */
-      function renderFileList(files, torrent) {
-        if (!files.length) {
-          fileList.classList.remove("show");
-          return;
-        }
-
+      function renderFileList(files) {
         let html = '<div class="panel-title-row" style="margin-bottom:12px"><div class="panel-title"><h2>📂 File (' + files.length + ')</h2></div></div>';
-
         files.forEach(function (file, idx) {
-          const icon = getFileIcon(file.name);
-          const playable = isVideo(file.name) || isAudio(file.name);
+          const icon = getFileIcon(file.path);
+          const name = file.path.split(/[/\\]/).pop();
+          const playable = isVideo(name) || isAudio(name);
           html += '<div class="file-item">' +
             '<div class="file-item-icon">' + icon + '</div>' +
             '<div class="file-item-info">' +
-              '<div class="file-item-name" title="' + file.name.replace(/"/g, '&quot;') + '">' + file.name + '</div>' +
+              '<div class="file-item-name" title="' + name.replace(/"/g, '&quot;') + '">' + name + '</div>' +
               '<div class="file-item-size">' + formatBytes(file.length) + '</div>' +
             '</div>' +
             '<div class="file-item-btns">' +
               (playable ? '<button class="btn btn-primary" data-idx="' + idx + '" data-action="play">▶ Play</button>' : '') +
+              (playable ? '<button class="btn" data-idx="' + idx + '" data-action="mpv" title="Buka di mpv (full codec support)">🎬 mpv</button>' : '') +
               '<button class="btn" data-idx="' + idx + '" data-action="download">⬇ Download</button>' +
             '</div>' +
           '</div>';
@@ -507,120 +501,140 @@
         fileList.innerHTML = html;
         fileList.classList.add("show");
 
-        /* ── Auto-play first video ── */
-        const firstVideo = files.find(function (f) { return isVideo(f.name); });
-        if (firstVideo) {
-          playFile(firstVideo);
-        }
-
-        /* ── Button handlers ── */
-        fileList.addEventListener("click", function (e) {
+        fileList.onclick = function (e) {
           const btn = e.target.closest("[data-action]");
           if (!btn) return;
           const idx = parseInt(btn.dataset.idx, 10);
           const file = files[idx];
           if (!file) return;
-
-          if (btn.dataset.action === "play") {
-            playFile(file);
-          } else if (btn.dataset.action === "download") {
-            downloadFile(file);
-          }
-        });
+          if (btn.dataset.action === "play") playFile(idx, file.path);
+          else if (btn.dataset.action === "mpv") openInMpv(idx, file.path);
+          else if (btn.dataset.action === "download") downloadFile(idx, file.path);
+        };
       }
 
       /* ── Play file ── */
-      function playFile(file) {
-        setStatus("Buffering: " + file.name + "...");
+      /* TorrServer stream: GET /stream?link=<magnet>&index=<1-based>&play */
+      function playFile(fileIndex, filePath) {
+        const name = filePath.split(/[/\\]/).pop();
+        const streamUrl = getBaseUrl() + "/stream?link=" + encodeURIComponent(currentMagnet) + "&index=" + (fileIndex + 1) + "&play";
 
-        file.getBuffer(function (err, buffer) {
-          if (err) {
-            showToast("Gagal buffer file: " + err.message, "error");
-            return;
-          }
+        console.log("[playFile]", name, "url:", streamUrl);
+        setStatus("Streaming: " + name + "...");
 
-          const blob = new Blob([buffer]);
-          const url = URL.createObjectURL(blob);
-          currentObjectURLs.push(url);
+        videoPlayer.onplay = function () { console.log("[video] onplay OK, currentTime:", videoPlayer.currentTime); };
+        videoPlayer.onloadedmetadata = function () { console.log("[video] metadata loaded, duration:", videoPlayer.duration, "readyState:", videoPlayer.readyState); };
+        videoPlayer.onwaiting = function () { console.log("[video] waiting, currentTime:", videoPlayer.currentTime, "buffered:", videoPlayer.buffered.length > 0 ? videoPlayer.buffered.end(videoPlayer.buffered.length - 1) : 0); };
+        videoPlayer.onplaying = function () { console.log("[video] PLAYING! currentTime:", videoPlayer.currentTime); };
+        videoPlayer.ontimeupdate = function () { console.log("[video] time:", videoPlayer.currentTime.toFixed(1), "ready:", videoPlayer.readyState); };
+        videoPlayer.onstalled = function () { console.log("[video] STALLED, readyState:", videoPlayer.readyState); };
+        videoPlayer.onerror = function () {
+          var err = videoPlayer.error;
+          var msg = "Error " + (err ? err.code : "?");
+          if (err && err.code === 1) msg = "MEDIA_ERR_ABORTED";
+          if (err && err.code === 2) msg = "MEDIA_ERR_NETWORK";
+          if (err && err.code === 3) msg = "MEDIA_ERR_DECODE";
+          if (err && err.code === 4) msg = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+          console.log("[video] ERROR:", msg, err);
+          setStatus("Video error: " + msg, true);
+        };
 
-          if (isVideo(file.name) || isAudio(file.name)) {
-            videoPlayer.src = url;
-            if (isVideo(file.name)) {
-              playerWrap.classList.add("show");
-            }
-            videoPlayer.play().catch(function () {});
-            setStatus("Playing: " + file.name);
+        if (isVideo(name) || isAudio(name)) {
+          videoPlayer.src = streamUrl;
+          playerWrap.classList.add("show");
+          videoPlayer.play().then(function () {
+            console.log("[video] play() resolved");
+            setStatus("Playing: " + name);
+          }).catch(function (e) {
+            console.log("[video] play() rejected:", e);
+            setStatus("Gagal play: " + e.message, true);
+          });
+        }
+      }
+
+      /* ── Open in mpv ── */
+      function openInMpv(fileIndex, filePath) {
+        const name = filePath.split(/[/\\]/).pop();
+        const streamUrl = getBaseUrl() + "/stream?link=" + encodeURIComponent(currentMagnet) + "&index=" + (fileIndex + 1) + "&play";
+        setStatus("Membuka mpv: " + name + "...");
+
+        fetch("/launch-mpv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: streamUrl }),
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          if (d.ok) {
+            showToast("mpv diluncurkan!");
+            setStatus("mpv: " + name);
           } else {
-            /* Non-media: trigger download */
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = file.name;
-            a.click();
-            setStatus("Downloaded: " + file.name);
+            setStatus("Gagal: " + (d.error || "mpv tidak ditemukan"), true);
+            showToast("Pastikan mpv terinstall & ada di PATH", "error");
           }
+        }).catch(function (e) {
+          setStatus("Gagal launch mpv: " + e.message, true);
         });
       }
 
-      /* ── Download file ── */
-      function downloadFile(file) {
-        setStatus("Mendownload: " + file.name + "...");
-        file.getBuffer(function (err, buffer) {
-          if (err) {
-            showToast("Gagal download: " + err.message, "error");
-            return;
-          }
-          const blob = new Blob([buffer]);
-          const url = URL.createObjectURL(blob);
-          currentObjectURLs.push(url);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = file.name;
-          a.click();
-          setStatus("Downloaded: " + file.name);
-          showToast(file.name + " berhasil diunduh!");
-        });
+      /* ── Download ── */
+      function downloadFile(fileIndex, filePath) {
+        const name = filePath.split(/[/\\]/).pop();
+        const streamUrl = getBaseUrl() + "/stream?link=" + encodeURIComponent(currentMagnet) + "&index=" + (fileIndex + 1) + "&play";
+        const a = document.createElement("a");
+        a.href = streamUrl;
+        a.download = name;
+        a.click();
+        showToast("Download: " + name);
       }
 
-      /* ── Stop streaming ── */
+      /* ── Stop ── */
       function stopStream() {
-        if (statsInterval) {
-          clearInterval(statsInterval);
-          statsInterval = null;
-        }
-        if (client) {
-          try { client.destroy(); } catch (e) {}
-          client = null;
-        }
-        cleanupObjectURLs();
+        if (statsInterval) { clearInterval(statsInterval); statsInterval = null; }
         videoPlayer.src = "";
         playerWrap.classList.remove("show");
         statsBar.classList.remove("show");
+        document.getElementById("cache-progress").classList.remove("show");
         progressWrap.classList.remove("show");
         fileList.classList.remove("show");
         fileList.innerHTML = "";
-        note.classList.remove("show");
         hideStatus();
         btnStream.style.display = "";
         btnStop.style.display = "none";
-        btnStream.disabled = false;
       }
 
-      /* ── Event listeners ── */
+      /* ── Events ── */
+      let useNoCors = false;
+
       btnStream.addEventListener("click", startStream);
       btnStop.addEventListener("click", stopStream);
+      magnetInput.addEventListener("keydown", function (e) { if (e.key === "Enter") startStream(); });
 
-      magnetInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") startStream();
+      /* Settings */
+      function loadSettings() {
+        try { const s = localStorage.getItem("ts-url"); if (s) tsUrlInput.value = s; } catch (e) {}
+      }
+      function saveSettings() {
+        try { localStorage.setItem("ts-url", tsUrlInput.value); } catch (e) {}
+      }
+      tsUrlInput.addEventListener("change", function () { saveSettings(); checkConnection(); });
+      btnCheck.addEventListener("click", function () {
+        saveSettings();
+        checkConnection().then(ok => showToast(ok ? "TorrServer terhubung!" : "TorrServer tidak terjangkau", ok ? "" : "error"));
       });
 
-      /* ── Load magnet from URL hash ── */
-      (function () {
-        const hash = decodeURIComponent(location.hash.slice(1));
-        if (hash && hash.startsWith("magnet:")) {
-          magnetInput.value = hash;
-          startStream();
-        }
-      })();
+      /* Init */
+      if (location.hostname === "localhost" && location.port === "8091") {
+        throughProxy = true;
+        connDot.classList.add("ok");
+        connDot.title = "Melalui proxy — CORS OK";
+        document.getElementById("settings-row").style.display = "none";
+        document.getElementById("note").style.display = "none";
+      }
+      loadSettings();
+      checkConnection();
+
+      /* Auto-load magnet from hash */
+      const h = decodeURIComponent(location.hash.slice(1));
+      if (h && h.startsWith("magnet:")) magnetInput.value = h;
     })();
     </script>
     <script src="../theme-splash.js"></script>

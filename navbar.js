@@ -172,6 +172,9 @@
   // Isi item (sudah difilter hide) + sync saat berubah
   buildItems();
   refreshIcons();
+  /* Scroll sidebar ke item active */
+  const activeItem = nav.querySelector(".nav-item.active");
+  if (activeItem) activeItem.scrollIntoView({ block: "center", behavior: "instant" });
   window.addEventListener("tools-hidden-change", () => { buildItems(); refreshIcons(); });
 
   // ── School Notes: klik item catatan → beritahu page ──
