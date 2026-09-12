@@ -22,20 +22,20 @@
 
   // Daftar tool — icon = Lucide icon name, diwarnai via --icon-bg.
   const TOOLS = [
-    { label: "Data Comparer", href: "page/Data-Comparer.html", c1: "#f87171", icon: "table-2" },
-    { label: "Excel Compare", href: "page/Excel-Compare.html", c1: "#34d399", icon: "file-spreadsheet" },
-    { label: "Extract Subjects", href: "page/Extract-Subjects.html", c1: "#fb923c", icon: "folder-tree" },
-    { label: "Fix Name", href: "page/Fix-Name.html", c1: "#f472b6", icon: "user-pen" },
-    { label: "Kalender Akademik", href: "page/Kalender-Akademik.html", c1: "#60a5fa", icon: "calendar" },
-    { label: "Query Data Update", href: "page/Query-Data-Update.html", c1: "#818cf8", icon: "database" },
-    { label: "School Notes & To Do", href: "page/School-Notes-&-To-Do.html", c1: "#2dd4bf", icon: "notebook-pen" },
-    { label: "Subject Comparer", href: "page/Subject-Comparer.html", c1: "#c084fc", icon: "layers" },
-    { label: "Username Maker", href: "page/Username-Maker.html", c1: "#22d3ee", icon: "user" },
-    { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "code" },
-    { label: "HTML Report Inspector", href: "page/HTML-Report-Inspector.html", c1: "#f472b6", icon: "file-code" },
-    { label: "OCR", href: "page/OCR.html", c1: "#38bdf8", icon: "scan-eye" },
-    { label: "Document Scanner", href: "page/Document-Scanner.html", c1: "#34d399", icon: "scan" },
-    { label: "Streaming Player", href: "page/Streaming-Player.html", c1: "#f472b6", icon: "play-circle" },
+    { label: "Data Comparer", href: "page/Data-Comparer.html", c1: "#f87171", icon: "table-2", cat: "Data & Comparison" },
+    { label: "Excel Compare", href: "page/Excel-Compare.html", c1: "#34d399", icon: "file-spreadsheet", cat: "Data & Comparison" },
+    { label: "Subject Comparer", href: "page/Subject-Comparer.html", c1: "#c084fc", icon: "layers", cat: "Data & Comparison" },
+    { label: "Query Data Update", href: "page/Query-Data-Update.html", c1: "#818cf8", icon: "database", cat: "Data & Comparison" },
+    { label: "Document Scanner", href: "page/Document-Scanner.html", c1: "#34d399", icon: "scan", cat: "Documents & OCR" },
+    { label: "OCR", href: "page/OCR.html", c1: "#38bdf8", icon: "scan-eye", cat: "Documents & OCR" },
+    { label: "HTML Report Inspector", href: "page/HTML-Report-Inspector.html", c1: "#f472b6", icon: "file-code", cat: "Documents & OCR" },
+    { label: "Extract Subjects", href: "page/Extract-Subjects.html", c1: "#fb923c", icon: "folder-tree", cat: "Academic" },
+    { label: "Kalender Akademik", href: "page/Kalender-Akademik.html", c1: "#60a5fa", icon: "calendar", cat: "Academic" },
+    { label: "School Notes & To Do", href: "page/School-Notes-&-To-Do.html", c1: "#2dd4bf", icon: "notebook-pen", cat: "Academic" },
+    { label: "Fix Name", href: "page/Fix-Name.html", c1: "#f472b6", icon: "user-pen", cat: "Utilities" },
+    { label: "Username Maker", href: "page/Username-Maker.html", c1: "#22d3ee", icon: "user", cat: "Utilities" },
+    { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "code", cat: "Utilities" },
+    { label: "Streaming Player", href: "page/Streaming-Player.html", c1: "#f472b6", icon: "play-circle", cat: "Media & Streaming" },
   ];
 
   function getHidden() {
@@ -104,18 +104,32 @@
       return;
     }
     const hidden = getHidden();
-    const items = TOOLS
-      .slice()
-      .sort((a, b) => a.label.localeCompare(b.label, "id"))
-      .filter((t) => hidden.indexOf(t.label) === -1)
-      .map((t) => {
+    const filtered = TOOLS
+      .filter((t) => hidden.indexOf(t.label) === -1);
+
+    /* Group by category */
+    const catOrder = ["Data & Comparison", "Documents & OCR", "Academic", "Utilities", "Media & Streaming"];
+    const grouped = {};
+    filtered.forEach((t) => {
+      const c = t.cat || "Lainnya";
+      if (!grouped[c]) grouped[c] = [];
+      grouped[c].push(t);
+    });
+
+    let items = "";
+    catOrder.forEach((cat) => {
+      const tools = grouped[cat];
+      if (!tools || !tools.length) return;
+      tools.sort((a, b) => a.label.localeCompare(b.label, "id"));
+      items += `<div class="nav-category">${cat}</div>`;
+      tools.forEach((t) => {
         const active = current && t.href.split("/").pop() === current ? " active" : "";
-        return `<a class="nav-item${active}" href="${ROOT}${t.href}" style="--icon-bg:${t.c1}">
+        items += `<a class="nav-item${active}" href="${ROOT}${t.href}" style="--icon-bg:${t.c1}">
           <span class="nav-ico"><i data-lucide="${t.icon}"></i></span>
           <span class="label">${t.label}</span>
         </a>`;
-      })
-      .join("");
+      });
+    });
     nav.innerHTML = items;
     const s = mount.querySelector("#nav-search");
     if (s) s.placeholder = "Cari program...";
@@ -284,6 +298,16 @@
     mount.querySelectorAll(".nav-item").forEach((a) => {
       const label = (a.querySelector(".label") || {}).textContent || "";
       a.style.display = label.toLowerCase().includes(q) ? "" : "none";
+    });
+    /* Hide category headers when all their items are hidden */
+    mount.querySelectorAll(".nav-category").forEach((cat) => {
+      let next = cat.nextElementSibling;
+      let hasVisible = false;
+      while (next && !next.classList.contains("nav-category")) {
+        if (next.classList.contains("nav-item") && next.style.display !== "none") hasVisible = true;
+        next = next.nextElementSibling;
+      }
+      cat.style.display = hasVisible ? "" : "none";
     });
   });
 
