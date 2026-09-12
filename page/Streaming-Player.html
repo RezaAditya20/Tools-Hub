@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      try { var t = localStorage.getItem("theme"); if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000"; } catch (e) { document.documentElement.style.background = "#000000"; }
+    </script>
+
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-duotone-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Streaming Player — Magnet Link</title>
+    <link rel="icon" type="image/svg+xml" href="../icon.svg" />
+    <meta name="description" content="Streaming konten dari magnet link langsung di browser menggunakan WebTorrent." />
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@2/webtorrent.min.js"></script>
+    <style>
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+
+      /* ── Input Area ── */
+      .input-area {
+        display: flex;
+        gap: 10px;
+        align-items: stretch;
+      }
+      .input-area input {
+        flex: 1;
+        padding: 14px 18px;
+        border-radius: 30px;
+        border: 1px solid var(--border);
+        background: var(--input);
+        color: var(--fg);
+        font-size: 0.95rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .input-area input::placeholder {
+        color: var(--muted);
+      }
+      .input-area input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+      }
+      .btn-stream {
+        padding: 14px 28px;
+        border-radius: 30px;
+        border: none;
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+      }
+      .btn-stream:hover { filter: brightness(1.1); transform: translateY(-1px); }
+      .btn-stream:active { transform: scale(0.97); }
+      .btn-stream:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btn-stop {
+        padding: 14px 28px;
+        border-radius: 30px;
+        border: 1px solid var(--red);
+        background: transparent;
+        color: var(--red);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+      }
+      .btn-stop:hover { background: color-mix(in srgb, var(--red) 10%, transparent); }
+
+      /* ── Status ── */
+      .status-bar {
+        margin-top: 14px;
+        padding: 12px 18px;
+        border-radius: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        font-size: 0.85rem;
+        color: var(--muted);
+        display: none;
+        gap: 6px;
+        align-items: center;
+      }
+      .status-bar.show { display: flex; }
+      .status-bar .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        flex-shrink: 0;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .status-bar.error {
+        border-color: var(--red);
+        color: var(--red);
+      }
+
+      /* ── Video Player ── */
+      .player-wrap {
+        margin-top: 20px;
+        display: none;
+      }
+      .player-wrap.show { display: block; }
+      .player-wrap video {
+        width: 100%;
+        max-height: 70vh;
+        border-radius: 20px;
+        background: #000;
+        outline: none;
+      }
+
+      /* ── File List ── */
+      .file-list {
+        margin-top: 20px;
+        display: none;
+      }
+      .file-list.show { display: block; }
+      .file-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-radius: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        margin-bottom: 8px;
+        transition: border-color 0.2s;
+      }
+      .file-item:hover {
+        border-color: var(--primary);
+      }
+      .file-item-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        background: color-mix(in srgb, var(--primary) 12%, transparent);
+        color: var(--primary);
+      }
+      .file-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .file-item-name {
+        font-weight: 500;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file-item-size {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .file-item-btns {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .file-item-btns .btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        border-radius: 30px;
+      }
+
+      /* ── Stats ── */
+      .stats-bar {
+        margin-top: 16px;
+        display: none;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .stats-bar.show { display: flex; }
+      .stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 30px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .stat-chip .stat-value {
+        font-weight: 600;
+        color: var(--fg);
+      }
+
+      /* ── Progress ── */
+      .progress-wrap {
+        margin-top: 12px;
+        display: none;
+      }
+      .progress-wrap.show { display: block; }
+      .progress-track {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--input);
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: var(--primary);
+        transition: width 0.3s;
+        width: 0%;
+      }
+
+      /* ── Note ── */
+      .note {
+        margin-top: 16px;
+        padding: 14px 18px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--yellow) 8%, transparent);
+        border: 1px solid color-mix(in srgb, var(--yellow) 20%, transparent);
+        font-size: 0.82rem;
+        color: var(--muted);
+        line-height: 1.5;
+        display: none;
+      }
+      .note.show { display: block; }
+      .note strong { color: var(--yellow); }
+
+      @media (max-width: 600px) {
+        .input-area { flex-direction: column; }
+        .file-item { flex-wrap: wrap; }
+        .file-item-btns { width: 100%; justify-content: flex-end; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <script src="../navbar.js"></script>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Streaming Player</h1>
+            <p class="subtitle">Streaming konten dari magnet link langsung di browser (WebTorrent).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="input-area">
+          <input type="text" id="magnet-input" placeholder="Paste magnet link di sini..." spellcheck="false" autocomplete="off" />
+          <button class="btn-stream" id="btn-stream">▶ Stream</button>
+          <button class="btn-stop" id="btn-stop" style="display:none">■ Stop</button>
+        </div>
+
+        <div class="status-bar" id="status-bar">
+          <div class="spinner"></div>
+          <span id="status-text">Menyiapkan...</span>
+        </div>
+
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        </div>
+
+        <div class="stats-bar" id="stats-bar">
+          <div class="stat-chip">⚡ Download: <span class="stat-value" id="stat-down">0 KB/s</span></div>
+          <div class="stat-chip">⬆ Upload: <span class="stat-value" id="stat-up">0 KB/s</span></div>
+          <div class="stat-chip">👥 Peers: <span class="stat-value" id="stat-peers">0</span></div>
+          <div class="stat-chip">📦 Downloaded: <span class="stat-value" id="stat-downloaded">0%</span></div>
+          <div class="stat-chip">🕐 ETA: <span class="stat-value" id="stat-eta">--</span></div>
+        </div>
+      </div>
+
+      <!-- Video Player -->
+      <div class="player-wrap" id="player-wrap">
+        <video id="video-player" controls playsinline></video>
+      </div>
+
+      <!-- File List -->
+      <div class="file-list" id="file-list"></div>
+
+      <!-- Note -->
+      <div class="note" id="note">
+        <strong>Catatan:</strong> WebTorrent menggunakan WebRTC (peer-to-peer di browser). Streaming hanya bisa terhubung ke peer yang juga menggunakan WebTorrent (bukan client BitTorrent biasa). Kecepatan tergantung jumlah peers WebTorrent yang tersedia.
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+    (function () {
+      /* ── Toast ── */
+      function showToast(msg, type) {
+        const c = document.createElement("div");
+        c.className = "toast" + (type === "error" ? " toast-error" : "");
+        c.textContent = msg;
+        document.getElementById("toast-container").appendChild(c);
+        requestAnimationFrame(() => c.classList.add("show"));
+        setTimeout(() => { c.classList.remove("show"); setTimeout(() => c.remove(), 250); }, 2200);
+      }
+
+      /* ── DOM refs ── */
+      const magnetInput = document.getElementById("magnet-input");
+      const btnStream = document.getElementById("btn-stream");
+      const btnStop = document.getElementById("btn-stop");
+      const statusBar = document.getElementById("status-bar");
+      const statusText = document.getElementById("status-text");
+      const progressWrap = document.getElementById("progress-wrap");
+      const progressFill = document.getElementById("progress-fill");
+      const statsBar = document.getElementById("stats-bar");
+      const playerWrap = document.getElementById("player-wrap");
+      const videoPlayer = document.getElementById("video-player");
+      const fileList = document.getElementById("file-list");
+      const note = document.getElementById("note");
+
+      let client = null;
+      let statsInterval = null;
+      let currentObjectURLs = [];
+
+      /* ── Helpers ── */
+      function formatBytes(b) {
+        if (b === 0) return "0 B";
+        const k = 1024;
+        const s = ["B", "KB", "MB", "GB", "TB"];
+        const i = Math.floor(Math.log(b) / Math.log(k));
+        return (b / Math.pow(k, i)).toFixed(1) + " " + s[i];
+      }
+
+      function formatSpeed(bps) {
+        return formatBytes(bps) + "/s";
+      }
+
+      function formatETA(seconds) {
+        if (!seconds || seconds === Infinity) return "--";
+        if (seconds < 60) return Math.round(seconds) + "s";
+        if (seconds < 3600) return Math.round(seconds / 60) + "m";
+        return (seconds / 3600).toFixed(1) + "h";
+      }
+
+      function isVideo(filename) {
+        return /\.(mp4|webm|mkv|avi|mov|ogg|ogv|flv|wmv|m4v)$/i.test(filename);
+      }
+
+      function isAudio(filename) {
+        return /\.(mp3|wav|flac|aac|ogg|opus|m4a|wma)$/i.test(filename);
+      }
+
+      function isSubtitle(filename) {
+        return /\.(srt|ass|ssa|vtt|sub)$/i.test(filename);
+      }
+
+      function getFileIcon(filename) {
+        if (isVideo(filename)) return "🎬";
+        if (isAudio(filename)) return "🎵";
+        if (isSubtitle(filename)) return "📝";
+        if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filename)) return "🖼️";
+        if (/\.(zip|rar|7z|tar|gz)$/i.test(filename)) return "📦";
+        if (/\.(pdf)$/i.test(filename)) return "📄";
+        return "📄";
+      }
+
+      function setStatus(text, isError) {
+        statusBar.classList.add("show");
+        statusBar.classList.toggle("error", !!isError);
+        statusText.textContent = text;
+      }
+
+      function hideStatus() {
+        statusBar.classList.remove("show");
+      }
+
+      function cleanupObjectURLs() {
+        currentObjectURLs.forEach(u => URL.revokeObjectURL(u));
+        currentObjectURLs = [];
+      }
+
+      /* ── Start streaming ── */
+      function startStream() {
+        const magnetURI = magnetInput.value.trim();
+        if (!magnetURI) {
+          showToast("Masukkan magnet link!", "error");
+          return;
+        }
+
+        if (!magnetURI.startsWith("magnet:")) {
+          showToast("Format magnet link tidak valid", "error");
+          return;
+        }
+
+        cleanupObjectURLs();
+        playerWrap.classList.remove("show");
+        fileList.classList.remove("show");
+        fileList.innerHTML = "";
+        videoPlayer.src = "";
+        statsBar.classList.remove("show");
+        progressWrap.classList.remove("show");
+        note.classList.remove("show");
+
+        btnStream.style.display = "none";
+        btnStop.style.display = "";
+        btnStream.disabled = true;
+
+        setStatus("Menyiapkan WebTorrent client...");
+
+        try {
+          client = new WebTorrent();
+        } catch (err) {
+          setStatus("Gagal inisialisasi WebTorrent: " + err.message, true);
+          btnStream.style.display = "";
+          btnStop.style.display = "none";
+          btnStream.disabled = false;
+          showToast("Error: " + err.message, "error");
+          return;
+        }
+
+        client.on("error", function (err) {
+          setStatus("Error: " + err.message, true);
+          stopStream();
+        });
+
+        setStatus("Menghubungkan ke peers...");
+
+        let torrent;
+        try {
+          torrent = client.add(magnetURI);
+        } catch (err) {
+          setStatus("Gagal memproses magnet link: " + err.message, true);
+          stopStream();
+          return;
+        }
+
+        torrent.on("ready", function () {
+          const files = torrent.files;
+          setStatus("Tersambung! " + torrent.name + " (" + files.length + " file)");
+
+          progressWrap.classList.add("show");
+          statsBar.classList.add("show");
+          note.classList.add("show");
+
+          /* ── Stats updater ── */
+          statsInterval = setInterval(function () {
+            if (!torrent) return;
+            document.getElementById("stat-down").textContent = formatSpeed(torrent.downloadSpeed);
+            document.getElementById("stat-up").textContent = formatSpeed(torrent.uploadSpeed);
+            document.getElementById("stat-peers").textContent = torrent.numPeers;
+            const pct = torrent.progress ? Math.round(torrent.progress * 100) : 0;
+            document.getElementById("stat-downloaded").textContent = pct + "%";
+            document.getElementById("stat-eta").textContent = formatETA(torrent.timeRemaining / 1000);
+            progressFill.style.width = pct + "%";
+          }, 500);
+
+          /* ── Render file list ── */
+          renderFileList(files, torrent);
+        });
+
+        torrent.on("done", function () {
+          setStatus("Download selesai! " + torrent.name);
+          progressFill.style.width = "100%";
+          if (statsInterval) clearInterval(statsInterval);
+          document.getElementById("stat-downloaded").textContent = "100%";
+          document.getElementById("stat-eta").textContent = "Selesai";
+        });
+
+        torrent.on("warning", function (err) {
+          console.warn("Torrent warning:", err);
+        });
+      }
+
+      /* ── Render file list ── */
+      function renderFileList(files, torrent) {
+        if (!files.length) {
+          fileList.classList.remove("show");
+          return;
+        }
+
+        let html = '<div class="panel-title-row" style="margin-bottom:12px"><div class="panel-title"><h2>📂 File (' + files.length + ')</h2></div></div>';
+
+        files.forEach(function (file, idx) {
+          const icon = getFileIcon(file.name);
+          const playable = isVideo(file.name) || isAudio(file.name);
+          html += '<div class="file-item">' +
+            '<div class="file-item-icon">' + icon + '</div>' +
+            '<div class="file-item-info">' +
+              '<div class="file-item-name" title="' + file.name.replace(/"/g, '&quot;') + '">' + file.name + '</div>' +
+              '<div class="file-item-size">' + formatBytes(file.length) + '</div>' +
+            '</div>' +
+            '<div class="file-item-btns">' +
+              (playable ? '<button class="btn btn-primary" data-idx="' + idx + '" data-action="play">▶ Play</button>' : '') +
+              '<button class="btn" data-idx="' + idx + '" data-action="download">⬇ Download</button>' +
+            '</div>' +
+          '</div>';
+        });
+
+        fileList.innerHTML = html;
+        fileList.classList.add("show");
+
+        /* ── Auto-play first video ── */
+        const firstVideo = files.find(function (f) { return isVideo(f.name); });
+        if (firstVideo) {
+          playFile(firstVideo);
+        }
+
+        /* ── Button handlers ── */
+        fileList.addEventListener("click", function (e) {
+          const btn = e.target.closest("[data-action]");
+          if (!btn) return;
+          const idx = parseInt(btn.dataset.idx, 10);
+          const file = files[idx];
+          if (!file) return;
+
+          if (btn.dataset.action === "play") {
+            playFile(file);
+          } else if (btn.dataset.action === "download") {
+            downloadFile(file);
+          }
+        });
+      }
+
+      /* ── Play file ── */
+      function playFile(file) {
+        setStatus("Buffering: " + file.name + "...");
+
+        file.getBuffer(function (err, buffer) {
+          if (err) {
+            showToast("Gagal buffer file: " + err.message, "error");
+            return;
+          }
+
+          const blob = new Blob([buffer]);
+          const url = URL.createObjectURL(blob);
+          currentObjectURLs.push(url);
+
+          if (isVideo(file.name) || isAudio(file.name)) {
+            videoPlayer.src = url;
+            if (isVideo(file.name)) {
+              playerWrap.classList.add("show");
+            }
+            videoPlayer.play().catch(function () {});
+            setStatus("Playing: " + file.name);
+          } else {
+            /* Non-media: trigger download */
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = file.name;
+            a.click();
+            setStatus("Downloaded: " + file.name);
+          }
+        });
+      }
+
+      /* ── Download file ── */
+      function downloadFile(file) {
+        setStatus("Mendownload: " + file.name + "...");
+        file.getBuffer(function (err, buffer) {
+          if (err) {
+            showToast("Gagal download: " + err.message, "error");
+            return;
+          }
+          const blob = new Blob([buffer]);
+          const url = URL.createObjectURL(blob);
+          currentObjectURLs.push(url);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = file.name;
+          a.click();
+          setStatus("Downloaded: " + file.name);
+          showToast(file.name + " berhasil diunduh!");
+        });
+      }
+
+      /* ── Stop streaming ── */
+      function stopStream() {
+        if (statsInterval) {
+          clearInterval(statsInterval);
+          statsInterval = null;
+        }
+        if (client) {
+          try { client.destroy(); } catch (e) {}
+          client = null;
+        }
+        cleanupObjectURLs();
+        videoPlayer.src = "";
+        playerWrap.classList.remove("show");
+        statsBar.classList.remove("show");
+        progressWrap.classList.remove("show");
+        fileList.classList.remove("show");
+        fileList.innerHTML = "";
+        note.classList.remove("show");
+        hideStatus();
+        btnStream.style.display = "";
+        btnStop.style.display = "none";
+        btnStream.disabled = false;
+      }
+
+      /* ── Event listeners ── */
+      btnStream.addEventListener("click", startStream);
+      btnStop.addEventListener("click", stopStream);
+
+      magnetInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") startStream();
+      });
+
+      /* ── Load magnet from URL hash ── */
+      (function () {
+        const hash = decodeURIComponent(location.hash.slice(1));
+        if (hash && hash.startsWith("magnet:")) {
+          magnetInput.value = hash;
+          startStream();
+        }
+      })();
+    })();
+    </script>
+    <script src="../theme-splash.js"></script>
+  </body>
+</html>

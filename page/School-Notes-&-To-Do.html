@@ -2313,38 +2313,69 @@
         let db = {};
         let currentSchoolId = null;
 
-        function loadData() {
-          try {
-            const raw = localStorage.getItem("school-notes-db");
-            if (raw) db = JSON.parse(raw);
-            // Migrasi: beri order untuk data lama
-            const keys = Object.keys(db);
-            keys.forEach((id, i) => {
-              if (db[id].order === undefined) db[id].order = i;
-            });
-          } catch (e) {
-            db = {};
+        async function loadData() {
+          if (window.electronAPI) {
+            try {
+              const result = await window.electronAPI.load();
+              if (result) {
+                db = result.db || {};
+                catOrder = result.catOrder || {};
+              }
+            } catch (e) { db = {}; catOrder = {}; }
+          } else {
+            try {
+              const raw = localStorage.getItem("school-notes-db");
+              if (raw) db = JSON.parse(raw);
+              catOrder = JSON.parse(localStorage.getItem("school-notes-catorder") || "{}");
+            } catch (e) { db = {}; catOrder = {}; }
+          }
+          // Migrasi: beri order untuk data lama
+          Object.keys(db).forEach((id, i) => {
+            if (db[id].order === undefined) db[id].order = i;
+          });
+        }
+
+        // Debounced save — coalesce rapid calls into one write
+        let _saveTimer = null;
+        function saveData() {
+          if (_saveTimer) clearTimeout(_saveTimer);
+          _saveTimer = setTimeout(() => {
+            _saveTimer = null;
+            _doSave();
+          }, 300);
+        }
+        async function _doSave() {
+          if (window.electronAPI) {
+            try { await window.electronAPI.saveState(db, catOrder); } catch (e) {}
+            updateStorageInfo();
+          } else {
+            try {
+              localStorage.setItem("school-notes-db", JSON.stringify(db));
+              localStorage.setItem("school-notes-catorder", JSON.stringify(catOrder));
+            } catch (e) {}
           }
         }
-        function saveData() {
-          try {
-            localStorage.setItem("school-notes-db", JSON.stringify(db));
-          } catch (e) {}
-          updateStorageInfo();
-        }
-        function updateStorageInfo() {
+
+        async function updateStorageInfo() {
           const el = document.getElementById("storage-info");
           if (!el) return;
-          let total = 0;
-          try {
-            for (let i = 0; i < localStorage.length; i++) {
-              const k = localStorage.key(i);
-              const v = localStorage.getItem(k);
-              total += k.length + (v ? v.length : 0);
-            }
-          } catch (e) {}
-          const mb = total / 1024 / 1024;
-          el.textContent = "Penyimpanan terpakai: " + mb.toFixed(2) + " MB";
+          if (window.electronAPI) {
+            try {
+              const info = await window.electronAPI.storageInfo();
+              el.textContent = "Penyimpanan terpakai: " + info.formatted;
+            } catch (e) {}
+          } else {
+            let total = 0;
+            try {
+              for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                const v = localStorage.getItem(k);
+                total += k.length + (v ? v.length : 0);
+              }
+            } catch (e) {}
+            const mb = total / 1024 / 1024;
+            el.textContent = "Penyimpanan terpakai: " + mb.toFixed(2) + " MB";
+          }
         }
         function generateId() {
           return Math.random().toString(36).substr(2, 9);
@@ -2352,18 +2383,6 @@
 
         // === Category Order ===
         let catOrder = {};
-        function loadCatOrder() {
-          try {
-            catOrder = JSON.parse(localStorage.getItem("school-notes-catorder") || "{}");
-          } catch (e) {
-            catOrder = {};
-          }
-        }
-        function saveCatOrder() {
-          try {
-            localStorage.setItem("school-notes-catorder", JSON.stringify(catOrder));
-          } catch (e) {}
-        }
         function formatDate(dateObj) {
           const d = dateObj.getDate().toString().padStart(2, "0");
           const m = (dateObj.getMonth() + 1).toString().padStart(2, "0");
@@ -2874,7 +2893,6 @@
               Object.keys(catOrder).forEach((k) => {
                 if (!allCats.includes(k)) delete catOrder[k];
               });
-              saveCatOrder();
               renderSchools();
               showToast("Urutan kategori diubah");
             });
@@ -2893,7 +2911,6 @@
                   delete catOrder[cat];
                 }
                 saveData();
-                saveCatOrder();
                 renderSchools();
                 showToast("Kategori diubah");
               }
@@ -3975,19 +3992,48 @@
         });
 
         // 6. Export / Import
-        document.getElementById("btn-export").addEventListener("click", () => {
-          const data = JSON.stringify({ db, catOrder }, null, 2);
-          const blob = new Blob(["﻿", data], { type: "application/json;charset=utf-8;" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "school-notes-export.json";
-          a.click();
-          URL.revokeObjectURL(url);
-          showToast("Data diexport");
+        document.getElementById("btn-export").addEventListener("click", async () => {
+          if (window.electronAPI) {
+            try {
+              const json = await window.electronAPI.exportData();
+              await window.electronAPI.saveFile(json);
+              showToast("Data diexport");
+            } catch (e) { showToast("Gagal export", "error"); }
+          } else {
+            const data = JSON.stringify({ db, catOrder }, null, 2);
+            const blob = new Blob(["﻿", data], { type: "application/json;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "school-notes-export.json";
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Data diexport");
+          }
         });
 
-        document.getElementById("btn-import-trigger").addEventListener("click", () => fileImport.click());
+        document.getElementById("btn-import-trigger").addEventListener("click", async () => {
+          if (window.electronAPI) {
+            try {
+              const json = await window.electronAPI.openFile();
+              if (!json) return;
+              const imported = JSON.parse(json);
+              if (imported.db) {
+                db = imported.db;
+                catOrder = imported.catOrder || {};
+              } else {
+                db = imported;
+              }
+              saveData();
+              showHome();
+              showToast("Data diimport");
+            } catch (err) {
+              showToast("File JSON tidak valid", "error");
+            }
+          } else {
+            fileImport.click();
+          }
+        });
         fileImport.addEventListener("change", (e) => {
           const file = e.target.files[0];
           if (!file) return;
@@ -4002,7 +4048,6 @@
                 db = imported;
               }
               saveData();
-              saveCatOrder();
               showHome();
               e.target.value = "";
               showToast("Data diimport");
@@ -4404,9 +4449,10 @@
         });
 
         // === Init ===
-        loadData();
-        loadCatOrder();
-        updateStorageInfo();
+        (async () => {
+          await loadData();
+          updateStorageInfo();
+        })();
 
         // ── Scroll: compact topbar + blur gradual ──
         // === Panel collapse — tersimpan per note ===

@@ -35,6 +35,7 @@
     { label: "HTML Report Inspector", href: "page/HTML-Report-Inspector.html", c1: "#f472b6", icon: "file-code" },
     { label: "OCR", href: "page/OCR.html", c1: "#38bdf8", icon: "scan-eye" },
     { label: "Document Scanner", href: "page/Document-Scanner.html", c1: "#34d399", icon: "scan" },
+    { label: "Streaming Player", href: "page/Streaming-Player.html", c1: "#f472b6", icon: "play-circle" },
   ];
 
   function getHidden() {
