@@ -11,6 +11,7 @@ import shutil
 import sys
 import subprocess
 import time
+import threading
 import webbrowser
 import urllib.request
 import urllib.error
@@ -381,16 +382,52 @@ class TorrentHandler(SimpleHTTPRequestHandler):
         super().handle_error(request, client_address)
 
 
+WATCH_EXTS = {".py", ".html", ".css", ".js", ".json", ".svg"}
+IGNORE = {".git", "__pycache__", "node_modules", ".claude"}
+
+
+def file_snapshots():
+    snaps = {}
+    for f in ROOT_DIR.rglob("*"):
+        if not f.is_file() or f.suffix not in WATCH_EXTS:
+            continue
+        if any(d in IGNORE for d in f.relative_to(ROOT_DIR).parts):
+            continue
+        try:
+            snaps[f.relative_to(ROOT_DIR).as_posix()] = f.stat().st_mtime
+        except OSError:
+            pass
+    return snaps
+
+
+def watcher(stop_event):
+    prev = file_snapshots()
+    while not stop_event.is_set():
+        time.sleep(1)
+        curr = file_snapshots()
+        changed = [p for p in set(curr) | set(prev) if curr.get(p) != prev.get(p)]
+        if changed:
+            print(f"  [reload] {', '.join(changed)}")
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        prev = curr
+
+
 def main():
     server = ThreadingHTTPServer(("127.0.0.1", PORT), TorrentHandler)
     print(f"Torrent Search running at http://localhost:{PORT}")
     print("Press Ctrl+C to stop.")
     if os.environ.get("TS_OPEN_BROWSER", "1") != "0":
         webbrowser.open(f"http://localhost:{PORT}")
+
+    stop = threading.Event()
+    t = threading.Thread(target=watcher, args=(stop,), daemon=True)
+    t.start()
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nStopped.")
+        stop.set()
         server.server_close()
 
 
