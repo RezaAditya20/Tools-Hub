@@ -1,11 +1,8 @@
 <!doctype html>
-<html lang="id" data-theme="dark">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      try { var t = localStorage.getItem("theme"); if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000"; } catch (e) { document.documentElement.style.background = "#000000"; }
-    </script>
 
     <link rel="stylesheet" href="shared.css" />
         <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
@@ -24,7 +21,7 @@
       .topbar-row { align-items: flex-start; }
       .panel { margin-bottom: 0; }
       .upload-area {
-        border: 2px dashed var(--border); border-radius: 30px;
+        border: 2px dashed var(--border); border-radius: 6px;
         padding: 48px 24px; text-align: center; cursor: pointer;
         transition: border-color .2s,background .2s;
         background: var(--card); margin-bottom: 24px;
@@ -37,7 +34,7 @@
       .upload-area .filename { color: var(--primary); font-weight: 600; font-size: 1rem; margin-top: 8px; }
       .upload-area input[type="file"] { display: none; }
       .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
-      .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 30px; padding: 12px 16px; flex: 1; min-width: 120px; }
+      .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; flex: 1; min-width: 120px; }
       .stat-card .label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
       .stat-card .value { font-size: 1.25rem; font-weight: 700; margin-top: 2px; }
       .grade-section { margin-bottom: 32px; }
@@ -52,17 +49,17 @@
       thead th:first-child { min-width: 140px; }
       tbody tr { border-top: 1px solid var(--border); }
       td { border-bottom: none; font-size: .75rem; }
-      .cell-copy { cursor: pointer; padding: 2px 4px; border-radius: 30px; }
+      .cell-copy { cursor: pointer; padding: 2px 4px; border-radius: 6px; }
       th .btn-primary, th .btn-success { background: transparent; border: none; color: var(--muted); padding: 2px; }
       th .btn-primary:hover:not(:disabled), th .btn-success:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 25%, transparent); color: var(--fg); border-color: transparent; }
       .search-wrap { position: sticky; z-index: 9; background: var(--bg); padding: 8px 0 4px; margin-bottom: 4px; }
       .col-highlight { background: color-mix(in srgb, var(--primary) 22%, var(--card)) !important; }
       .row-highlight { background: color-mix(in srgb, #f59e0b 28%, var(--card)) !important; outline: 1px solid #f59e0b; outline-offset: -1px; }
       #base-rekap { position: sticky; top: 8px; z-index: 10; max-height: calc(5 * 32px + 96px); }
-      #base-wrap { max-height: calc(5 * 32px + 28px); overflow-y: auto; border-radius: 30px; border: 1px solid var(--border); scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+      #base-wrap { max-height: calc(5 * 32px + 28px); overflow-y: auto; border-radius: 6px; border: 1px solid var(--border); scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
       #base-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
       #base-wrap::-webkit-scrollbar-track { background: transparent; }
-      #base-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 30px; }
+      #base-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
       #base-wrap::-webkit-scrollbar-thumb:hover { background: var(--muted); }
       #base-table { width: auto; min-width: 100%; border-collapse: collapse; }
       #base-table thead { background: var(--accent); }
@@ -96,7 +93,7 @@
         <input type="file" id="file-input" accept=".xlsx,.xls" />
       </div>
 
-      <div id="upload-note" style="display:none;text-align:center;padding:12px;margin-bottom:16px;background:var(--card);border:1px solid var(--border);border-radius: 30px;font-size:.85rem;color:var(--muted)">
+      <div id="upload-note" style="display:none;text-align:center;padding:12px;margin-bottom:16px;background:var(--card);border:1px solid var(--border);border-radius: 6px;font-size:.85rem;color:var(--muted)">
         File: <strong id="note-filename" style="color:var(--fg)"></strong> sudah dimuat. Untuk ganti file, <a href="#" onclick="location.reload()" style="color:var(--primary);text-decoration:underline;cursor:pointer">refresh halaman</a>.
       </div>
 
@@ -691,7 +688,6 @@
         return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
       }
     </script>
-      <script src="../theme-splash.js"></script>
   </body>
 </html>
 

@@ -1,11 +1,8 @@
 <!doctype html>
-<html lang="id" data-theme="dark">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      try { var t = localStorage.getItem("theme"); if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000"; } catch (e) { document.documentElement.style.background = "#000000"; }
-    </script>
 
     <link rel="stylesheet" href="shared.css" />
         <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
@@ -25,7 +22,7 @@
       /* Drop zones */
       .drop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
       .drop-zone {
-        border: 2px dashed var(--border); border-radius: 30px; padding: 32px 16px;
+        border: 2px dashed var(--border); border-radius: 6px; padding: 32px 16px;
         text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.2s;
         background: var(--input);
       }
@@ -55,7 +52,7 @@
         display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
       }
       .stat-card {
-        background: var(--input); border: 1px solid var(--border); border-radius: 30px;
+        background: var(--input); border: 1px solid var(--border); border-radius: 6px;
         padding: 12px 16px; flex: 1; min-width: 120px; text-align: center;
       }
       .stat-card .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
@@ -74,7 +71,7 @@
       td.col-val.val-self { background: rgba(239, 68, 68, 0.06); }
       td.col-val.val-other { background: rgba(34, 197, 94, 0.06); }
       td.col-status { width: 60px; text-align: center; font-weight: 600; }
-      .badge { border-radius: 30px; }
+      .badge { border-radius: 6px; }
       .badge.diff { background: rgba(239,68,68,0.15); color: #ef4444; }
       .badge.only-a { background: rgba(251,191,36,0.15); color: #f59e0b; }
       .badge.only-b { background: rgba(99,102,241,0.15); color: #818cf8; }
@@ -84,7 +81,7 @@
       .loading.active { display: block; }
       .spinner {
         width: 32px; height: 32px; border: 3px solid var(--border);
-        border-top-color: var(--primary); border-radius: 30px;
+        border-top-color: var(--primary); border-radius: 6px;
         animation: spin 0.6s linear infinite; margin: 0 auto 8px;
       }
       @keyframes spin { to { transform: rotate(360deg); } }
@@ -95,7 +92,7 @@
       /* Filter tabs */
       .filter-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
       .filter-tab {
-        padding: 4px 12px; border-radius: 30px; border: 1px solid var(--border);
+        padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border);
         background: var(--bg); color: var(--muted); font-size: 0.75rem; font-weight: 500;
         cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
       }
@@ -105,7 +102,7 @@
       /* Base data */
       #base-rekap {
         margin-bottom: 16px; background: var(--card);
-        border: 1px solid var(--border); border-radius: 30px;
+        border: 1px solid var(--border); border-radius: 6px;
         padding: 16px;
       }
       #base-rekap .base-header {
@@ -114,19 +111,19 @@
       }
       #base-rekap .base-header span { font-weight: 600; font-size: 0.85rem; }
       #base-toggle {
-        font-size: 0.65rem; padding: 1px 8px; border-radius: 30px;
+        font-size: 0.65rem; padding: 1px 8px; border-radius: 6px;
         background: var(--accent); border: 1px solid var(--border);
         color: var(--muted); cursor: pointer;
       }
       #base-toggle:hover { color: var(--fg); }
       #base-wrap {
-        max-height: 250px; overflow: auto; border-radius: 30px;
+        max-height: 250px; overflow: auto; border-radius: 6px;
         border: 1px solid var(--border);
         scrollbar-width: thin; scrollbar-color: var(--border) transparent;
       }
       #base-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
       #base-wrap::-webkit-scrollbar-track { background: transparent; }
-      #base-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 30px; }
+      #base-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
       #base-table { width: auto; min-width: 100%; border-collapse: collapse; font-size: 0.75rem; }
       #base-table thead { background: var(--accent); }
       #base-table thead th { padding: 6px 10px; font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
@@ -224,7 +221,7 @@
             <div class="base-header">
               <span>Base Data</span>
               <div style="display:flex;gap:6px;align-items:center">
-                <select id="base-file-sel" style="padding:2px 6px;border-radius: 30px;border:1px solid var(--border);background:var(--input);color:var(--fg);font-size:0.7rem"></select>
+                <select id="base-file-sel" style="padding:2px 6px;border-radius: 6px;border:1px solid var(--border);background:var(--input);color:var(--fg);font-size:0.7rem"></select>
                 <button id="base-toggle">Sembunyikan</button>
               </div>
             </div>
@@ -407,7 +404,7 @@
 
       // Create tooltip
       const baseTooltip = document.createElement("div");
-      baseTooltip.style.cssText = "display:none;position:fixed;z-index:1000;padding:8px 12px;border-radius: 30px;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.2);font-size:0.75rem;max-width:400px;pointer-events:none;color:var(--fg);";
+      baseTooltip.style.cssText = "display:none;position:fixed;z-index:1000;padding:8px 12px;border-radius: 6px;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.2);font-size:0.75rem;max-width:400px;pointer-events:none;color:var(--fg);";
       document.body.appendChild(baseTooltip);
 
       document.getElementById("base-body").addEventListener("mouseover", e=>{
@@ -601,7 +598,7 @@
       function showToast(msg, type){
         const bg = type==="error" ? "rgba(239,68,68,0.95)" : "rgba(34,197,94,0.95)";
         const c = document.createElement("div");
-        c.style.cssText = `position:fixed;right:16px;bottom:16px;z-index:1000;max-width:min(320px,100%);padding:12px 14px;border-radius: 30px;background:${bg};color:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.2);font-size:0.875rem;font-weight:500;opacity:0;transform:translateY(8px);transition:opacity 0.2s,transform 0.2s;`;
+        c.style.cssText = `position:fixed;right:16px;bottom:16px;z-index:1000;max-width:min(320px,100%);padding:12px 14px;border-radius: 6px;background:${bg};color:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.2);font-size:0.875rem;font-weight:500;opacity:0;transform:translateY(8px);transition:opacity 0.2s,transform 0.2s;`;
         c.textContent = msg;
         document.body.appendChild(c);
         requestAnimationFrame(()=>{ c.style.opacity="1"; c.style.transform="translateY(0)"; });
@@ -609,6 +606,5 @@
       }
     })();
     </script>
-      <script src="../theme-splash.js"></script>
   </body>
 </html>

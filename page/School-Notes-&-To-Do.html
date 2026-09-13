@@ -1,18 +1,8 @@
 <!doctype html>
-<html lang="id" data-theme="dark">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      try {
-        var t = localStorage.getItem("theme");
-        if (t !== "light" && t !== "dark") t = "dark";
-        document.documentElement.setAttribute("data-theme", t);
-        document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000";
-      } catch (e) {
-        document.documentElement.style.background = "#000000";
-      }
-    </script>
 
     <link rel="stylesheet" href="shared.css" />
     <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
@@ -67,7 +57,7 @@
         --color-primary: var(--muted);
         --color-secondary: var(--card);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: var(--liquid-shadow);
+        box-shadow: none;
       }
       .topbar-actions {
         display: flex;
@@ -205,7 +195,7 @@
         background: color-mix(in srgb, var(--primary) 15%, transparent);
         color: var(--primary);
         padding: 2px 8px;
-        border-radius: 30px;
+        border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 600;
       }
@@ -296,7 +286,7 @@
         font-size: 0.72rem;
         color: var(--muted);
         background: color-mix(in srgb, var(--input) 80%, var(--bg));
-        border-radius: 30px;
+        border-radius: 6px;
         padding: 1px 8px;
       }
       .btn-col-add {
@@ -308,7 +298,7 @@
         width: 24px;
         height: 24px;
         padding: 0;
-        border-radius: 30px;
+        border-radius: 6px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -353,7 +343,7 @@
       }
       .note-card.row-clickable:hover {
         border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
-        box-shadow: var(--shadow-lg);
+        box-shadow: none;
       }
       .note-card.row-clickable:hover .note-title {
         color: var(--primary);
@@ -467,7 +457,7 @@
       .modal-reason-badge {
         flex-shrink: 0;
         padding: 1px 7px;
-        border-radius: 30px;
+        border-radius: 6px;
         font-size: 0.66rem;
         font-weight: 600;
         background: rgba(249, 115, 22, 0.15);
@@ -592,7 +582,7 @@
         border: 1px solid var(--border);
         border-radius: 10px;
         padding: 6px;
-        box-shadow: var(--shadow-lg);
+        box-shadow: none;
       }
       .progress-pop .progress-edit {
         font-size: 0.8rem;
@@ -675,21 +665,23 @@
       }
 
       /* Button hover states - light mode */
-      [data-theme="light"] .btn-export-note:hover,
-      [data-theme="light"] .btn-rename-note:hover {
-        color: #000 !important;
-      }
-      [data-theme="light"] .btn-icon {
-        color: #000;
-      }
-      [data-theme="light"] .btn-icon:hover:not(:disabled) {
-        color: #fff;
-        background: var(--muted);
-      }
-      [data-theme="light"] #btn-rename-school:hover,
-      [data-theme="light"] #btn-set-pin:hover {
-        color: #fff;
-        background: var(--muted);
+      @media (prefers-color-scheme: light) {
+        .btn-export-note:hover,
+        .btn-rename-note:hover {
+          color: #000 !important;
+        }
+        .btn-icon {
+          color: #000;
+        }
+        .btn-icon:hover:not(:disabled) {
+          color: #fff;
+          background: var(--muted);
+        }
+        #btn-rename-school:hover,
+        #btn-set-pin:hover {
+          color: #fff;
+          background: var(--muted);
+        }
       }
 
       /* Col widths */
@@ -756,7 +748,7 @@
         font-size: 0.75rem;
         font-weight: 500;
         padding: 2px 6px;
-        border-radius: 30px;
+        border-radius: 6px;
         border: 1px solid var(--border);
         background: var(--input);
         color: var(--fg);
@@ -774,7 +766,7 @@
       .pb-count {
         display: inline-block;
         padding: 2px 8px;
-        border-radius: 30px;
+        border-radius: 6px;
         background: color-mix(in srgb, var(--primary) 15%, transparent);
         color: var(--primary);
         white-space: nowrap;
@@ -787,7 +779,7 @@
       .pb-prog {
         display: inline-block;
         padding: 2px 8px;
-        border-radius: 30px;
+        border-radius: 6px;
         background: color-mix(in srgb, var(--primary) 15%, transparent);
         color: var(--primary);
         white-space: nowrap;
@@ -809,7 +801,7 @@
       .pb-solo {
         display: inline-block;
         padding: 2px 8px;
-        border-radius: 30px;
+        border-radius: 6px;
         background: color-mix(in srgb, var(--primary) 15%, transparent);
         color: var(--primary);
         white-space: nowrap;
@@ -822,7 +814,7 @@
         width: 100%;
         padding: 2px 6px;
         border: 1px solid var(--primary);
-        border-radius: 30px;
+        border-radius: 6px;
         background: var(--input);
         color: var(--fg);
         font-size: 0.75rem;
@@ -868,7 +860,7 @@
         width: 26px;
         height: 26px;
         padding: 0;
-        border-radius: 30px;
+        border-radius: 6px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -894,9 +886,9 @@
         gap: 2px;
         background: var(--card);
         border: 1px;
-        border-radius: 30px;
+        border-radius: 6px;
         padding: 4px;
-        box-shadow: var(--shadow-lg);
+        box-shadow: none;
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -931,7 +923,7 @@
           pointer-events: auto;
           background: transparent;
           border: none;
-          border-radius: 30px;
+          border-radius: 6px;
           padding: 0;
           box-shadow: none;
           gap: 0;
@@ -951,7 +943,7 @@
         width: 26px;
         height: 26px;
         padding: 0;
-        border-radius: 30px;
+        border-radius: 6px;
         font-size: 0.8rem;
         line-height: 1;
         transition:
@@ -1009,7 +1001,7 @@
         color: #fff;
         cursor: pointer;
         padding: 8px;
-        border-radius: 30px;
+        border-radius: 6px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1066,7 +1058,7 @@
       /* Panel-header buttons — override shared.css pill style */
       .panel-header .btn {
         padding: 6px 14px;
-        border-radius: 30px;
+        border-radius: 6px;
         font-size: 0.8125rem;
         font-weight: 500;
         letter-spacing: -0.01em;
@@ -1137,13 +1129,11 @@
         overflow: hidden;
       }
       .glass-panel {
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid var(--border) !important;
         background: var(--card) !important;
-        backdrop-filter: saturate(180%) blur(20px);
-        -webkit-backdrop-filter: saturate(180%) blur(20px);
         padding: 10px !important;
-        box-shadow: var(--liquid-shadow);
-        border-radius: 12px;
+        box-shadow: none;
+        border-radius: 8px;
       }
       .liquid-in-panel {
         background: color-mix(in srgb, var(--bg) 92%, var(--fg)) !important;
@@ -1353,7 +1343,7 @@
         margin-bottom: 8px;
         cursor: grab;
         user-select: none;
-        border-radius: 30px;
+        border-radius: 6px;
         transition: background 0.15s;
       }
       .category-header:hover {
@@ -1384,7 +1374,7 @@
       .category-badge {
         font-size: 0.7rem;
         padding: 2px 8px;
-        border-radius: 30px;
+        border-radius: 6px;
         background: color-mix(in srgb, var(--primary) 12%, transparent);
         color: var(--primary);
         font-weight: 600;
@@ -1434,7 +1424,7 @@
       .recent-badge-arrow {
         width: 24px;
         height: 24px;
-        border-radius: 30px;
+        border-radius: 6px;
         border: 1px solid var(--border);
         background: var(--input);
         color: var(--muted);
@@ -1459,7 +1449,7 @@
         align-items: center;
         gap: 5px;
         padding: 5px 10px;
-        border-radius: 30px;
+        border-radius: 6px;
         border: 1px solid var(--border);
         background: var(--input);
         cursor: pointer;
@@ -1531,7 +1521,7 @@
         cursor: pointer;
         font-size: 0.75rem;
         padding: 2px 4px;
-        border-radius: 30px;
+        border-radius: 6px;
         opacity: 0;
         transition:
           opacity 0.2s,
@@ -1615,7 +1605,7 @@
         left: 9px;
         width: 5px;
         height: 5px;
-        border-radius: 30px;
+        border-radius: 6px;
         background: var(--border);
         transform: translateY(-50%);
       }
@@ -1626,7 +1616,7 @@
         padding: 8px 12px;
         background: color-mix(in srgb, var(--bg) 92%, var(--fg));
         border: none;
-        border-radius: 30px;
+        border-radius: 6px;
         cursor: default;
         transition:
           background 0.15s,
@@ -1658,7 +1648,7 @@
         font-size: 1.1rem;
         line-height: 1;
         user-select: none;
-        border-radius: 30px;
+        border-radius: 6px;
         transition: color 0.15s;
       }
       .task-item .drag-handle:active {
@@ -1669,7 +1659,7 @@
         font-size: 0.875rem;
         word-break: break-word;
         padding: 2px 4px;
-        border-radius: 30px;
+        border-radius: 6px;
         cursor: pointer;
         transition: background 0.15s;
       }
@@ -1723,7 +1713,7 @@
         color: var(--muted);
         cursor: pointer;
         padding: 4px;
-        border-radius: 30px;
+        border-radius: 6px;
         font-size: 0.8rem;
         line-height: 1;
         transition:
@@ -1756,7 +1746,7 @@
         display: inline-flex;
         align-items: center;
         padding: 2px 8px;
-        border-radius: 30px;
+        border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 500;
         cursor: pointer;
@@ -1795,7 +1785,7 @@
         width: 120px;
         padding: 2px 6px;
         border: 1px solid var(--primary);
-        border-radius: 30px;
+        border-radius: 6px;
         background: var(--input);
         color: var(--fg);
         font-size: 0.75rem;
@@ -1824,12 +1814,12 @@
         background: var(--card);
         color: var(--fg);
         border: 1px solid transparent;
-        border-radius: 30px;
+        border-radius: 6px;
         padding: 24px 28px;
         max-width: 380px;
         width: 90%;
         text-align: center;
-        box-shadow: var(--shadow-lg);
+        box-shadow: none;
         animation: confirm-pop-in 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
       .pin-box p {
@@ -1849,7 +1839,7 @@
         text-align: center;
         font-size: 1.25rem;
         font-weight: 700;
-        border-radius: 30px;
+        border-radius: 6px;
         border: 1.5px solid transparent;
         background: color-mix(in srgb, var(--bg) 92%, var(--fg));
         color: var(--fg);
@@ -1918,11 +1908,11 @@
         background: var(--card);
         color: var(--fg);
         border: 1px solid var(--border);
-        border-radius: 30px;
+        border-radius: 6px;
         padding: 24px 28px;
         max-width: 440px;
         width: 92%;
-        box-shadow: var(--shadow-lg);
+        box-shadow: none;
         animation: confirm-pop-in 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
 
@@ -2179,41 +2169,41 @@
       <div class="shortcut-box">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
           <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg)">Keyboard Shortcuts - Deskripsi</h3>
-          <button id="shortcut-close" style="background: transparent; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 30px; transition: background 0.2s; color: var(--fg)">✕</button>
+          <button id="shortcut-close" style="background: transparent; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--fg)">✕</button>
         </div>
         <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse">
           <tbody>
             <tr style="border-bottom: 1px solid var(--border)">
               <td style="padding: 8px 0; color: var(--muted)">Auto-close pasangan</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">{ [ ( ` ' "</code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">{ [ ( ` ' "</code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
               <td style="padding: 8px 0; color: var(--muted)">Hapus pasangan kosong</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Backspace</code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">Backspace</code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
               <td style="padding: 8px 0; color: var(--muted)">Enter - auto lanjut list</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Enter</code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">Enter</code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
               <td style="padding: 8px 0; color: var(--muted)">Tab → sub item berdot</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Tab</code> di <code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">- </code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">Tab</code> di <code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">- </code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
               <td style="padding: 8px 0; color: var(--muted)">Duplikat baris ke bawah</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Shift + Alt + ↓</code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">Shift + Alt + ↓</code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
               <td style="padding: 8px 0; color: var(--muted)">Duplikat baris ke atas</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Shift + Alt + ↑</code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">Shift + Alt + ↑</code></td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border)">
               <td style="padding: 8px 0; color: var(--muted)">Pindah baris ke bawah</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Alt + ↓</code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">Alt + ↓</code></td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: var(--muted)">Pindah baris ke atas</td>
-              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 30px; font-size: 0.75rem">Alt + ↑</code></td>
+              <td style="padding: 8px 0; text-align: right"><code style="background: var(--input); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem">Alt + ↑</code></td>
             </tr>
           </tbody>
         </table>
@@ -2260,7 +2250,7 @@
       <div class="shortcut-box" style="max-width: 520px">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
           <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg)">Crop & OCR</h3>
-          <button id="ocr-close" style="background: transparent; border: none; color: var(--fg); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 30px">✕</button>
+          <button id="ocr-close" style="background: transparent; border: none; color: var(--fg); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px">✕</button>
         </div>
         <div id="ocr-stage" style="position: relative; display: inline-block; max-width: 100%; line-height: 0">
           <img id="ocr-img" style="display: block; max-width: 100%; max-height: 60vh; border-radius: 12px; user-select: none" draggable="false" />
@@ -3252,7 +3242,7 @@
           const cls = statusClass(progStr);
           const col = statusColor(progStr);
           const label = progStr || "Pending";
-          const badgeStyle = `padding:2px 8px;border-radius: 30px;font-size:0.75rem;font-weight:500;background:${col.bg};color:${col.fg}`;
+          const badgeStyle = `padding:2px 8px;border-radius: 6px;font-size:0.75rem;font-weight:500;background:${col.bg};color:${col.fg}`;
           const holdTip = (progStr || "").toLowerCase() === "on hold" && (n.onHoldReason || "").trim()
             ? ' title="On Hold: ' + escapeHtml(n.onHoldReason) + '"'
             : "";
@@ -4965,6 +4955,5 @@
         showHome();
       })();
     </script>
-    <script src="../theme-splash.js"></script>
   </body>
 </html>

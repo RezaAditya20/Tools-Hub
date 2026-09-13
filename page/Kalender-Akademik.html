@@ -1,11 +1,8 @@
 <!doctype html>
-<html lang="id" data-theme="dark">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      try { var t = localStorage.getItem("theme"); if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000"; } catch (e) { document.documentElement.style.background = "#000000"; }
-    </script>
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -124,7 +121,7 @@
         width: 100%;
         padding: 4px 6px;
         border: 1px solid transparent;
-        border-radius: 30px;
+        border-radius: 6px;
         background: transparent;
         color: var(--fg);
         font-size: 0.8125rem;
@@ -156,7 +153,7 @@
         font-size: 0.75rem;
         cursor: pointer;
         padding: 4px 6px;
-        border-radius: 30px;
+        border-radius: 6px;
         border: 1px solid transparent;
         transition:
           border-color 0.15s,
@@ -200,7 +197,7 @@
         padding: 4px 6px;
         padding-right: 18px;
         border: 1px solid transparent;
-        border-radius: 30px;
+        border-radius: 6px;
         background-color: transparent;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
@@ -251,7 +248,7 @@
       .modal {
         background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 30px;
+        border-radius: 8px;
         padding: 20px;
         width: 100%;
         max-width: 900px;
@@ -1160,7 +1157,7 @@
                 '<td class="pdate-cell" data-dmy="' + fmtDmy(rightDate) + '" style="white-space: nowrap; vertical-align: middle; cursor: pointer; padding: 1px 0">' + fmtPeriodeDateShort(rightDate) + '</td></tr>' +
                 '<tr><td style="white-space: nowrap; vertical-align: middle; padding: 1px 0">' + p.prevTitles.join(", ") + '</td>' +
                 '<td style="padding: 0 8px; color: var(--muted); text-align: center; vertical-align: middle">→</td>' +
-                '<td style="white-space: nowrap; vertical-align: middle; padding: 1px 0">' + p.titles.join(", ") + ' <span style="font-size: 0.625rem; background: rgba(59,130,246,0.15); color: var(--primary); padding: 1px 6px; border-radius: 30px; font-weight: 600; vertical-align: middle; margin-left: 4px">Saat Ini</span></td></tr></table>';
+                '<td style="white-space: nowrap; vertical-align: middle; padding: 1px 0">' + p.titles.join(", ") + ' <span style="font-size: 0.625rem; background: rgba(59,130,246,0.15); color: var(--primary); padding: 1px 6px; border-radius: 6px; font-weight: 600; vertical-align: middle; margin-left: 4px">Saat Ini</span></td></tr></table>';
             } else {
               rightHtml = '<div style="font-size: 0.6875rem; color: var(--muted)">' + p.titles.join(", ") + '</div>';
             }
@@ -1208,6 +1205,5 @@
       })();
     </script>
     </div>
-      <script src="../theme-splash.js"></script>
   </body>
 </html>

@@ -1,11 +1,8 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      try { var t = localStorage.getItem("theme"); if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); document.documentElement.style.background = t === "light" ? "#f5f5f7" : "#000000"; } catch (e) { document.documentElement.style.background = "#000000"; }
-    </script>
 
     <link rel="stylesheet" href="shared.css" />
         <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
@@ -21,7 +18,7 @@
       .topbar-row { align-items: flex-start; }
       .dropzone {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 48px 24px; border: 2px dashed var(--border); border-radius: 30px;
+        padding: 48px 24px; border: 2px dashed var(--border); border-radius: 6px;
         background: var(--card); cursor: pointer; transition: all 0.3s;
       }
       .dropzone:hover, .dropzone.dragover {
@@ -35,7 +32,7 @@
       .def-list { display: flex; flex-direction: column; gap: 2px; }
       .def-row {
         display: flex; align-items: center; gap: 12px;
-        padding: 10px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 30px;
+        padding: 10px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 6px;
         background: var(--card); transition: all 0.15s;
       }
       .def-row:hover { border-color: var(--primary); background: var(--row-hover); }
@@ -49,7 +46,7 @@
       .def-row-args:empty { display: none; }
       .def-row-meta {
         font-size: 0.6875rem; color: var(--muted); background: var(--code-bg);
-        padding: 2px 8px; border-radius: 30px; white-space: nowrap;
+        padding: 2px 8px; border-radius: 6px; white-space: nowrap;
       }
 
       /* ═══════ FUNC DETAIL ═══════ */
@@ -57,7 +54,7 @@
         display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0;
       }
       .var-chip-btn {
-        font-size: 0.75rem; padding: 4px 10px; border-radius: 30px;
+        font-size: 0.75rem; padding: 4px 10px; border-radius: 6px;
         border: 1px solid var(--border); background: var(--card); color: var(--fg);
         cursor: pointer; transition: all 0.15s;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -67,22 +64,22 @@
         background: var(--primary); color: var(--primary-fg); border-color: var(--primary);
       }
       .code-block {
-        background: var(--bg); padding: 15px; border-radius: 30px;
+        background: var(--bg); padding: 15px; border-radius: 6px;
         border: 1px solid var(--border); overflow-x: auto;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         font-size: 0.8125rem; color: var(--fg); white-space: pre; line-height: 1.4;
       }
       .code-block.filtered { line-height: 0.7; }
       .line-number { color: var(--muted); margin-right: 12px; user-select: none; }
-      .highlight { background: rgba(6, 182, 212, 0.25); border-radius: 30px; }
-      .highlight-search { background: rgba(234, 179, 8, 0.3); border-radius: 30px; }
-      .code-row { border-radius: 30px; }
+      .highlight { background: rgba(6, 182, 212, 0.25); border-radius: 6px; }
+      .highlight-search { background: rgba(234, 179, 8, 0.3); border-radius: 6px; }
+      .code-row { border-radius: 6px; }
       .code-row.line-def { background: rgba(59, 130, 246, 0.08); }
       .code-row.line-use { background: rgba(34, 197, 94, 0.08); }
       .code-row.line-both { background: rgba(168, 85, 247, 0.08); }
       .line-tag {
         display: inline-block; margin-left: 6px; font-size: 0.6rem; font-weight: 600;
-        padding: 0 4px; border-radius: 30px; line-height: 1.4; vertical-align: middle;
+        padding: 0 4px; border-radius: 6px; line-height: 1.4; vertical-align: middle;
       }
       .line-tag-def { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
       .line-tag-use { background: rgba(34, 197, 94, 0.15); color: var(--success); }
@@ -94,7 +91,7 @@
       .code-nav-fixed {
         position: fixed; right: 24px; bottom: 24px; z-index: 100;
         display: flex; flex-direction: column; gap: 4px; align-items: center;
-        background: var(--card); border: 1px solid var(--border); border-radius: 30px;
+        background: var(--card); border: 1px solid var(--border); border-radius: 6px;
         padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       }
       .code-nav-fixed button {
@@ -567,6 +564,5 @@ json.dumps(result)
         codeEl.innerHTML = html || "<span style='color:var(--muted);'>Tidak ada penggunaan</span>";
       }
     </script>
-      <script src="../theme-splash.js"></script>
   </body>
 </html>
