@@ -14,11 +14,13 @@ import time
 import webbrowser
 import urllib.request
 import urllib.error
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, quote as url_quote
-from engines import ALL_ENGINES, TorrentResult
 from typing import List
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from engines import ALL_ENGINES
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -28,7 +30,7 @@ logging.basicConfig(
 log = logging.getLogger("torrent-search")
 
 PORT = 8420
-HUB_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+HUB_ROOT = ROOT_DIR
 INDEX_FILE = os.path.join(HUB_ROOT, "index.html")
 TORRENT_FILE = os.path.join(HUB_ROOT, "page", "Torrent-Search.html")
 
@@ -53,6 +55,12 @@ def _normalize_tmdb_images(item: dict) -> None:
 
 class TorrentHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        try:
+            self._do_GET()
+        except (ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
+
+    def _do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
 
@@ -74,6 +82,12 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             self._serve_static(path)
 
     def do_POST(self):
+        try:
+            self._do_POST()
+        except (ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
+
+    def _do_POST(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
         if path == "/api/torrserver":
@@ -100,14 +114,14 @@ class TorrentHandler(SimpleHTTPRequestHandler):
 
     # MIME types for static files
     MIME = {
-        ".css": "text/css", ".js": "application/javascript", ".json": "application/json",
-        ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml",
-        ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf",
-        ".ico": "image/x-icon",
+        ".html": "text/html", ".css": "text/css", ".js": "application/javascript",
+        ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg",
+        ".svg": "image/svg+xml", ".woff2": "font/woff2", ".woff": "font/woff",
+        ".ttf": "font/ttf", ".ico": "image/x-icon",
     }
 
     def _serve_static(self, path):
-        """Serve static files from the Hub root directory."""
+        """Serve static files from hub root."""
         safe = path.lstrip("/")
         if ".." in safe:
             self.send_error(403)
@@ -359,9 +373,16 @@ class TorrentHandler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
+    def handle_error(self, request, client_address):
+        import traceback
+        tb = traceback.format_exc()
+        if "10053" in tb or "ConnectionAbortedError" in tb or "BrokenPipeError" in tb:
+            return
+        super().handle_error(request, client_address)
+
 
 def main():
-    server = HTTPServer(("127.0.0.1", PORT), TorrentHandler)
+    server = ThreadingHTTPServer(("127.0.0.1", PORT), TorrentHandler)
     print(f"Torrent Search running at http://localhost:{PORT}")
     print("Press Ctrl+C to stop.")
     if os.environ.get("TS_OPEN_BROWSER", "1") != "0":
