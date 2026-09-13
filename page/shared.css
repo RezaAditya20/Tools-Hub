@@ -88,11 +88,11 @@ body {
 
 /* ═══════════════════════════ 3. TYPOGRAPHY ═══════════════════════════ */
 h1 {
-    font-size: clamp(1.6rem, 6vw, 1.9rem);
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 600;
     margin: 0;
-    letter-spacing: -0.03em;
-    line-height: 1.08;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
 }
 
 .topbar h1, .topbar h2 {
@@ -125,15 +125,13 @@ h1 {
         transform: translateX(0);
     }
 }
-    background-size: 200% 200%;
-}
 
 .subtitle {
     color: var(--muted);
-    font-size: 0.9375rem;
-    margin: 2px 0 0;
+    font-size: 0.875rem;
+    margin: 4px 0 0;
     letter-spacing: -0.01em;
-    line-height: 1.47059;
+    line-height: 1.4;
 }
 
 select.filter-sel {
@@ -161,7 +159,7 @@ code {
 /* ═══════════════════════════ 4. LAYOUT ═══════════════════════════ */
 .container {
     margin: 0 auto;
-    padding: 48px 16px 48px 24px;
+    padding: 24px 16px;
     transition: all 0.3s;
 }
 
@@ -171,11 +169,11 @@ code {
     justify-content: space-between;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 28px !important;
+    margin-bottom: 24px;
     position: sticky;
     top: 0;
     z-index: 100;
-    padding: 16px 0 12px;
+    padding: 8px 0;
     background: var(--bg);
 }
 
@@ -224,8 +222,7 @@ code {
     .topbar {
         position: sticky;
         top: 0;
-        padding-top: 10px;
-        margin-bottom: 0px !important;
+        padding-top: 8px;
         padding-left: 40px;
     }
 }
@@ -234,7 +231,7 @@ code {
 .panel-group {
     display: flex;
     flex-direction: column;
-    /* margin-bottom: 24px; */
+    gap: 16px;
 }
 
 .panel {
@@ -242,7 +239,7 @@ code {
     border-radius: 8px;
     border: 1px solid var(--border);
     padding: 16px;
-    margin-bottom: 16px;
+    margin: 0;
 }
 
 .panel-header {
@@ -251,14 +248,14 @@ code {
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .panel-header h2 {
-    font-size: 1.25rem;
+    font-size: 1rem;
     margin: 0;
     font-weight: 600;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.015em;
 }
 
 .panel-title {
@@ -269,16 +266,17 @@ code {
 .panel-title h2 {
     min-width: 0;
     overflow-wrap: anywhere;
-    font-size: 1.25rem;
+    font-size: 1rem;
     margin: 0;
     font-weight: 600;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.015em;
 }
 
 .panel-title p {
     font-size: 0.8125rem;
     color: var(--muted);
-    margin: 6px 0 0;
+    margin: 4px 0 0;
+    line-height: 1.4;
 }
 
 .panel-title-row {
@@ -287,16 +285,16 @@ code {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
 }
 
 .panel-title-row h2 {
     min-width: 0;
     overflow-wrap: anywhere;
-    font-size: 1.25rem;
+    font-size: 1rem;
     margin: 0;
     font-weight: 600;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.015em;
 }
 
 .panel-meta {
@@ -1656,12 +1654,7 @@ textarea {
 
     body:has(#navbar) .container {
         margin-left: 0;
-        padding-top: 58px;
-    }
-
-    /* netralkan padding 58px agar topbar langsung di top:0 (gak geser pas scroll) */
-    body:has(#navbar) .topbar {
-        margin-top: -58px;
+        padding-top: 16px;
     }
 
     .navbar.open ~ .container {
@@ -1678,6 +1671,7 @@ body:has(#navbar) .container {
     body:has(#navbar) .container {
         padding-left: 244px;
         padding-top: 24px;
+        padding-bottom: 24px;
         margin: 0 auto;
     }
 
