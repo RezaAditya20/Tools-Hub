@@ -606,9 +606,19 @@
         td.name { max-width: 160px; }
         table { font-size: 0.75rem; }
       }
+
+      /* ── Offset untuk shared sidebar navbar (konsisten dgn page lain: 220px sidebar + 24px gap) ── */
+      @media (min-width: 1049px) {
+        body:has(#navbar) { padding-left: 244px; }
+        body:has(#navbar) .topnav { left: 244px; }
+        body:has(#navbar) .topnav.solid { left: calc(244px + 2%); }
+        body:has(#navbar) .top-gradient { left: 244px; }
+      }
     </style>
   </head>
   <body>
+    <div id="navbar"></div>
+    <script src="../navbar.js"></script>
     <!-- Top nav -->
     <nav class="topnav" id="topnav">
       <div class="brand"><i class="fa-solid fa-magnifying-glass"></i> TorrentSearch</div>
