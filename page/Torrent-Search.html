@@ -49,15 +49,30 @@
         line-height: 1.4;
       }
 
+      /* ── Top gradient overlay ── */
+      .top-gradient {
+        position: fixed; top: 0; left: 0; right: 0; height: 100px; z-index: 99;
+        pointer-events: none;
+      }
+      .top-gradient::before {
+        content: ""; position: absolute; inset: 0;
+        background: linear-gradient(180deg, var(--bg), transparent);
+      }
+
       /* ── Top nav ── */
       .topnav {
         position: fixed; top: 0; left: 0; right: 0; z-index: 100;
         display: flex; align-items: center; gap: 16px;
         padding: 12px 24px;
         background: linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0));
-        transition: background 0.3s;
+        transition: background 0.3s, border-radius 0.3s, top 0.3s, left 0.3s, transform 0.3s, width 0.3s, box-shadow 0.3s, padding 0.3s;
       }
-      .topnav.solid { background: var(--bg); border-bottom: 1px solid var(--border); }
+      .topnav.solid {
+        background: var(--card-bg);
+        border-radius: 16px; top: 20px; left: 2%; right: 2%; width: auto;
+        box-shadow: 0 0 0 0.5px var(--border), 0 8px 32px rgba(0,0,0,0.4);
+        padding: 6px 12px; gap: 8px;
+      }
       .topnav .brand {
         font-weight: 800; font-size: 1.25rem; letter-spacing: -0.5px;
         color: var(--accent); display: flex; align-items: center; gap: 8px;
@@ -610,6 +625,7 @@
         <span class="icon-moon" style="display:none"><i class="fa-solid fa-moon"></i></span>
       </button>
     </nav>
+    <div class="top-gradient"></div>
 
     <!-- Hero (featured from trending) -->
     <section class="hero" id="hero">
