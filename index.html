@@ -515,6 +515,15 @@
             category: "🎬 Media & Streaming",
             icon: '<circle cx="24" cy="24" r="16" fill="#fce7f3"/><polygon points="20,16 34,24 20,32" fill="#ec4899"/>',
           },
+          /* ── 🔍 Search & Download ── */
+          {
+            href: "page/Torrent-Search.html",
+            title: "Torrent Search",
+            desc: "Cari torrent dari 12 engine sekaligus (perlu server Python)",
+            c1: "#38bdf8",
+            category: "🔍 Search & Download",
+            icon: '<circle cx="24" cy="24" r="16" fill="#e0f2fe"/><circle cx="22" cy="22" r="7" fill="none" stroke="#0ea5e9" stroke-width="2.5"/><line x1="27" y1="27" x2="34" y2="34" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round"/>',
+          },
         ];
 
         const grid = document.getElementById("grid");
@@ -560,7 +569,7 @@
         }
 
         // ── Render ──
-        const CAT_ORDER = ["📊 Data & Comparison", "📄 Documents & OCR", "🎓 Academic", "🛠️ Utilities", "🎬 Media & Streaming"];
+        const CAT_ORDER = ["📊 Data & Comparison", "📄 Documents & OCR", "🎓 Academic", "🛠️ Utilities", "🎬 Media & Streaming", "🔍 Search & Download"];
         function render() {
           const q = search.value.toLowerCase().trim();
           const favOnly = btnFav.classList.contains("active");

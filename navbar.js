@@ -35,6 +35,7 @@
     { label: "Fix Name", href: "page/Fix-Name.html", c1: "#f472b6", icon: "user-pen", cat: "Utilities" },
     { label: "Username Maker", href: "page/Username-Maker.html", c1: "#22d3ee", icon: "user", cat: "Utilities" },
     { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "code", cat: "Utilities" },
+    { label: "Torrent Search", href: "page/Torrent-Search.html", c1: "#38bdf8", icon: "search", cat: "Search & Download" },
   ];
 
   function getHidden() {
@@ -107,7 +108,7 @@
       .filter((t) => hidden.indexOf(t.label) === -1);
 
     /* Group by category */
-    const catOrder = ["Data & Comparison", "Documents & OCR", "Academic", "Utilities"];
+    const catOrder = ["Data & Comparison", "Documents & OCR", "Academic", "Utilities", "Search & Download"];
     const grouped = {};
     filtered.forEach((t) => {
       const c = t.cat || "Lainnya";
