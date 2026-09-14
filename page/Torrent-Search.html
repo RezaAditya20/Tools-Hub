@@ -1171,6 +1171,14 @@
                     <option value="">All Quality</option>
                   </select>
                 </div>
+                <div class="select-wrap" id="all-list-sort-wrap" style="display:none">
+                  <select class="all-list-filter" id="all-list-sort" onchange="filterAllList()">
+                    <option value="seeds">Sort: Seeds</option>
+                    <option value="leech">Sort: Leech</option>
+                    <option value="size">Sort: Size</option>
+                    <option value="name">Sort: Name</option>
+                  </select>
+                </div>
               </div>
               <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()" style="display:none">
               <div id="all-list-wrap" style="display:none"></div>
@@ -1486,7 +1494,7 @@
         if (sizeBytes <= 0 || sizeBytes > limit) continue;
         const seeds = parseInt(r.seeds, 10) || 0;
         const leech = parseInt(r.leech, 10) || 0;
-        if (seeds === 0 && leech === 0) continue;
+        if (seeds < 100) continue;
         const cur = picks[q];
         if (!cur) {
           picks[q] = r;
@@ -1544,14 +1552,17 @@
       const search = document.getElementById('all-list-search');
       const qualitySelect = document.getElementById('all-list-quality');
       const qualityWrap = document.getElementById('all-list-quality-wrap');
+      const sortWrap = document.getElementById('all-list-sort-wrap');
       if (!wrap) return;
       if (wrap.style.display !== 'none') {
         wrap.style.display = 'none';
         if (search) search.style.display = 'none';
         if (qualityWrap) qualityWrap.style.display = 'none';
+        if (sortWrap) sortWrap.style.display = 'none';
         return;
       }
       if (search) { search.style.display = ''; search.value = ''; }
+      if (sortWrap) sortWrap.style.display = '';
 
       // Populate quality filter from available results
       if (qualitySelect && qualityWrap) {
@@ -1568,16 +1579,48 @@
         qualityWrap.style.display = qualities.size > 1 ? '' : 'none';
       }
       wrap.innerHTML = '';
-      // Filter out 0 seeds + 0 leech, sort by seeds desc then leech desc
-      const filtered = allResults.filter(r => {
+      renderAllList();
+      wrap.style.display = '';
+    }
+
+    function renderAllList() {
+      const wrap = document.getElementById('all-list-wrap');
+      const search = document.getElementById('all-list-search');
+      const qualitySelect = document.getElementById('all-list-quality');
+      const sortSelect = document.getElementById('all-list-sort');
+      if (!wrap) return;
+      const nameQ = (search ? search.value : '').toLowerCase();
+      const qualQ = qualitySelect ? qualitySelect.value : '';
+      const sortBy = sortSelect ? sortSelect.value : 'seeds';
+      // Filter out seeds < 100
+      let filtered = allResults.filter(r => {
         const s = parseInt(r.seeds, 10) || 0;
-        const l = parseInt(r.leech, 10) || 0;
-        return s > 0 || l > 0;
-      }).sort((a, b) => {
+        return s >= 100;
+      });
+      // Apply name + quality filter
+      if (nameQ || qualQ) {
+        filtered = filtered.filter(r => {
+          const text = (r.name || '').toLowerCase();
+          const matchName = !nameQ || text.includes(nameQ);
+          const matchQual = !qualQ || text.includes(qualQ.toLowerCase());
+          return matchName && matchQual;
+        });
+      }
+      // Sort
+      filtered.sort((a, b) => {
+        if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
+        if (sortBy === 'size') return parseBytes(b.size) - parseBytes(a.size);
+        if (sortBy === 'leech') {
+          const al = parseInt(a.leech, 10) || 0, bl = parseInt(b.leech, 10) || 0;
+          if (bl !== al) return bl - al;
+          return (parseInt(b.seeds, 10) || 0) - (parseInt(a.seeds, 10) || 0);
+        }
+        // seeds (default)
         const sa = parseInt(a.seeds, 10) || 0, sb = parseInt(b.seeds, 10) || 0;
         if (sb !== sa) return sb - sa;
         return (parseInt(b.leech, 10) || 0) - (parseInt(a.leech, 10) || 0);
       });
+      wrap.innerHTML = '';
       if (!filtered.length) {
         wrap.innerHTML = '<div class="all-list-empty">No active torrents found.</div>';
       } else {
@@ -1589,24 +1632,10 @@
         }
         wrap.appendChild(list);
       }
-      wrap.style.display = '';
     }
 
     function filterAllList() {
-      const wrap = document.getElementById('all-list-wrap');
-      const search = document.getElementById('all-list-search');
-      const qualitySelect = document.getElementById('all-list-quality');
-      if (!wrap) return;
-      const nameQ = (search ? search.value : '').toLowerCase();
-      const qualQ = qualitySelect ? qualitySelect.value : '';
-      const cards = wrap.querySelectorAll('.torrent-card');
-      cards.forEach(card => {
-        const name = card.querySelector('.t-name');
-        const text = name ? name.textContent.toLowerCase() : '';
-        const matchName = !nameQ || text.includes(nameQ);
-        const matchQual = !qualQ || text.includes(qualQ.toLowerCase());
-        card.style.display = (matchName && matchQual) ? '' : 'none';
-      });
+      renderAllList();
     }
 
     // ── Subtitles ──
