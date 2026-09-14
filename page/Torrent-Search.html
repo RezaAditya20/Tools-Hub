@@ -404,10 +404,18 @@
         position: relative; overflow: hidden;
       }
       .quality-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+      .quality-card .q-badges {
+        display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+      }
       .quality-card .q-badge {
         display: inline-block; padding: 3px 8px; border-radius: 4px;
-        font-size: 0.7rem; font-weight: 800; margin-bottom: 8px;
+        font-size: 0.7rem; font-weight: 800;
         color: #fff; letter-spacing: 0.5px;
+      }
+      .quality-card .q-source {
+        display: inline-block; padding: 3px 8px; border-radius: 4px;
+        font-size: 0.66rem; font-weight: 700;
+        background: rgba(255,255,255,0.12); color: var(--muted); letter-spacing: 0.3px;
       }
       .quality-card.q720 .q-badge { background: #2196f3; }
       .quality-card.q1080 .q-badge { background: #4caf50; }
@@ -1441,6 +1449,19 @@
       if (/720p/.test(n)) return '720';
       return null;
     }
+    function detectSource(name) {
+      const n = (name || '').replace(/\./g, ' ');
+      if (/remux/i.test(n)) return 'REMUX';
+      if (/bluray|blu-ray|bdrip|bdremux/i.test(n)) return 'BluRay';
+      if (/web-?dl/i.test(n)) return 'WEB-DL';
+      if (/web-?rip/i.test(n)) return 'WEBRip';
+      if (/hdrip/i.test(n)) return 'HDRip';
+      if (/dvdrip/i.test(n)) return 'DVDRip';
+      if (/hdtv/i.test(n)) return 'HDTV';
+      if (/web/i.test(n)) return 'WEB';
+      if (/encode/i.test(n)) return 'ENCODE';
+      return null;
+    }
 
     const QUALITY_LIMITS = {
       '720':  2 * 1073741824,   // 2 GB
@@ -1490,8 +1511,9 @@
         const r = picks[q];
         if (r) {
           const engineLabel = engineNames[r.engine] || r.engine;
+          const src = detectSource(r.name);
           card.innerHTML = `
-            <span class="q-badge">${QUALITY_LABELS[q]}</span>
+            <div class="q-badges"><span class="q-badge">${QUALITY_LABELS[q]}</span>${src ? `<span class="q-source">${src}</span>` : ''}</div>
             <div class="q-name" title="${escHtml(r.name)}">${escHtml(r.name)}</div>
             <div class="q-meta">
               <span class="seeds"><i class="fa-solid fa-arrow-up"></i> ${parseInt(r.seeds, 10) >= 0 ? parseInt(r.seeds, 10) : '-'}</span>
