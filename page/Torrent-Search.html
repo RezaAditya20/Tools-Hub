@@ -384,9 +384,43 @@
         border-top: 1px solid var(--border);
       }
       .quality-picks h3 {
-        font-size: 0.9rem; font-weight: 700; margin: 0 0 10px;
+        font-size: 0.9rem; font-weight: 700; margin: 0;
         display: flex; align-items: center; gap: 8px;
       }
+      .quality-info-btn {
+        background: none; border: none; color: var(--muted); cursor: pointer;
+        font-size: 0.85rem; padding: 2px; display: flex; align-items: center;
+        transition: color 0.2s;
+      }
+      .quality-info-btn:hover { color: var(--accent); }
+      .quality-modal {
+        position: fixed; inset: 0; z-index: 1100;
+        background: rgba(0,0,0,0.7); display: none;
+        align-items: center; justify-content: center; padding: 16px;
+      }
+      .quality-modal.open { display: flex; }
+      .quality-modal-box {
+        background: var(--card-bg); border-radius: 12px; padding: 24px;
+        max-width: 480px; width: 100%; box-shadow: 0 12px 50px rgba(0,0,0,0.7);
+        animation: detailIn 0.24s ease-out;
+      }
+      .quality-modal-box h3 { margin: 0 0 16px; font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+      .quality-modal-box h3 i { color: var(--accent); }
+      .quality-tier { margin-bottom: 12px; }
+      .quality-tier-label {
+        font-size: 0.72rem; font-weight: 700; color: var(--accent);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+      }
+      .quality-tier-list { display: flex; flex-direction: column; gap: 4px; }
+      .quality-tier-item {
+        font-size: 0.78rem; color: var(--text); padding: 4px 0;
+      }
+      .quality-modal-close {
+        margin-top: 16px; width: 100%; padding: 10px; border: 1px solid var(--border);
+        border-radius: 6px; background: transparent; color: var(--text); font-size: 0.82rem;
+        font-weight: 600; cursor: pointer; transition: border-color 0.2s;
+      }
+      .quality-modal-close:hover { border-color: var(--accent); }
       .quality-picks h3 i { color: var(--accent); }
       .quality-grid {
         display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
@@ -748,6 +782,46 @@
       <span><i class="fa-solid fa-server"></i> TorrServer:</span>
       <input class="torrserv-url" type="text" value="" placeholder="http://127.0.0.1:8090" />
       <span class="mpv-hint">Opens in MPV</span>
+    </div>
+
+    <!-- Quality info modal -->
+    <div class="quality-modal" id="quality-modal">
+      <div class="quality-modal-box">
+        <h3><i class="fa-solid fa-circle-info"></i> Source Quality Guide</h3>
+        <div class="quality-tier">
+          <div class="quality-tier-label">Top Tier</div>
+          <div class="quality-tier-list">
+            <div class="quality-tier-item">1. <strong>REMUX</strong> - Lossless dari disc, kualitas asli</div>
+            <div class="quality-tier-item">2. <strong>BluRay</strong> - Re-encode dari Blu-ray disc</div>
+            <div class="quality-tier-item">3. <strong>WEB-DL</strong> - Direct download dari streaming</div>
+          </div>
+        </div>
+        <div class="quality-tier">
+          <div class="quality-tier-label">Mid Tier</div>
+          <div class="quality-tier-list">
+            <div class="quality-tier-item">4. <strong>WEBRip</strong> - Capture dari streaming, di-transcode</div>
+            <div class="quality-tier-item">5. <strong>HDRip</strong> - Transcode dari HD source</div>
+            <div class="quality-tier-item">6. <strong>WEB</strong> - Generic source dari web</div>
+          </div>
+        </div>
+        <div class="quality-tier">
+          <div class="quality-tier-label">Lower Tier</div>
+          <div class="quality-tier-list">
+            <div class="quality-tier-item">7. <strong>HDTV</strong> - Record dari TV broadcast</div>
+            <div class="quality-tier-item">8. <strong>DVDRip</strong> - Rip dari DVD</div>
+          </div>
+        </div>
+        <div class="quality-tier">
+          <div class="quality-tier-label">Junk</div>
+          <div class="quality-tier-list">
+            <div class="quality-tier-item">9. <strong>TC</strong> - Telecine, scan dari film strip</div>
+            <div class="quality-tier-item">10. <strong>TS</strong> - Telesync, audio dari jack bioskop</div>
+            <div class="quality-tier-item">11. <strong>HC</strong> - Hardcoded, camera + subtitle nempel</div>
+            <div class="quality-tier-item">12. <strong>CAM</strong> - Camera record di bioskop</div>
+          </div>
+        </div>
+        <button class="quality-modal-close" onclick="closeQualityInfo()">Close</button>
+      </div>
     </div>
 
     <!-- Command copy modal -->
@@ -1160,7 +1234,10 @@
             <div class="detail-actions" id="detail-actions"></div>
             <!-- Auto Quality Picks -->
             <div class="quality-picks" id="quality-picks" style="display:none">
-              <h3><i class="fa-solid fa-bolt"></i> Auto Quality - Best Pick per Resolution</h3>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                <h3 style="margin:0"><i class="fa-solid fa-bolt"></i> Auto Quality - Best Pick per Resolution</h3>
+                <button class="quality-info-btn" onclick="openQualityInfo()" title="Source quality guide"><i class="fa-solid fa-circle-info"></i></button>
+              </div>
               <div class="quality-grid" id="quality-grid"></div>
               <div class="all-list-row">
                 <button class="btn-all-list" id="btn-all-list" onclick="toggleAllList()">
@@ -1301,7 +1378,7 @@
           <div class="detail-info">
             <h2>${escHtml(d.name || 'Unknown')}</h2>
             <div class="detail-meta">
-              ${d.birthday ? `<span><i class="fa-solid fa-cake-candles"></i> ${d.birthday}${d.deathday ? ' — ' + d.deathday : ''}</span>` : ''}
+              ${d.birthday ? `<span><i class="fa-solid fa-cake-candles"></i> ${d.birthday}${d.deathday ? ' -' + d.deathday : ''}</span>` : ''}
               ${d.place_of_birth ? `<span><i class="fa-solid fa-location-dot"></i> ${escHtml(d.place_of_birth)}</span>` : ''}
               ${d.known_for_department ? `<span class="badge">${escHtml(d.known_for_department)}</span>` : ''}
             </div>
@@ -1387,7 +1464,7 @@
       if (e.target === e.currentTarget) closeCmd();
     });
 
-    // ── Torrent search (SSE streaming) — triggered from movie detail ──
+    // ── Torrent search (SSE streaming) -triggered from movie detail ──
     let detailSearchQuery = '';
 
     function doSearch(query, cat) {
@@ -1426,7 +1503,7 @@
       es.addEventListener('engine_done', e => {
         const data = JSON.parse(e.data);
         engineCount++;
-        setStatus(`<span class="spinner"></span> ${engineCount} engine${engineCount !== 1 ? 's' : ''} done — ${allResults.length} torrent${allResults.length !== 1 ? 's' : ''}`);
+        setStatus(`<span class="spinner"></span> ${engineCount} engine${engineCount !== 1 ? 's' : ''} done -${allResults.length} torrent${allResults.length !== 1 ? 's' : ''}`);
       });
       es.addEventListener('result', e => {
         const r = JSON.parse(e.data);
@@ -1467,9 +1544,15 @@
       if (/dvdrip/i.test(n)) return 'DVDRip';
       if (/hdtv/i.test(n)) return 'HDTV';
       if (/web/i.test(n)) return 'WEB';
-      if (/encode/i.test(n)) return 'ENCODE';
+      if (/tc/i.test(n)) return 'TC';
+      if (/\bts\b/i.test(n)) return 'TS';
+      if (/\bhc\b/i.test(n)) return 'HC';
+      if (/\bcam\b/i.test(n)) return 'CAM';
       return null;
     }
+    function openQualityInfo() { document.getElementById('quality-modal').classList.add('open'); }
+    function closeQualityInfo() { document.getElementById('quality-modal').classList.remove('open'); }
+    document.getElementById('quality-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeQualityInfo(); });
 
     const QUALITY_LIMITS = {
       '720':  2 * 1073741824,   // 2 GB
@@ -1812,7 +1895,7 @@
     function formatSize(raw) {
       if (!raw || raw === '-1') return '-';
       const str = String(raw).trim();
-      // Already formatted with unit (e.g. "1.5 GB") — return as-is
+      // Already formatted with unit (e.g. "1.5 GB") -return as-is
       if (/\d\s*(KB|MB|GB|TB)/i.test(str)) return str;
       // Extract numeric bytes value (handles "1794879534 B" or "1794879534")
       const bytes = parseInt(str.replace(/[^0-9]/g, ''), 10);
