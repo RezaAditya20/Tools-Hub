@@ -437,7 +437,8 @@
       }
       .quality-card .q-actions .q-play { background: #1db954; }
       .quality-card .q-actions .q-cmd { background: #2d2d2d; color: #e0e0e0; }
-      .quality-card .q-actions button:hover { opacity: 0.82; }
+      .quality-card .q-actions .q-get { background: var(--accent-2); color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.18s; }
+      .quality-card .q-actions button:hover, .quality-card .q-actions .q-get:hover { opacity: 0.82; }
       .btn-all-list {
         display: inline-flex; align-items: center; gap: 6px;
         padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px;
@@ -1119,12 +1120,15 @@
         const btnFind = document.createElement('button');
         btnFind.className = 'btn-find';
         const buildQuery = () => {
-          if (!isTV) return title;
-          const sel = document.getElementById('detail-season-select');
-          if (!sel) return title;
-          const sn = parseInt(sel.value, 10);
-          if (isNaN(sn) || sn < 1) return title; // S00 = specials → search title only
-          return `${title} S${String(sn).padStart(2, '0')}`;
+          let q = title;
+          if (isTV) {
+            const sel = document.getElementById('detail-season-select');
+            if (sel) {
+              const sn = parseInt(sel.value, 10);
+              if (!isNaN(sn) && sn >= 1) q = `${title} S${String(sn).padStart(2, '0')}`;
+            }
+          }
+          return year ? `${q} ${year}` : q;
         };
         btnFind.id = 'btn-find-torrent';
         btnFind.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Find Torrent';
@@ -1402,7 +1406,8 @@
             </div>
             <div class="q-actions">
               ${r.link && extractHash(r.link) ? `<button class="q-play" onclick="event.stopPropagation(); launchMpv('${escHtml(r.name).replace(/'/g, "\\'")}', '${extractHash(r.link)}', '${r.link}', this)"><i class="fa-solid fa-play"></i> Play</button>` : ''}
-              ${r.link ? `<button class="q-cmd" onclick="event.stopPropagation(); openCmd('${r.link}')"><i class="fa-solid fa-terminal"></i> MPV</button>` : ''}
+              ${r.link && extractHash(r.link) ? `<button class="q-cmd" onclick="event.stopPropagation(); openCmd('${r.link}')"><i class="fa-solid fa-terminal"></i> MPV</button>` : ''}
+              ${r.link ? `<a class="q-get" href="${r.link}" onclick="event.stopPropagation()"><i class="fa-solid fa-download"></i> Get</a>` : ''}
             </div>`;
           card.style.cursor = 'pointer';
           card.onclick = () => {
@@ -1563,7 +1568,9 @@
     function formatSize(raw) {
       if (!raw || raw === '-1') return '-';
       const str = String(raw).trim();
-      if (/[^0-9.,]/.test(str.replace(/\s/g, ''))) return str;
+      // Already formatted with unit (e.g. "1.5 GB") — return as-is
+      if (/\d\s*(KB|MB|GB|TB)/i.test(str)) return str;
+      // Extract numeric bytes value (handles "1794879534 B" or "1794879534")
       const bytes = parseInt(str.replace(/[^0-9]/g, ''), 10);
       if (isNaN(bytes)) return str;
       if (bytes < 1024) return bytes + ' B';
