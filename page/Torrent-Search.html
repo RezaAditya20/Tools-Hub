@@ -1105,7 +1105,7 @@
                 <button class="btn-all-list" id="btn-all-list" onclick="toggleAllList()">
                   <i class="fa-solid fa-list"></i> All List (<span id="all-list-count">0</span>)
                 </button>
-                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList(this.value)">
+                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList(this.value)" style="display:none">
               </div>
               <div id="all-list-wrap" style="display:none"></div>
             </div>
@@ -1435,11 +1435,14 @@
 
     function toggleAllList() {
       const wrap = document.getElementById('all-list-wrap');
+      const search = document.getElementById('all-list-search');
       if (!wrap) return;
       if (wrap.style.display !== 'none') {
         wrap.style.display = 'none';
+        if (search) search.style.display = 'none';
         return;
       }
+      if (search) { search.style.display = ''; search.value = ''; }
       wrap.innerHTML = '';
       // Filter out 0 seeds + 0 leech, sort by seeds desc then leech desc
       const filtered = allResults.filter(r => {
