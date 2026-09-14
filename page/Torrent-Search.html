@@ -450,14 +450,35 @@
       .all-list-search {
         height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px;
         background: var(--card-bg-2); color: var(--text); font-size: 0.78rem;
-        outline: none; transition: border-color 0.18s; flex: 1; min-width: 0;
+        outline: none; transition: border-color 0.18s; width: 100%; margin-top: 8px;
       }
       .all-list-search:focus { border-color: var(--accent); }
       .all-list-search::placeholder { color: var(--muted); }
+      .select-wrap {
+        position: relative; display: inline-flex; align-items: center; flex-shrink: 0;
+      }
+      .select-wrap::after {
+        content: "";
+        position: absolute;
+        right: 10px;
+        pointer-events: none;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid var(--text);
+      }
       .all-list-filter {
-        height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px;
-        background: var(--card-bg-2); color: var(--text); font-size: 0.78rem;
-        outline: none; cursor: pointer; flex-shrink: 0;
+        height: 36px;
+        padding: 0 28px 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--card-bg-2);
+        color: var(--text);
+        font-size: 0.78rem;
+        outline: none;
+        cursor: pointer;
+        flex-shrink: 0;
+        width: auto;
+        -webkit-appearance: none; -moz-appearance: none; appearance: none;
       }
       .all-list-filter:focus { border-color: var(--accent); }
       /* ── Subtitles ── */
@@ -1137,11 +1158,13 @@
                 <button class="btn-all-list" id="btn-all-list" onclick="toggleAllList()">
                   <i class="fa-solid fa-list"></i> All List (<span id="all-list-count">0</span>)
                 </button>
-                <select class="all-list-filter" id="all-list-quality" onchange="filterAllList()" style="display:none">
-                  <option value="">All Quality</option>
-                </select>
-                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()" style="display:none">
+                <div class="select-wrap" id="all-list-quality-wrap" style="display:none">
+                  <select class="all-list-filter" id="all-list-quality" onchange="filterAllList()">
+                    <option value="">All Quality</option>
+                  </select>
+                </div>
               </div>
+              <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()" style="display:none">
               <div id="all-list-wrap" style="display:none"></div>
             </div>
             <!-- Subtitles -->
@@ -1151,11 +1174,13 @@
               </button>
               <div id="subtitle-wrap" style="display:none">
                 <div class="subtitle-filters">
-                  <select class="all-list-filter" id="sub-lang" onchange="loadSubtitles()">
-                    <option value="id">Indonesian</option>
-                    <option value="en">English</option>
-                    <option value="">All Languages</option>
-                  </select>
+                  <div class="select-wrap">
+                    <select class="all-list-filter" id="sub-lang" onchange="loadSubtitles()">
+                      <option value="id">Indonesian</option>
+                      <option value="en">English</option>
+                      <option value="">All Languages</option>
+                    </select>
+                  </div>
                 </div>
                 <div id="subtitle-list" class="subtitle-list"></div>
               </div>
@@ -1496,17 +1521,18 @@
       const wrap = document.getElementById('all-list-wrap');
       const search = document.getElementById('all-list-search');
       const qualitySelect = document.getElementById('all-list-quality');
+      const qualityWrap = document.getElementById('all-list-quality-wrap');
       if (!wrap) return;
       if (wrap.style.display !== 'none') {
         wrap.style.display = 'none';
         if (search) search.style.display = 'none';
-        if (qualitySelect) qualitySelect.style.display = 'none';
+        if (qualityWrap) qualityWrap.style.display = 'none';
         return;
       }
       if (search) { search.style.display = ''; search.value = ''; }
 
       // Populate quality filter from available results
-      if (qualitySelect) {
+      if (qualitySelect && qualityWrap) {
         const qualities = new Set();
         const qPattern = /\b(2160p|1080p|720p|480p|4K)\b/i;
         for (const r of allResults) {
@@ -1517,7 +1543,7 @@
         ['2160P', '1080P', '720P', '480P'].filter(q => qualities.has(q)).forEach(q => {
           qualitySelect.innerHTML += `<option value="${q}">${q}</option>`;
         });
-        qualitySelect.style.display = qualities.size > 1 ? '' : 'none';
+        qualityWrap.style.display = qualities.size > 1 ? '' : 'none';
       }
       wrap.innerHTML = '';
       // Filter out 0 seeds + 0 leech, sort by seeds desc then leech desc

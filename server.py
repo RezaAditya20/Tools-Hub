@@ -321,7 +321,7 @@ class TorrentHandler(SimpleHTTPRequestHandler):
         imdb_id = params.get("imdb_id", [""])[0]
         film_name = params.get("film_name", [""])[0]
         sub_type = params.get("type", [""])[0]
-        languages = params.get("languages", ["en"])[0]
+        languages = params.get("languages", [""])[0]
         season = params.get("season", [""])[0]
         episode = params.get("episode", [""])[0]
         if not imdb_id and not film_name:
