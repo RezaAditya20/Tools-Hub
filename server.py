@@ -182,7 +182,6 @@ class TorrentHandler(SimpleHTTPRequestHandler):
                 return name, []
 
         total = 0
-        import random
 
         def _emit_results(name, res):
             nonlocal total
@@ -193,7 +192,6 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             for r in res:
                 r["engine"] = name
                 _send("result", r)
-                time.sleep(random.uniform(0.02, 0.08))
 
         # Priority engines run & stream first (RARBG), then the rest in parallel.
         PRIORITY = ["therarbg"]

@@ -617,8 +617,6 @@
     </style>
   </head>
   <body>
-    <div id="navbar"></div>
-    <script src="../navbar.js"></script>
     <!-- Top nav -->
     <nav class="topnav" id="topnav">
       <div class="brand"><i class="fa-solid fa-magnifying-glass"></i> TorrentSearch</div>
@@ -1092,7 +1090,7 @@
             <div class="detail-actions" id="detail-actions"></div>
             <!-- Auto Quality Picks -->
             <div class="quality-picks" id="quality-picks" style="display:none">
-              <h3><i class="fa-solid fa-bolt"></i> Auto Quality — Best Pick per Resolution</h3>
+              <h3><i class="fa-solid fa-bolt"></i> Auto Quality - Best Pick per Resolution</h3>
               <div class="quality-grid" id="quality-grid"></div>
               <button class="btn-all-list" id="btn-all-list" onclick="toggleAllList()">
                 <i class="fa-solid fa-list"></i> All List (<span id="all-list-count">0</span>)
@@ -1505,14 +1503,15 @@
           play.innerHTML = '<i class="fa-solid fa-play"></i> Play';
           play.onclick = () => launchMpv(r.name, infohash, r.link, play);
           act.appendChild(play);
+
+          const cmd = document.createElement('button');
+          cmd.className = 'btn-cmd';
+          cmd.type = 'button';
+          cmd.innerHTML = '<i class="fa-solid fa-terminal"></i> MPV';
+          cmd.title = 'Copy peerflix command';
+          cmd.onclick = () => openCmd(r.link);
+          act.appendChild(cmd);
         }
-        const cmd = document.createElement('button');
-        cmd.className = 'btn-cmd';
-        cmd.type = 'button';
-        cmd.innerHTML = '<i class="fa-solid fa-terminal"></i> MPV';
-        cmd.title = 'Copy peerflix command';
-        cmd.onclick = () => openCmd(r.link);
-        act.appendChild(cmd);
         const dl = document.createElement('a');
         dl.href = r.link; dl.innerHTML = '<i class="fa-solid fa-download"></i> Get';
         act.appendChild(dl);
