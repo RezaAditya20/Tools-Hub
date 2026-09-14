@@ -418,6 +418,13 @@ class LimeTorrents:
         "games": "games", "movies": "movies", "music": "music", "tv": "tv",
     }
 
+    _trackers = [
+        "udp://tracker.opentrackr.org:1337/announce",
+        "udp://open.stealth.si:80/announce",
+        "udp://exodus.desync.com:6969/announce",
+        "udp://tracker.openbittorrent.com:6969/announce",
+    ]
+
     def search(self, query: str, cat: str = "all") -> List[TorrentResult]:
         category = self.supported_categories.get(cat, "all")
         slug = query.replace("%20", "-").replace(" ", "-")
@@ -433,6 +440,27 @@ class LimeTorrents:
             all_results.extend(parser.results)
             if len(parser.results) < 20:
                 break
+
+        # Fetch magnet links in parallel from detail pages
+        def _fetch_magnet(item: TorrentResult) -> TorrentResult:
+            desc = item.get("desc_link", "")
+            if not desc:
+                return item
+            html = retrieve_url(desc)
+            if not html:
+                return item
+            # Extract hash from meta description or page content
+            m = re.search(r'(?:Magnet Link Hash|Torrent Hash)\s*[:\s]+\s*([A-Fa-f0-9]{40})', html)
+            if m:
+                info_hash = m.group(1).upper()
+                dn = urlencode({"dn": item.get("name", "")})
+                trs = "&".join(f"tr={t}" for t in self._trackers)
+                item["link"] = f"magnet:?xt=urn:btih:{info_hash}&{dn}&{trs}"
+            return item
+
+        with ThreadPoolExecutor(max_workers=min(len(all_results), 10)) as pool:
+            all_results = list(pool.map(_fetch_magnet, all_results))
+
         return all_results
 
 
@@ -774,38 +802,77 @@ class BT4GPRX:
     ]
 
     def search(self, query: str, cat: str = "all") -> List[TorrentResult]:
-        cat_prefix = self.supported_categories.get(cat, "")
-        all_results: List[TorrentResult] = []
-        page = 1
-        while page <= 5:
-            url = f"{self.url}/{cat_prefix}search/{query}/byseeders/{page}"
-            html = retrieve_url(url)
-            if not html:
-                break
+        cat_param = self.supported_categories.get(cat, "")
+        ITEMS_PER_PAGE = 15
+
+        def _url(page: int) -> str:
+            params = f"q={quote(query)}&p={page}"
+            if cat_param:
+                params += f"&category={cat_param}"
+            return f"{self.url}/search?{params}"
+
+        def _parse_page(html: str) -> List[Dict[str, str]]:
             parser = _BT4GParser()
             parser.feed(html)
-            if not parser.results:
-                break
-            for r in parser.results:
+            return parser.results
+
+        def _fetch_page(page: int) -> List[Dict[str, str]]:
+            html = retrieve_url(_url(page))
+            return _parse_page(html) if html else []
+
+        # Page 1 first — also extract total count
+        first_results = _fetch_page(1)
+        if not first_results:
+            return []
+
+        # Try to get total from HTML
+        first_html = retrieve_url(_url(1))
+        total = ITEMS_PER_PAGE  # fallback: at least 1 page
+        if first_html:
+            m = re.search(r'Found\s*<[^>]*>\s*(\d+)', first_html)
+            if m:
+                total = int(m.group(1))
+
+        max_pages = min((total + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE, 10)
+
+        # Fetch remaining pages in parallel
+        all_page_results = [first_results]
+        if max_pages > 1:
+            with ThreadPoolExecutor(max_workers=min(max_pages - 1, 5)) as pool:
+                futures = {pool.submit(_fetch_page, p): p for p in range(2, max_pages + 1)}
+                for f in as_completed(futures):
+                    page_results = f.result()
+                    if page_results:
+                        all_page_results.append(page_results)
+
+        # Flatten and build results
+        all_results: List[TorrentResult] = []
+        for page_results in all_page_results:
+            for r in page_results:
+                href = r.get("href", "")
+                if href.startswith("http"):
+                    desc_link = href
+                    magnet_path = href.replace(self.url, "")
+                else:
+                    desc_link = self.url + href
+                    magnet_path = href
                 all_results.append({
                     "name": r.get("title", ""),
                     "size": r.get("filesize", "-1"),
                     "seeds": int(r.get("seeders", 0)),
                     "leech": int(r.get("leechers", 0)),
                     "engine_url": self.url,
-                    "desc_link": self.url + r.get("href", ""),
-                    "link": self._build_magnet(r.get("href", "")),
+                    "desc_link": desc_link,
+                    "link": self._build_magnet(magnet_path),
                     "pub_date": -1,
                 })
-            page += 1
-            time.sleep(0.5)
         return all_results
 
     def _build_magnet(self, href: str) -> str:
         """Try to extract torrent page and find magnet, fallback to torrent file link."""
         if not href:
             return ""
-        page_url = self.url + href
+        page_url = self.url + href if not href.startswith("http") else href
         html = retrieve_url(page_url)
         if not html:
             return ""
@@ -823,37 +890,54 @@ class BT4GPRX:
 
 
 class _BT4GParser(HTMLParser):
+    """Parse bt4gprx.com search results (notion-list layout)."""
+
     def __init__(self):
         super().__init__()
         self.results: List[Dict[str, str]] = []
-        self._in_container = False
-        self._in_entry = False
-        self._b_value = ""
+        self._in_item = False
+        self._in_title = False
+        self._capture = ""  # field name to capture next data into
         self._temp: Dict[str, str] = {}
 
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, Union[str, None]]]):
         p = dict(attrs)
-        if tag == "div" and not self._in_container and p.get("class") == "container":
-            self._in_container = True
-        elif tag == "a" and self._in_container and "title" in p and "href" in p:
-            self._in_entry = True
-            self._temp = dict(attrs)
-        elif tag == "b" and self._in_entry:
-            cls = p.get("class", "") or ""
-            id_ = p.get("id", "") or ""
-            self._b_value = "filesize" if "cpill" in cls else id_
+        cls = p.get("class", "") or ""
+        id_ = p.get("id", "") or ""
+
+        if tag == "div" and "notion-list-item" in cls:
+            self._in_item = True
+            self._temp = {}
+
+        if not self._in_item:
+            return
+
+        if tag == "div" and "notion-list-item-title" in cls:
+            self._in_title = True
+        elif tag == "a" and self._in_title and "href" in p:
+            self._temp["title"] = p.get("title", "") or ""
+            self._temp["href"] = p.get("href", "")
+        elif tag == "b" and "cpill" in cls:
+            self._capture = "filesize"
+        elif tag == "span" and id_ == "seeders":
+            self._capture = "seeders"
+        elif tag == "span" and id_ == "leechers":
+            self._capture = "leechers"
 
     def handle_endtag(self, tag: str):
-        if tag == "div":
-            self._in_entry = False
+        if tag == "div" and self._in_title:
+            self._in_title = False
+        elif tag == "div" and self._in_item:
+            # Closing the notion-list-item div — save if we have data
+            if self._temp.get("title"):
+                self.results.append(self._temp.copy())
+            self._in_item = False
+            self._temp = {}
 
     def handle_data(self, data: str):
-        if self._b_value and self._in_entry:
-            self._temp[self._b_value] = data
-            if self._b_value == "leechers":
-                self.results.append(self._temp.copy())
-                self._temp = {}
-            self._b_value = ""
+        if self._capture and self._in_item:
+            self._temp[self._capture] = data.strip()
+            self._capture = ""
 
 
 # ---------------------------------------------------------------------------
