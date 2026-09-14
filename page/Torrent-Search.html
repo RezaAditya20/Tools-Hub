@@ -454,6 +454,38 @@
       }
       .all-list-search:focus { border-color: var(--accent); }
       .all-list-search::placeholder { color: var(--muted); }
+      .all-list-filter {
+        height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px;
+        background: var(--card-bg-2); color: var(--text); font-size: 0.78rem;
+        outline: none; cursor: pointer; flex-shrink: 0;
+      }
+      .all-list-filter:focus { border-color: var(--accent); }
+      /* ── Subtitles ── */
+      .subtitle-section { margin-top: 16px; }
+      .btn-subtitle {
+        display: inline-flex; align-items: center; gap: 6px; height: 36px;
+        padding: 0 16px; border: 1px solid var(--border); border-radius: 6px;
+        background: transparent; color: var(--muted); font-size: 0.78rem; font-weight: 600;
+        cursor: pointer; transition: all 0.18s;
+      }
+      .btn-subtitle:hover { border-color: var(--accent); color: var(--accent); }
+      .subtitle-filters { display: flex; gap: 8px; margin-top: 10px; }
+      .subtitle-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 30vh; overflow-y: auto; scrollbar-width: thin; }
+      .sub-item {
+        display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+        background: var(--card-bg-2); border: 1px solid var(--border); border-radius: 6px;
+        font-size: 0.75rem; transition: border-color 0.18s;
+      }
+      .sub-item:hover { border-color: var(--accent); }
+      .sub-info { flex: 1; min-width: 0; }
+      .sub-name { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sub-meta { color: var(--muted); font-size: 0.7rem; margin-top: 2px; display: flex; gap: 8px; }
+      .sub-dl {
+        padding: 4px 10px; border-radius: 4px; border: none; background: var(--accent);
+        color: #fff; font-size: 0.7rem; font-weight: 600; cursor: pointer; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; transition: opacity 0.18s;
+      }
+      .sub-dl:hover { opacity: 0.82; text-decoration: none; color: #fff; }
       @media (max-width: 640px) {
         .quality-grid { grid-template-columns: 1fr; }
       }
@@ -1046,7 +1078,7 @@
       const id = movie.id;
       const type = isTV ? 'tv' : 'movie';
       try {
-        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + type + '/' + id)}&append_to_response=${encodeURIComponent('credits')}`);
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + type + '/' + id)}&append_to_response=${encodeURIComponent('credits,external_ids')}`);
         const d = await r.json();
         if (d.error) throw new Error(d.error);
         // Update backdrop from fetched data (filmography items don't have backdrop)
@@ -1105,9 +1137,28 @@
                 <button class="btn-all-list" id="btn-all-list" onclick="toggleAllList()">
                   <i class="fa-solid fa-list"></i> All List (<span id="all-list-count">0</span>)
                 </button>
-                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList(this.value)" style="display:none">
+                <select class="all-list-filter" id="all-list-quality" onchange="filterAllList()" style="display:none">
+                  <option value="">All Quality</option>
+                </select>
+                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()" style="display:none">
               </div>
               <div id="all-list-wrap" style="display:none"></div>
+            </div>
+            <!-- Subtitles -->
+            <div class="subtitle-section" id="subtitle-section" style="display:none">
+              <button class="btn-subtitle" id="btn-subtitle" onclick="toggleSubtitles()">
+                <i class="fa-solid fa-closed-captioning"></i> Find Subtitles
+              </button>
+              <div id="subtitle-wrap" style="display:none">
+                <div class="subtitle-filters">
+                  <select class="all-list-filter" id="sub-lang" onchange="loadSubtitles()">
+                    <option value="en">English</option>
+                    <option value="id">Indonesian</option>
+                    <option value="">All Languages</option>
+                  </select>
+                </div>
+                <div id="subtitle-list" class="subtitle-list"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1124,6 +1175,13 @@
               </div>`).join('')}
           </div>
         </div>` : ''}`;
+
+      // Set subtitle context and show section
+      currentDetailTitle = title;
+      currentDetailType = isTV ? 'tv' : 'movie';
+      currentDetailImdbId = d.imdb_id || (d.external_ids || {}).imdb_id || '';
+      const subSection = document.getElementById('subtitle-section');
+      if (subSection) subSection.style.display = '';
 
       // Wire up actions after render to avoid HTML-escaping quotes
       const actions = document.getElementById('detail-actions');
@@ -1248,6 +1306,7 @@
       const modal = document.getElementById('detail-modal');
       modal.classList.remove('open');
       document.body.style.overflow = '';
+      subtitleData = [];
     }
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDetail(); closeCmd(); } });
     document.getElementById('detail-modal').addEventListener('click', (e) => {
@@ -1436,13 +1495,30 @@
     function toggleAllList() {
       const wrap = document.getElementById('all-list-wrap');
       const search = document.getElementById('all-list-search');
+      const qualitySelect = document.getElementById('all-list-quality');
       if (!wrap) return;
       if (wrap.style.display !== 'none') {
         wrap.style.display = 'none';
         if (search) search.style.display = 'none';
+        if (qualitySelect) qualitySelect.style.display = 'none';
         return;
       }
       if (search) { search.style.display = ''; search.value = ''; }
+
+      // Populate quality filter from available results
+      if (qualitySelect) {
+        const qualities = new Set();
+        const qPattern = /\b(2160p|1080p|720p|480p|4K)\b/i;
+        for (const r of allResults) {
+          const m = (r.name || '').match(qPattern);
+          if (m) qualities.add(m[1].toUpperCase());
+        }
+        qualitySelect.innerHTML = '<option value="">All Quality</option>';
+        ['2160P', '1080P', '720P', '480P'].filter(q => qualities.has(q)).forEach(q => {
+          qualitySelect.innerHTML += `<option value="${q}">${q}</option>`;
+        });
+        qualitySelect.style.display = qualities.size > 1 ? '' : 'none';
+      }
       wrap.innerHTML = '';
       // Filter out 0 seeds + 0 leech, sort by seeds desc then leech desc
       const filtered = allResults.filter(r => {
@@ -1468,15 +1544,81 @@
       wrap.style.display = '';
     }
 
-    function filterAllList(query) {
+    function filterAllList() {
       const wrap = document.getElementById('all-list-wrap');
+      const search = document.getElementById('all-list-search');
+      const qualitySelect = document.getElementById('all-list-quality');
       if (!wrap) return;
+      const nameQ = (search ? search.value : '').toLowerCase();
+      const qualQ = qualitySelect ? qualitySelect.value : '';
       const cards = wrap.querySelectorAll('.torrent-card');
-      const q = query.toLowerCase();
       cards.forEach(card => {
         const name = card.querySelector('.t-name');
-        card.style.display = (!q || (name && name.textContent.toLowerCase().includes(q))) ? '' : 'none';
+        const text = name ? name.textContent.toLowerCase() : '';
+        const matchName = !nameQ || text.includes(nameQ);
+        const matchQual = !qualQ || text.includes(qualQ.toLowerCase());
+        card.style.display = (matchName && matchQual) ? '' : 'none';
       });
+    }
+
+    // ── Subtitles ──
+    let subtitleData = [];
+    let currentDetailTitle = '';
+    let currentDetailType = 'movie';
+    let currentDetailImdbId = '';
+
+    function toggleSubtitles() {
+      const wrap = document.getElementById('subtitle-wrap');
+      if (!wrap) return;
+      if (wrap.style.display !== 'none') {
+        wrap.style.display = 'none';
+        return;
+      }
+      wrap.style.display = '';
+      loadSubtitles();
+    }
+
+    async function loadSubtitles() {
+      const list = document.getElementById('subtitle-list');
+      if (!list) return;
+      const lang = document.getElementById('sub-lang')?.value || 'en';
+      list.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;padding:8px"><i class="fa-solid fa-spinner fa-spin"></i> Searching subtitles...</div>';
+      try {
+        const params = new URLSearchParams();
+        if (currentDetailImdbId) {
+          params.set('imdb_id', currentDetailImdbId);
+        } else {
+          params.set('film_name', currentDetailTitle);
+          params.set('type', currentDetailType);
+        }
+        if (lang) params.set('languages', lang);
+        const resp = await fetch(`${API}/subtitles?${params}`);
+        const data = await resp.json();
+        subtitleData = data.subtitles || [];
+        renderSubtitles();
+      } catch (e) {
+        list.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;padding:8px">Failed to load subtitles.</div>';
+      }
+    }
+
+    function renderSubtitles() {
+      const list = document.getElementById('subtitle-list');
+      if (!list) return;
+      if (!subtitleData.length) {
+        list.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;padding:8px">No subtitles found.</div>';
+        return;
+      }
+      list.innerHTML = subtitleData.map(s => {
+        const dlUrl = s.download_url || (s.url?.startsWith('http') ? s.url : `https://api.subdl.com${s.url || ''}`);
+        const meta = [s.author, s.fps ? s.fps + 'fps' : '', s.hi ? 'HI' : ''].filter(Boolean).join(' · ');
+        return `<div class="sub-item">
+          <div class="sub-info">
+            <div class="sub-name" title="${escHtml(s.release_name || '')}">${escHtml(s.release_name || s.name || '')}</div>
+            <div class="sub-meta"><span>${escHtml(s.lang || s.language || '')}</span><span>${escHtml(meta)}</span></div>
+          </div>
+          ${dlUrl ? `<a class="sub-dl" href="${dlUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i> Download</a>` : ''}
+        </div>`;
+      }).join('');
     }
 
     function clearTorrents() {

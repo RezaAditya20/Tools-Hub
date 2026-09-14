@@ -79,6 +79,8 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             self._launch_mpv(parse_qs(parsed.query))
         elif path == "/api/tmdb":
             self._proxy_tmdb(parse_qs(parsed.query))
+        elif path == "/api/subtitles":
+            self._handle_subtitles(parse_qs(parsed.query))
         else:
             self._serve_static(path)
 
@@ -311,6 +313,50 @@ class TorrentHandler(SimpleHTTPRequestHandler):
         if isinstance(data.get("movie_credits"), dict):
             for m in data["movie_credits"].get("cast", []) or []:
                 _normalize_tmdb_images(m)
+        self._json_response(200, data)
+
+    def _handle_subtitles(self, params: dict):
+        """Proxy Subdl v2 API for subtitle search."""
+        api_key = "subdl_1DHXQhNIm-r0FluQBOGPzMrwCn5pSMc-mcr-QWOif9g"
+        imdb_id = params.get("imdb_id", [""])[0]
+        film_name = params.get("film_name", [""])[0]
+        sub_type = params.get("type", [""])[0]
+        languages = params.get("languages", ["en"])[0]
+        season = params.get("season", [""])[0]
+        episode = params.get("episode", [""])[0]
+        if not imdb_id and not film_name:
+            self._json_response(400, {"error": "imdb_id or film_name required"})
+            return
+        # Build v2 subtitle search URL
+        parts = []
+        if imdb_id:
+            parts.append(f"imdb_id={imdb_id}")
+        elif film_name:
+            parts.append(f"film_name={url_quote(film_name)}")
+        if sub_type:
+            parts.append(f"type={sub_type}")
+        if languages:
+            parts.append(f"languages={languages}")
+        if season:
+            parts.append(f"season={season}")
+        if episode:
+            parts.append(f"episode={episode}")
+        url = f"https://api.subdl.com/api/v2/subtitles/search?{'&'.join(parts)}"
+        req = urllib.request.Request(url)
+        req.add_header("Authorization", f"Bearer {api_key}")
+        req.add_header("Accept", "application/json")
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8", "replace"))
+        except Exception as e:
+            self._json_response(502, {"error": str(e)})
+            return
+        # Normalize: v2 returns { results: [...], subtitles: [...] }
+        # Build full download URLs from relative paths
+        for sub in data.get("subtitles", []) or []:
+            url = sub.get("url", "")
+            if url and not url.startswith("http"):
+                sub["download_url"] = f"https://api.subdl.com{url}"
         self._json_response(200, data)
 
     def _json_response(self, code: int, data: dict):
