@@ -108,6 +108,49 @@
       }
       .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+      /* ── Filter buttons + popover ── */
+      .filter-btns { display: flex; gap: 4px; margin-left: 12px; }
+      .filter-btn {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 7px 12px; border: none; border-radius: 6px;
+        background: transparent; color: #fff; font-size: 0.78rem; font-weight: 600;
+        cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      }
+      .filter-btn:hover { background: rgba(255,255,255,0.1); }
+      .filter-btn.active { background: var(--accent); color: #fff; }
+      .filter-popover {
+        position: fixed; top: 0; right: 0; width: 300px; max-height: 60vh;
+        background: var(--card-bg); border: 1px solid var(--border);
+        border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        z-index: 200; display: none; overflow: hidden;
+      }
+      .filter-popover.open { display: block; }
+      .fp-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 14px; border-bottom: 1px solid var(--border);
+      }
+      .fp-head span { font-size: 0.82rem; font-weight: 700; }
+      .fp-close {
+        background: none; border: none; color: var(--muted); font-size: 0.95rem;
+        cursor: pointer; padding: 2px 6px; border-radius: 4px;
+      }
+      .fp-close:hover { color: var(--text); background: var(--hover-bg); }
+      .fp-body { padding: 8px; overflow-y: auto; max-height: calc(60vh - 44px); }
+      .fp-body.genre-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+      .fp-body.year-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+      .fp-opt {
+        display: flex; align-items: center; gap: 6px;
+        padding: 7px 10px; border: none; border-radius: 6px; background: transparent;
+        color: var(--text); cursor: pointer; font-size: 0.78rem; font-weight: 500;
+        width: 100%; text-align: left; transition: background 0.12s;
+      }
+      .fp-opt:hover { background: var(--hover-bg); }
+      .fp-opt .opt-icon { font-size: 1rem; flex-shrink: 0; width: 20px; text-align: center; }
+      .fp-opt .opt-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      @media (max-width: 760px) {
+        .filter-btns { display: none; }
+      }
+
       /* ── Hero ── */
       .hero {
         position: relative; height: 78vh; min-height: 480px; max-height: 760px;
@@ -782,7 +825,13 @@
   <body>
     <!-- Top nav -->
     <nav class="topnav" id="topnav">
-      <div class="brand"><i class="fa-solid fa-magnifying-glass"></i> TorrentSearch</div>
+      <a class="brand" href="Torrent-Search.html" style="text-decoration:none;color:var(--accent)">TorrentSearch</a>
+      <div class="filter-btns" id="filter-btns">
+        <button class="filter-btn" data-type="genre"><i class="fa-solid fa-masks-theater"></i> Genre</button>
+        <button class="filter-btn" data-type="country"><i class="fa-solid fa-globe"></i> Country</button>
+        <button class="filter-btn" data-type="year"><i class="fa-regular fa-calendar"></i> Year</button>
+        <button class="filter-btn" id="list-btn" onclick="showMyList()"><i class="fa-solid fa-bookmark"></i> List</button>
+      </div>
       <div class="search-wrap">
         <input id="q" type="text" placeholder="Search movies & TV shows…" />
         <button class="btn-search" id="btn-search" onclick="searchMovies()">
@@ -795,6 +844,12 @@
       </button>
     </nav>
     <div class="top-gradient"></div>
+
+    <!-- Filter popover -->
+    <div class="filter-popover" id="filter-popover">
+      <div class="fp-head"><span id="fp-title"></span><button class="fp-close" onclick="closeFilterPopover()">✕</button></div>
+      <div class="fp-body" id="fp-body"></div>
+    </div>
 
     <!-- Hero (featured from trending) -->
     <section class="hero" id="hero">
@@ -945,6 +1000,86 @@
     const engineNames = {};
     let heroMovie = null;
 
+    // ── Filter popover data ──
+    const FP_GENRES = [
+      { id: 28, name: "Action", icon: "🥊" }, { id: 12, name: "Adventure", icon: "🗺️" },
+      { id: 16, name: "Animation", icon: "🎨" }, { id: 35, name: "Comedy", icon: "😂" },
+      { id: 80, name: "Crime", icon: "🔪" }, { id: 99, name: "Documentary", icon: "📽️" },
+      { id: 18, name: "Drama", icon: "🎭" }, { id: 10751, name: "Family", icon: "👨‍👩‍👧" },
+      { id: 14, name: "Fantasy", icon: "🧙" }, { id: 36, name: "History", icon: "📜" },
+      { id: 27, name: "Horror", icon: "👻" }, { id: 10402, name: "Music", icon: "🎵" },
+      { id: 9648, name: "Mystery", icon: "🔍" }, { id: 10749, name: "Romance", icon: "💕" },
+      { id: 878, name: "Sci-Fi", icon: "🚀" }, { id: 53, name: "Thriller", icon: "😱" },
+      { id: 10752, name: "War", icon: "⚔️" }, { id: 37, name: "Western", icon: "🤠" },
+    ];
+    const FP_COUNTRIES = [
+      { code: "US", name: "United States", flag: "🇺🇸" }, { code: "ID", name: "Indonesia", flag: "🇮🇩" },
+      { code: "JP", name: "Japan", flag: "🇯🇵" }, { code: "KR", name: "South Korea", flag: "🇰🇷" },
+      { code: "GB", name: "United Kingdom", flag: "🇬🇧" }, { code: "FR", name: "France", flag: "🇫🇷" },
+      { code: "DE", name: "Germany", flag: "🇩🇪" }, { code: "IN", name: "India", flag: "🇮🇳" },
+      { code: "TH", name: "Thailand", flag: "🇹🇭" }, { code: "AU", name: "Australia", flag: "🇦🇺" },
+      { code: "BR", name: "Brazil", flag: "🇧🇷" }, { code: "MX", name: "Mexico", flag: "🇲🇽" },
+      { code: "IT", name: "Italy", flag: "🇮🇹" }, { code: "ES", name: "Spain", flag: "🇪🇸" },
+      { code: "TR", name: "Turkey", flag: "🇹🇷" }, { code: "RU", name: "Russia", flag: "🇷🇺" },
+      { code: "CN", name: "China", flag: "🇨🇳" }, { code: "CA", name: "Canada", flag: "🇨🇦" },
+      { code: "NG", name: "Nigeria", flag: "🇳🇬" }, { code: "PH", name: "Philippines", flag: "🇵🇭" },
+    ];
+    const FP_YEARS = [];
+    for (let y = new Date().getFullYear(); y >= 1970; y--) FP_YEARS.push(y);
+
+    let activeFP = null;
+    function openFilterPopover(type) {
+      const pop = document.getElementById('filter-popover');
+      const title = document.getElementById('fp-title');
+      const body = document.getElementById('fp-body');
+      if (activeFP === type) { closeFilterPopover(); return; }
+      activeFP = type;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+      title.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+      body.innerHTML = '';
+      body.className = 'fp-body';
+      const TS = '/page/Torrent-Search.html';
+      if (type === 'genre') {
+        body.classList.add('genre-grid');
+        FP_GENRES.forEach(g => {
+          const opt = document.createElement('button');
+          opt.className = 'fp-opt';
+          opt.innerHTML = `<span class="opt-label">${g.name}</span>`;
+          opt.onclick = () => { window.location.href = TS + '?genre=' + g.id; };
+          body.appendChild(opt);
+        });
+      } else if (type === 'country') {
+        FP_COUNTRIES.forEach(c => {
+          const opt = document.createElement('button');
+          opt.className = 'fp-opt';
+          opt.innerHTML = `<span class="opt-icon">${c.flag}</span><span class="opt-label">${c.name}</span>`;
+          opt.onclick = () => { window.location.href = TS + '?country=' + c.code; };
+          body.appendChild(opt);
+        });
+      } else if (type === 'year') {
+        body.classList.add('year-grid');
+        FP_YEARS.forEach(y => {
+          const opt = document.createElement('button');
+          opt.className = 'fp-opt';
+          opt.innerHTML = `<span class="opt-label">${y}</span>`;
+          opt.onclick = () => { window.location.href = TS + '?year=' + y; };
+          body.appendChild(opt);
+        });
+      }
+      // Position below the clicked button
+      const btn = document.querySelector(`.filter-btn[data-type="${type}"]`);
+      const br = btn.getBoundingClientRect();
+      pop.style.top = (br.bottom + 6) + 'px';
+      pop.style.left = Math.min(br.left, window.innerWidth - 310) + 'px';
+      pop.style.right = 'auto';
+      pop.classList.add('open');
+    }
+    function closeFilterPopover() {
+      activeFP = null;
+      document.getElementById('filter-popover').classList.remove('open');
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    }
+
     // ── Init ──
     (async function init() {
       await Settings.init();
@@ -973,7 +1108,25 @@
         if (e.key === 'Enter') searchMovies();
       });
 
-      loadTrending();
+      // Filter popover buttons (exclude list-btn)
+      document.querySelectorAll('.filter-btn[data-type]').forEach(btn => {
+        btn.addEventListener('click', () => openFilterPopover(btn.dataset.type));
+      });
+      document.addEventListener('click', e => {
+        if (!document.getElementById('filter-popover').contains(e.target) && !e.target.closest('.filter-btn'))
+          closeFilterPopover();
+      });
+
+      // Check for filter params from navbar
+      const urlParams = new URLSearchParams(window.location.search);
+      const genreId = urlParams.get('genre');
+      const countryCode = urlParams.get('country');
+      const yearParam = urlParams.get('year');
+      if (genreId || countryCode || yearParam) {
+        loadFiltered(genreId, countryCode, yearParam);
+      } else {
+        loadTrending();
+      }
     })();
 
     function renderChips() {
@@ -1055,6 +1208,75 @@
         wrap.dispatchEvent(new Event('scroll'));
       }
       // Icons handled by FontAwesome
+    }
+
+    // ── Filtered results (from navbar Genre/Country/Year) ──
+    const GENRE_MAP = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',53:'Thriller',10752:'War',37:'Western'};
+    const COUNTRY_MAP = {US:'United States',ID:'Indonesia',JP:'Japan',KR:'South Korea',GB:'United Kingdom',FR:'France',DE:'Germany',IN:'India',TH:'Thailand',AU:'Australia',BR:'Brazil',MX:'Mexico',IT:'Italy',ES:'Spain',TR:'Turkey',RU:'Russia',CN:'China',CA:'Canada',NG:'Nigeria',PH:'Philippines'};
+
+    async function loadFiltered(genreId, countryCode, yearParam) {
+      document.getElementById('trending-rows').style.display = 'none';
+      const section = document.getElementById('search-section');
+      const grid = document.getElementById('search-grid');
+      section.style.display = '';
+      grid.innerHTML = '';
+
+      // Build label
+      const parts = [];
+      if (genreId) parts.push(GENRE_MAP[genreId] || 'Genre ' + genreId);
+      if (countryCode) parts.push(COUNTRY_MAP[countryCode] || countryCode);
+      if (yearParam) parts.push(yearParam);
+      const filterLabel = parts.join(' · ') || 'Filtered';
+
+      // Show skeleton in hero
+      const loader = document.getElementById('hero-loader');
+      const content = document.getElementById('hero-content');
+      loader.innerHTML = '<div class="skel-hero"><div class="skeleton skel-badge"></div><div class="skeleton skel-title"></div><div class="skeleton skel-meta"><div class="skeleton skel-meta span"></div><div class="skeleton skel-meta span"></div></div><div class="skeleton skel-text"></div><div class="skeleton skel-text short"></div></div>';
+      loader.style.display = '';
+      content.style.display = 'none';
+
+      // Fetch discover
+      const params = new URLSearchParams({ sort_by: 'popularity.desc', language: 'en-US' });
+      if (genreId) params.set('with_genres', genreId);
+      if (countryCode) params.set('with_origin_country', countryCode);
+      if (yearParam) { params.set('primary_release_year', yearParam); params.set('year', yearParam); }
+      const path = '/discover/movie?' + params.toString();
+
+      try {
+        const items = await fetchCategory(path);
+        if (!items.length) {
+          loader.innerHTML = `<i class="fa-solid fa-film" style="font-size:2rem;margin-bottom:12px;display:block;color:var(--muted)"></i>No results for "${filterLabel}"`;
+          return;
+        }
+        // Hero = first item
+        heroMovie = items[0];
+        const hero = items[0];
+        const heroTitle = hero.title || hero.original_title || 'Unknown';
+        const heroYear = (hero.release_date || '').slice(0, 4);
+        const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + hero.backdrop_path : '');
+        document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
+        document.getElementById('hero-badge').textContent = filterLabel.toUpperCase();
+        document.getElementById('hero-meta').innerHTML =
+          (hero.vote_average ? `<span class="rating">${hero.vote_average.toFixed(1)}</span>` : '') +
+          (heroYear ? `<span>${heroYear}</span>` : '') +
+          '<span>Movie</span>';
+        document.getElementById('hero-overview').textContent = hero.overview || '';
+        document.getElementById('hero-play').onclick = () => openDetail(hero);
+        loader.style.display = 'none';
+        content.style.display = '';
+        const titleEl = document.getElementById('hero-title');
+        const logoUrl = await fetchLogo(hero.id, 'movie');
+        if (logoUrl) {
+          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+        } else {
+          titleEl.textContent = heroTitle;
+        }
+        // Grid = rest
+        const rest = items.slice(1, 30);
+        if (rest.length) renderSearchGrid(rest);
+      } catch (e) {
+        loader.innerHTML = `Error loading "${filterLabel}": ${e.message}`;
+      }
     }
 
     async function fetchCategory(path) {
@@ -1231,6 +1453,112 @@
       if (backBtn) backBtn.style.display = 'none';
       document.getElementById('trending-rows').style.display = '';
       loadTrending();
+    }
+
+    // ── My List view (inline) ──
+    async function showMyList() {
+      const watchlist = Settings.get('watchlist', []);
+      const completed = Settings.get('completed', []);
+      const allItems = [...watchlist, ...completed];
+      // Dedupe by id+type
+      const seen = new Set();
+      const items = allItems.filter(m => {
+        const key = (m.id || m.title) + '|' + (m.type || 'movie');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      document.getElementById('q').value = '';
+      document.getElementById('trending-rows').style.display = 'none';
+      const section = document.getElementById('search-section');
+      const grid = document.getElementById('search-grid');
+      section.style.display = '';
+      grid.innerHTML = '';
+
+      const loader = document.getElementById('hero-loader');
+      const content = document.getElementById('hero-content');
+      const heroActions = document.getElementById('hero-actions');
+
+      if (!items.length) {
+        loader.innerHTML = '<i class="fa-solid fa-bookmark" style="font-size:2rem;margin-bottom:12px;display:block;color:var(--muted)"></i>Belum ada film di list.';
+        content.style.display = 'none';
+        loader.style.display = '';
+        // Remove back button if exists
+        const backBtn = document.getElementById('hero-back');
+        if (backBtn) backBtn.style.display = 'none';
+        return;
+      }
+
+      // Show hero with first item (fetch fresh TMDB data for backdrop)
+      loader.innerHTML = '<div class="skel-hero"><div class="skeleton skel-badge"></div><div class="skeleton skel-title"></div><div class="skeleton skel-meta"><div class="skeleton skel-meta span"></div><div class="skeleton skel-meta span"></div></div><div class="skeleton skel-text"></div><div class="skeleton skel-text short"></div></div>';
+      loader.style.display = '';
+      content.style.display = 'none';
+
+      const first = items[0];
+      const firstType = first.type || 'movie';
+      try {
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + firstType + '/' + first.id)}`);
+        const d = await r.json();
+        if (!d.error) {
+          heroMovie = d;
+          const heroTitle = firstType === 'tv' ? (d.name || d.original_name) : (d.title || d.original_title);
+          const heroYear = (d.release_date || d.first_air_date || '').slice(0, 4);
+          const bd = d.backdrop_url || (d.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + d.backdrop_path : '');
+          document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
+          document.getElementById('hero-badge').textContent = 'MY LIST';
+          document.getElementById('hero-meta').innerHTML =
+            (d.vote_average ? `<span class="rating">${d.vote_average.toFixed(1)}</span>` : '') +
+            (heroYear ? `<span>${heroYear}</span>` : '') +
+            (firstType === 'tv' ? '<span>TV</span>' : '<span>Movie</span>');
+          document.getElementById('hero-overview').textContent = d.overview || '';
+          document.getElementById('hero-play').onclick = () => openDetail(d);
+          const titleEl = document.getElementById('hero-title');
+          const logoUrl = await fetchLogo(d.id, firstType);
+          if (logoUrl) {
+            titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+          } else {
+            titleEl.textContent = heroTitle;
+          }
+          loader.style.display = 'none';
+          content.style.display = '';
+        }
+      } catch {}
+
+      // Add back button
+      let backBtn = document.getElementById('hero-back');
+      if (!backBtn) {
+        backBtn = document.createElement('button');
+        backBtn.id = 'hero-back';
+        backBtn.className = 'btn-hero ghost';
+        backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Back';
+        backBtn.onclick = () => clearMovieSearch();
+        heroActions.appendChild(backBtn);
+      }
+      backBtn.style.display = '';
+
+      // Grid: remaining items
+      const rest = items.slice(1, 30);
+      if (rest.length) {
+        for (const m of rest) {
+          const isTV = m.type === 'tv';
+          const title = m.title || 'Unknown';
+          const card = document.createElement('div');
+          card.className = 'movie-card';
+          card.innerHTML = `
+            <div class="poster-wrap">
+              ${m.poster_url
+                ? `<img src="${m.poster_url}" alt="${escHtml(title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=\\'poster-ph\\'><i class=\\'fa-solid fa-film\\'></i></div>'">`
+                : '<div class="poster-ph"><i class="fa-solid fa-film"></i></div>'}
+            </div>
+            <div class="info">
+              <div class="title">${escHtml(title)}</div>
+              <div class="year">${m.year || ''}</div>
+            </div>`;
+          card.onclick = () => openDetail({ id: m.id, media_type: m.type || 'movie', title: m.title, poster_url: m.poster_url });
+          grid.appendChild(card);
+        }
+      }
     }
 
     // ── Detail modal ──
@@ -1524,7 +1852,7 @@
       document.body.style.overflow = '';
       subtitleData = [];
     }
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDetail(); closeCmd(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDetail(); closeCmd(); closeFilterPopover(); } });
     document.getElementById('detail-modal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeDetail();
     });
