@@ -151,6 +151,22 @@
         .filter-btns { display: none; }
       }
 
+      /* ── Advanced search form ── */
+      .adv-form { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+      .adv-form label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+      .adv-form input, .adv-form select {
+        width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+        border-radius: 6px; background: var(--card-bg-2); color: var(--text);
+        font-size: 0.82rem; outline: none; transition: border-color 0.18s;
+      }
+      .adv-form input:focus, .adv-form select:focus { border-color: var(--accent); }
+      .adv-form .btn-adv {
+        padding: 10px; border: none; border-radius: 6px;
+        background: var(--accent); color: #fff; font-size: 0.85rem;
+        font-weight: 700; cursor: pointer; transition: opacity 0.18s;
+      }
+      .adv-form .btn-adv:hover { opacity: 0.85; }
+
       /* ── Hero ── */
       .hero {
         position: relative; height: 78vh; min-height: 480px; max-height: 760px;
@@ -830,6 +846,7 @@
         <button class="filter-btn" data-type="genre"><i class="fa-solid fa-masks-theater"></i> Genre</button>
         <button class="filter-btn" data-type="country"><i class="fa-solid fa-globe"></i> Country</button>
         <button class="filter-btn" data-type="year"><i class="fa-regular fa-calendar"></i> Year</button>
+        <button class="filter-btn" data-type="advanced"><i class="fa-solid fa-sliders"></i> Advanced</button>
         <button class="filter-btn" id="list-btn" onclick="showMyList()"><i class="fa-solid fa-bookmark"></i> List</button>
       </div>
       <div class="search-wrap">
@@ -1072,12 +1089,33 @@
           opt.onclick = () => { window.location.href = TS + '?year=' + y; };
           body.appendChild(opt);
         });
+      } else if (type === 'advanced') {
+        // Build genre options
+        const genreOpts = FP_GENRES.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        const countryOpts = FP_COUNTRIES.map(c => `<option value="${c.code}">${c.flag} ${c.name}</option>`).join('');
+        const yearOpts = FP_YEARS.map(y => `<option value="${y}">${y}</option>`).join('');
+        body.innerHTML = `
+          <div class="adv-form">
+            <div><label for="adv-name">Name</label>
+              <input id="adv-name" type="text" placeholder="e.g. Spider-Man" /></div>
+            <div><label for="adv-genre">Genre</label>
+              <select id="adv-genre"><option value="">Any Genre</option>${genreOpts}</select></div>
+            <div><label for="adv-country">Country</label>
+              <select id="adv-country"><option value="">Any Country</option>${countryOpts}</select></div>
+            <div><label for="adv-year">Year</label>
+              <select id="adv-year"><option value="">Any Year</option>${yearOpts}</select></div>
+            <button class="btn-adv" onclick="doAdvancedSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+          </div>`;
+        // Enter key triggers search
+        body.querySelector('#adv-name').addEventListener('keydown', e => { if (e.key === 'Enter') doAdvancedSearch(); });
       }
       // Position below the clicked button
       const btn = document.querySelector(`.filter-btn[data-type="${type}"]`);
       const br = btn.getBoundingClientRect();
+      const popWidth = type === 'advanced' ? 360 : 300;
+      pop.style.width = popWidth + 'px';
       pop.style.top = (br.bottom + 6) + 'px';
-      pop.style.left = Math.min(br.left, window.innerWidth - 310) + 'px';
+      pop.style.left = Math.min(br.left, window.innerWidth - (popWidth + 10)) + 'px';
       pop.style.right = 'auto';
       pop.classList.add('open');
     }
@@ -1085,6 +1123,111 @@
       activeFP = null;
       document.getElementById('filter-popover').classList.remove('open');
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    async function doAdvancedSearch() {
+      const name = document.getElementById('adv-name')?.value.trim() || '';
+      const genreId = document.getElementById('adv-genre')?.value || '';
+      const countryCode = document.getElementById('adv-country')?.value || '';
+      const yearVal = document.getElementById('adv-year')?.value || '';
+      closeFilterPopover();
+
+      // Build label
+      const parts = [];
+      if (name) parts.push(`"${name}"`);
+      if (genreId) parts.push(GENRE_MAP[genreId] || 'Genre');
+      if (countryCode) parts.push(COUNTRY_MAP[countryCode] || countryCode);
+      if (yearVal) parts.push(yearVal);
+      const filterLabel = parts.join(' · ') || 'Advanced';
+
+      // Hide trending, show search section
+      document.getElementById('trending-rows').style.display = 'none';
+      const section = document.getElementById('search-section');
+      const grid = document.getElementById('search-grid');
+      section.style.display = '';
+      grid.innerHTML = '';
+
+      // Show skeleton hero
+      const loader = document.getElementById('hero-loader');
+      const content = document.getElementById('hero-content');
+      loader.innerHTML = '<div class="skel-hero"><div class="skeleton skel-badge"></div><div class="skeleton skel-title"></div><div class="skel-meta"><div class="skeleton skel-meta span"></div><div class="skeleton skel-meta span"></div></div><div class="skeleton skel-text"></div><div class="skeleton skel-text short"></div></div>';
+      loader.style.display = '';
+      content.style.display = 'none';
+
+      try {
+        let items = [];
+        let total_pages = 1;
+
+        if (name && !genreId && !countryCode) {
+          // Name-only or name+year: use /search/movie
+          const searchParams = new URLSearchParams({ query: name, language: 'en-US' });
+          if (yearVal) searchParams.set('year', yearVal);
+          const { results, total_pages: tp } = await fetchCategory('/search/movie?' + searchParams.toString());
+          items = results;
+          total_pages = tp;
+          // Set scroll state with base path (no page)
+          activeView = 'filtered';
+          currentPath = '/search/movie?' + searchParams.toString();
+        } else {
+          // Has genre/country: use /discover/movie
+          const params = new URLSearchParams({ sort_by: 'popularity.desc', language: 'en-US' });
+          if (genreId) params.set('with_genres', genreId);
+          if (countryCode) params.set('with_origin_country', countryCode);
+          if (yearVal) { params.set('primary_release_year', yearVal); params.set('year', yearVal); }
+          const discoverPath = '/discover/movie?' + params.toString();
+          const { results, total_pages: tp } = await fetchCategory(discoverPath);
+          total_pages = tp;
+          // Client-side filter by name if provided
+          if (name) {
+            const lower = name.toLowerCase();
+            items = results.filter(m => {
+              const t = (m.title || m.original_title || '').toLowerCase();
+              return t.includes(lower);
+            });
+          } else {
+            items = results;
+          }
+          activeView = 'filtered';
+          currentPath = discoverPath;
+        }
+
+        currentPage = 1;
+        totalPages = total_pages;
+
+        if (!items.length) {
+          loader.innerHTML = `<i class="fa-solid fa-film" style="font-size:2rem;margin-bottom:12px;display:block;color:var(--muted)"></i>No results for ${escHtml(filterLabel)}`;
+          return;
+        }
+
+        // Hero = first item
+        heroMovie = items[0];
+        const hero = items[0];
+        const heroTitle = hero.title || hero.original_title || 'Unknown';
+        const heroYear = (hero.release_date || '').slice(0, 4);
+        const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + hero.backdrop_path : '');
+        document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
+        document.getElementById('hero-badge').textContent = filterLabel.toUpperCase();
+        document.getElementById('hero-meta').innerHTML =
+          (hero.vote_average ? `<span class="rating">${hero.vote_average.toFixed(1)}</span>` : '') +
+          (heroYear ? `<span>${heroYear}</span>` : '') +
+          '<span>Movie</span>';
+        document.getElementById('hero-overview').textContent = hero.overview || '';
+        document.getElementById('hero-play').onclick = () => openDetail(hero);
+        loader.style.display = 'none';
+        content.style.display = '';
+        const titleEl = document.getElementById('hero-title');
+        const logoUrl = await fetchLogo(hero.id, 'movie');
+        if (logoUrl) {
+          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+        } else {
+          titleEl.textContent = heroTitle;
+        }
+        // Grid = rest
+        const rest = items.slice(1, 20);
+        if (rest.length) renderSearchGrid(rest);
+      } catch (e) {
+        loader.innerHTML = `Error: ${e.message}`;
+      }
     }
 
     // ── Init ──
@@ -2100,7 +2243,7 @@
           const src = detectSource(r.name);
           card.innerHTML = `
             <div class="q-badges"><span class="q-badge">${QUALITY_LABELS[q]}</span>${src ? `<span class="q-source">${src}</span>` : ''}</div>
-            <div class="q-name" title="${escHtml(r.name)}">${escHtml(r.name)}</div>
+            <div class="q-name" title="${escHtml(cleanTorrentName(r.name))}">${escHtml(cleanTorrentName(r.name))}</div>
             <div class="q-meta">
               <span class="seeds"><i class="fa-solid fa-arrow-up"></i> ${parseInt(r.seeds, 10) >= 0 ? parseInt(r.seeds, 10) : '-'}</span>
               <span class="leech"><i class="fa-solid fa-arrow-down"></i> ${parseInt(r.leech, 10) >= 0 ? parseInt(r.leech, 10) : '-'}</span>
@@ -2305,7 +2448,7 @@
       name.className = 't-name';
       const a = document.createElement('a');
       a.href = r.desc_link || '#'; a.target = '_blank'; a.rel = 'noopener';
-      a.textContent = r.name || 'Unknown'; a.title = r.name || '';
+      a.textContent = cleanTorrentName(r.name) || 'Unknown'; a.title = cleanTorrentName(r.name) || '';
       name.appendChild(a);
       const meta = document.createElement('div');
       meta.className = 't-meta';
@@ -2384,6 +2527,9 @@
 
     // ── Helpers ──
     function setStatus() {} // Status bar removed
+    function cleanTorrentName(name) {
+      return (name || '').replace(/\s*\((?:Movies|TV|电影|Films)\)\s*$/i, '').trim();
+    }
     function escHtml(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
