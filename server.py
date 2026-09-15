@@ -115,7 +115,7 @@ def _normalize_tmdb_images(item: dict) -> None:
     if item.get("poster_path") and not item.get("poster_url"):
         item["poster_url"] = TMDB_IMG + item["poster_path"]
     if item.get("backdrop_path") and not item.get("backdrop_url"):
-        item["backdrop_url"] = "https://image.tmdb.org/t/p/w780" + item["backdrop_path"]
+        item["backdrop_url"] = "https://image.tmdb.org/t/p/original" + item["backdrop_path"]
 
 
 class TorrentHandler(SimpleHTTPRequestHandler):
