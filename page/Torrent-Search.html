@@ -270,17 +270,17 @@
       .movie-row .row-body { position: relative; }
       .movie-row .scroll-wrap {
         display: flex; gap: 10px; overflow: hidden;
-        padding: 4px 24px 8px; scroll-behavior: smooth;
+        padding: 4px 24px 8px; scroll-behavior: smooth; overscroll-behavior-x: contain;
       }
       .movie-row .scroll-wrap .movie-card {
         flex: 0 0 140px;
       }
       .movie-row .arrow-btn {
-        position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+        position: absolute; top: 50%; margin-top: -18px; z-index: 10;
         width: 36px; height: 36px; border-radius: 50%;
         background: var(--card-bg-2); border: 1px solid var(--border); color: var(--text);
         font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        transition: all 0.2s; opacity: 0;
+        transition: opacity 0.2s, background 0.2s, color 0.2s, border-color 0.2s; opacity: 0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       }
       .movie-row:hover .arrow-btn { opacity: 1; }
@@ -855,9 +855,8 @@
           <i class="fa-solid fa-magnifying-glass"></i> Search
         </button>
       </div>
-      <button class="icon-btn" id="theme-toggle" title="Toggle theme">
-        <span class="icon-sun"><i class="fa-solid fa-sun"></i></span>
-        <span class="icon-moon" style="display:none"><i class="fa-solid fa-moon"></i></span>
+      <button class="icon-btn" id="lang-btn" title="Default country">
+        <span id="lang-icon"><i class="fa-solid fa-language"></i></span>
       </button>
     </nav>
     <div class="top-gradient"></div>
@@ -866,6 +865,12 @@
     <div class="filter-popover" id="filter-popover">
       <div class="fp-head"><span id="fp-title"></span><button class="fp-close" onclick="closeFilterPopover()">✕</button></div>
       <div class="fp-body" id="fp-body"></div>
+    </div>
+
+    <!-- Language / country popover -->
+    <div class="filter-popover" id="lang-popover">
+      <div class="fp-head"><span>Default Country</span><button class="fp-close" onclick="closeLangPopover()">✕</button></div>
+      <div class="fp-body" id="lang-body"></div>
     </div>
 
     <!-- Hero (featured from trending) -->
@@ -1125,6 +1130,65 @@
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     }
 
+    // ── Default country selector ──
+    let defaultCountry = null;
+
+    function openLangPopover() {
+      const pop = document.getElementById('lang-popover');
+      const body = document.getElementById('lang-body');
+      if (pop.classList.contains('open')) { closeLangPopover(); return; }
+      body.innerHTML = '';
+      // "None" option
+      const noneOpt = document.createElement('button');
+      noneOpt.className = 'fp-opt' + (!defaultCountry ? ' active' : '');
+      noneOpt.style.cssText = 'background:transparent;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;width:100%;';
+      if (!defaultCountry) noneOpt.style.borderColor = 'var(--accent)';
+      noneOpt.innerHTML = `<span class="opt-label" style="color:var(--muted)">None (hide country row)</span>`;
+      noneOpt.onclick = () => setDefaultCountry(null);
+      body.appendChild(noneOpt);
+      FP_COUNTRIES.forEach(c => {
+        const opt = document.createElement('button');
+        opt.className = 'fp-opt';
+        if (defaultCountry === c.code) {
+          opt.style.borderColor = 'var(--accent)';
+          opt.style.background = 'var(--hover-bg)';
+        }
+        opt.innerHTML = `<span class="opt-icon">${c.flag}</span><span class="opt-label">${c.name}</span>`;
+        opt.onclick = () => setDefaultCountry(c.code);
+        body.appendChild(opt);
+      });
+      const btn = document.getElementById('lang-btn');
+      const br = btn.getBoundingClientRect();
+      pop.style.width = '300px';
+      pop.style.top = (br.bottom + 6) + 'px';
+      pop.style.left = Math.min(br.left, window.innerWidth - 310) + 'px';
+      pop.style.right = 'auto';
+      pop.classList.add('open');
+    }
+    function closeLangPopover() {
+      document.getElementById('lang-popover').classList.remove('open');
+    }
+
+    function updateLangIcon() {
+      const el = document.getElementById('lang-icon');
+      if (!el) return;
+      if (defaultCountry) {
+        const c = FP_COUNTRIES.find(c => c.code === defaultCountry);
+        el.textContent = c ? c.flag : '🌐';
+      } else {
+        el.innerHTML = '<i class="fa-solid fa-language"></i>';
+      }
+    }
+
+    async function setDefaultCountry(code) {
+      defaultCountry = code;
+      await Settings.set('default_country', code);
+      updateLangIcon();
+      closeLangPopover();
+      // Rebuild trending rows with updated country
+      loadTrending();
+    }
+
     async function doAdvancedSearch() {
       const name = document.getElementById('adv-name')?.value.trim() || '';
       const genreId = document.getElementById('adv-genre')?.value || '';
@@ -1262,9 +1326,17 @@
       document.querySelectorAll('.filter-btn[data-type]').forEach(btn => {
         btn.addEventListener('click', () => openFilterPopover(btn.dataset.type));
       });
+
+      // Language / default country button
+      defaultCountry = Settings.get('default_country') || null;
+      updateLangIcon();
+      document.getElementById('lang-btn').addEventListener('click', openLangPopover);
+
       document.addEventListener('click', e => {
         if (!document.getElementById('filter-popover').contains(e.target) && !e.target.closest('.filter-btn'))
           closeFilterPopover();
+        if (!document.getElementById('lang-popover').contains(e.target) && !e.target.closest('#lang-btn'))
+          closeLangPopover();
       });
 
       // Check for filter params from navbar
@@ -1328,8 +1400,18 @@
       // Hero from trending week
       const { results: heroData } = await fetchCategory('/trending/movie/week');
       renderHero(heroData);
+      // Build categories: add country row if defaultCountry is set
+      const cats = [...CATEGORIES];
+      if (defaultCountry) {
+        const cName = COUNTRY_MAP[defaultCountry] || defaultCountry;
+        cats.splice(2, 0, {
+          title: cName,
+          path: `/discover/movie?with_origin_country=${defaultCountry}&sort_by=popularity.desc`,
+          type: 'movie'
+        });
+      }
       // Render each row
-      for (const cat of CATEGORIES) {
+      for (const cat of cats) {
         const row = document.createElement('div');
         row.className = 'movie-row';
         row.innerHTML = `
