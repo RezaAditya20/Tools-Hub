@@ -1204,7 +1204,7 @@
         const hero = items[0];
         const heroTitle = hero.title || hero.original_title || 'Unknown';
         const heroYear = (hero.release_date || '').slice(0, 4);
-        const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + hero.backdrop_path : '');
+        const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/original' + hero.backdrop_path : '');
         document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
         document.getElementById('hero-badge').textContent = filterLabel.toUpperCase();
         document.getElementById('hero-meta').innerHTML =
@@ -1410,7 +1410,7 @@
         const hero = items[0];
         const heroTitle = hero.title || hero.original_title || 'Unknown';
         const heroYear = (hero.release_date || '').slice(0, 4);
-        const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + hero.backdrop_path : '');
+        const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/original' + hero.backdrop_path : '');
         document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
         document.getElementById('hero-badge').textContent = filterLabel.toUpperCase();
         document.getElementById('hero-meta').innerHTML =
@@ -1479,7 +1479,7 @@
       const isTV = featured.media_type === 'tv' || activeTmdbPath.includes('/tv/');
       const title = isTV ? (featured.name || featured.original_name) : (featured.title || featured.original_title);
       const year = (featured.release_date || featured.first_air_date || '').slice(0, 4);
-      const bd = featured.backdrop_url || (featured.backdrop_path ? ('https://image.tmdb.org/t/p/w1280' + featured.backdrop_path) : '');
+      const bd = featured.backdrop_url || (featured.backdrop_path ? ('https://image.tmdb.org/t/p/original' + featured.backdrop_path) : '');
       if (bd) bg.style.backgroundImage = `url("${bd}")`;
       document.getElementById('hero-meta').innerHTML =
         (featured.vote_average ? `<span class="rating">${featured.vote_average.toFixed(1)}</span>` : '') +
@@ -1534,7 +1534,7 @@
         const isHeroTV = heroItem.media_type === 'tv';
         const heroTitle = isHeroTV ? (heroItem.name || heroItem.original_name) : (heroItem.title || heroItem.original_title);
         const heroYear = (heroItem.release_date || heroItem.first_air_date || '').slice(0, 4);
-        const bd = heroItem.backdrop_url || (heroItem.backdrop_path ? ('https://image.tmdb.org/t/p/w1280' + heroItem.backdrop_path) : '');
+        const bd = heroItem.backdrop_url || (heroItem.backdrop_path ? ('https://image.tmdb.org/t/p/original' + heroItem.backdrop_path) : '');
         document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
         document.getElementById('hero-badge').textContent = 'SEARCH RESULT';
         document.getElementById('hero-meta').innerHTML =
@@ -1716,7 +1716,7 @@
           heroMovie = d;
           const heroTitle = firstType === 'tv' ? (d.name || d.original_name) : (d.title || d.original_title);
           const heroYear = (d.release_date || d.first_air_date || '').slice(0, 4);
-          const bd = d.backdrop_url || (d.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + d.backdrop_path : '');
+          const bd = d.backdrop_url || (d.backdrop_path ? 'https://image.tmdb.org/t/p/original' + d.backdrop_path : '');
           document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
           document.getElementById('hero-badge').textContent = 'MY LIST';
           document.getElementById('hero-meta').innerHTML =
@@ -1781,7 +1781,7 @@
       modal.classList.add('open');
       document.body.style.overflow = 'hidden';
       // Set backdrop from passed data first
-      const bd = movie.backdrop_url || (movie.backdrop_path ? ('https://image.tmdb.org/t/p/w1280' + movie.backdrop_path) : '');
+      const bd = movie.backdrop_url || (movie.backdrop_path ? ('https://image.tmdb.org/t/p/original' + movie.backdrop_path) : '');
       if (bd) backdrop.style.backgroundImage = `url("${bd}")`;
       else backdrop.style.backgroundImage = 'none';
       body.innerHTML = '<div class="detail-loading"><div class="skel-detail"><div class="skel-row"><div class="skel-info"><div class="skeleton skel-badge"></div><div class="skeleton skel-line w80"></div><div class="skeleton skel-line w60"></div><div class="skeleton skel-line w80"></div><div class="skeleton skel-line w40"></div></div></div></div></div>';
@@ -1794,7 +1794,7 @@
         const d = await r.json();
         if (d.error) throw new Error(d.error);
         // Update backdrop from fetched data (filmography items don't have backdrop)
-        const fBd = d.backdrop_url || (d.backdrop_path ? ('https://image.tmdb.org/t/p/w1280' + d.backdrop_path) : '');
+        const fBd = d.backdrop_url || (d.backdrop_path ? ('https://image.tmdb.org/t/p/original' + d.backdrop_path) : '');
         if (fBd) backdrop.style.backgroundImage = `url("${fBd}")`;
         renderDetail(d, isTV);
       } catch (e) {
