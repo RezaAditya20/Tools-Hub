@@ -268,7 +268,20 @@ class TorrentHandler(SimpleHTTPRequestHandler):
         if ".." in path or "://" in path:
             self._json_response(400, {"error": "Invalid path"})
             return
-        url = f"{TMDB_API}{path}?language=en-US"
+        # Split path into base path and any inline query string
+        if "?" in path:
+            base_path, inline_qs = path.split("?", 1)
+        else:
+            base_path, inline_qs = path, ""
+        url = f"{TMDB_API}{base_path}?language=en-US"
+        # Forward inline query params from the path (e.g. sort_by, with_origin_country)
+        if inline_qs:
+            for pair in inline_qs.split("&"):
+                if "=" in pair:
+                    k, v = pair.split("=", 1)
+                    if k == "language":
+                        continue  # already set above
+                    url += f"&{k}={url_quote(v, safe='')}"
         # Forward optional extra query params (page, append_to_response, query, etc.)
         for k in ("page", "append_to_response", "query"):
             if k in params:
