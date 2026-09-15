@@ -2016,6 +2016,7 @@
   </head>
   <body>
     <div id="navbar"></div>
+    <script src="settings.js"></script>
     <script src="../navbar.js"></script>
     <div class="container view active">
       <div class="topbar">
@@ -2313,11 +2314,9 @@
               }
             } catch (e) { db = {}; catOrder = {}; }
           } else {
-            try {
-              const raw = localStorage.getItem("school-notes-db");
-              if (raw) db = JSON.parse(raw);
-              catOrder = JSON.parse(localStorage.getItem("school-notes-catorder") || "{}");
-            } catch (e) { db = {}; catOrder = {}; }
+            await Settings.init();
+            db = Settings.get("school-notes-db", {});
+            catOrder = Settings.get("school-notes-catorder", {});
           }
           // Migrasi: beri order untuk data lama
           Object.keys(db).forEach((id, i) => {
@@ -2339,10 +2338,8 @@
             try { await window.electronAPI.saveState(db, catOrder); } catch (e) {}
             updateStorageInfo();
           } else {
-            try {
-              localStorage.setItem("school-notes-db", JSON.stringify(db));
-              localStorage.setItem("school-notes-catorder", JSON.stringify(catOrder));
-            } catch (e) {}
+            Settings.set("school-notes-db", db);
+            Settings.set("school-notes-catorder", catOrder);
           }
         }
 

@@ -356,6 +356,7 @@
       <div class="grid" id="grid"></div>
       <div class="empty" id="empty">Tidak ada tool yang cocok ditemukan.</div>
 
+      <script src="page/settings.js"></script>
       <script>
         // ── Force scroll to top on load ──
         history.scrollRestoration = "manual";
@@ -499,31 +500,23 @@
         const empty = document.getElementById("empty");
         const btnFav = document.getElementById("btn-fav");
 
-        // ── Favorit (localStorage) ──
+        // ── Favorit (SQLite via Settings) ──
         function getFavs() {
-          try {
-            return JSON.parse(localStorage.getItem("tools-fav") || "[]");
-          } catch {
-            return [];
-          }
+          return Settings.get("tools-fav", []);
         }
         function saveFavs(favs) {
-          localStorage.setItem("tools-fav", JSON.stringify(favs));
+          Settings.set("tools-fav", favs);
         }
         function isFav(title) {
           return getFavs().includes(title);
         }
 
-        // ── Hide (localStorage) ──
+        // ── Hide (SQLite via Settings) ──
         function getHidden() {
-          try {
-            return JSON.parse(localStorage.getItem("tools-hidden") || "[]");
-          } catch {
-            return [];
-          }
+          return Settings.get("tools-hidden", []);
         }
         function saveHidden(arr) {
-          localStorage.setItem("tools-hidden", JSON.stringify(arr));
+          Settings.set("tools-hidden", arr);
           window.dispatchEvent(new CustomEvent("tools-hidden-change"));
         }
         function isHidden(title) {
@@ -646,15 +639,14 @@
           grid.classList.toggle("list-view", v === "list");
           btnGrid.classList.toggle("active", v === "grid");
           btnList.classList.toggle("active", v === "list");
-          localStorage.setItem("view", v);
+          Settings.set("view", v);
         }
 
-        render();
-        updateToolbarBadges();
-
-        (function () {
-          const saved = localStorage.getItem("view");
-          if (saved === "list") setView("list");
+        (async () => {
+          await Settings.init();
+          render();
+          updateToolbarBadges();
+          if (Settings.get("view") === "list") setView("list");
         })();
       </script>
 

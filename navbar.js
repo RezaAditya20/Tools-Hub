@@ -39,6 +39,7 @@
   ];
 
   function getHidden() {
+    if (window.Settings) return Settings.get("tools-hidden", []);
     try {
       return JSON.parse(localStorage.getItem("tools-hidden") || "[]");
     } catch {
@@ -53,6 +54,7 @@
   let snState = { view: "home", schoolId: null, activeNoteId: null };
   const isSchoolNotes = location.pathname.split("/").pop() === "School-Notes-&-To-Do.html";
   function getSchoolNotes() {
+    if (window.Settings) return Settings.get("school-notes-db", {});
     try {
       return JSON.parse(localStorage.getItem("school-notes-db") || "{}");
     } catch {

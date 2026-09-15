@@ -1,5 +1,5 @@
 // Shared theme sync — semua file pakai key yang sama
-(function () {
+(async function () {
   const KEY = "theme";
   const root = document.documentElement;
   const toggle = document.getElementById("theme-toggle");
@@ -19,11 +19,12 @@
       if (moon) moon.style.display = "none";
       if (label) label.textContent = "Mode Terang";
     }
-    try { localStorage.setItem(KEY, theme); } catch (e) {}
+    Settings.set(KEY, theme);
   }
 
-  let saved;
-  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  // Load from server first, then apply
+  await Settings.init();
+  const saved = Settings.get(KEY);
   const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   applyTheme(saved || (prefersDark ? "dark" : "dark"));
 

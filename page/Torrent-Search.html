@@ -899,6 +899,7 @@
       </div>
     </div>
 
+    <script src="settings.js"></script>
     <script src="theme.js"></script>
     <script>
     // ── State ──
@@ -913,10 +914,11 @@
 
     // ── Init ──
     (async function init() {
+      await Settings.init();
       const tsInput = document.querySelector('.torrserv-url');
-      tsInput.value = localStorage.getItem('torrserver-url') || 'http://127.0.0.1:8090';
+      tsInput.value = Settings.get('torrserver-url') || 'http://127.0.0.1:8090';
       tsInput.addEventListener('change', (e) => {
-        localStorage.setItem('torrserver-url', e.target.value);
+        Settings.set('torrserver-url', e.target.value);
       });
 
       // Sticky nav background on scroll
@@ -1995,14 +1997,14 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTrailer(); } });
 
     /* ── Player: launch MPV via server ── */
-    let torrserv = localStorage.getItem('torrserver-url') || 'http://127.0.0.1:8090';
+    let torrserv = Settings.get('torrserver-url') || 'http://127.0.0.1:8090';
     function extractHash(magnet) {
       const m = magnet.match(/btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
       return m ? m[1].toLowerCase() : null;
     }
     async function launchMpv(title, hash, magnet, btn) {
       const base = (document.querySelector('.torrserv-url')?.value || torrserv).replace(/\/+$/, '');
-      localStorage.setItem('torrserver-url', base);
+      Settings.set('torrserver-url', base);
       torrserv = base;
       const orig = btn.innerHTML;
       btn.disabled = true;

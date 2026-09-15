@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import shutil
+import sqlite3
 import sys
 import subprocess
 import time
@@ -42,6 +43,69 @@ TMDB_TOKEN = os.environ.get(
 )
 TMDB_API = "https://api.themoviedb.org/3"
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
+
+# ── SQLite settings DB ──
+DB_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "ToolsHub")
+DB_PATH = os.path.join(DB_DIR, "config.db")
+
+
+def _init_db():
+    os.makedirs(DB_DIR, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS settings ("
+        "  key TEXT PRIMARY KEY,"
+        "  value TEXT NOT NULL,"
+        "  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        ")"
+    )
+    conn.commit()
+    conn.close()
+
+
+def _db_get(key: str):
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    conn.close()
+    if row is None:
+        return None
+    try:
+        return json.loads(row[0])
+    except (json.JSONDecodeError, TypeError):
+        return row[0]
+
+
+def _db_get_all() -> dict:
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute("SELECT key, value FROM settings").fetchall()
+    conn.close()
+    result = {}
+    for key, value in rows:
+        try:
+            result[key] = json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            result[key] = value
+    return result
+
+
+def _db_set(key: str, value: str):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+        (key, value),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _db_delete(key: str):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("DELETE FROM settings WHERE key = ?", (key,))
+    conn.commit()
+    conn.close()
+
+
+_init_db()
 
 
 def _normalize_tmdb_images(item: dict) -> None:
@@ -81,6 +145,8 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             self._proxy_tmdb(parse_qs(parsed.query))
         elif path == "/api/subtitles":
             self._handle_subtitles(parse_qs(parsed.query))
+        elif path == "/api/settings":
+            self._handle_settings_get(parse_qs(parsed.query))
         else:
             self._serve_static(path)
 
@@ -97,6 +163,10 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length) if length else b""
             self._proxy_torrserver_post(parse_qs(parsed.query), body)
+        elif path == "/api/settings":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length) if length else b""
+            self._handle_settings_post(body)
         else:
             self.send_error(404)
 
@@ -358,6 +428,34 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             if url and not url.startswith("http"):
                 sub["download_url"] = f"https://api.subdl.com{url}"
         self._json_response(200, data)
+
+    def _handle_settings_get(self, params: dict):
+        key = params.get("key", [None])[0]
+        if key:
+            val = _db_get(key)
+            if val is None:
+                self._json_response(404, {"error": "not found"})
+            else:
+                self._json_response(200, {key: val})
+        else:
+            self._json_response(200, _db_get_all())
+
+    def _handle_settings_post(self, body: bytes):
+        try:
+            data = json.loads(body.decode("utf-8"))
+        except Exception:
+            self._json_response(400, {"error": "Invalid JSON"})
+            return
+        key = data.get("key")
+        value = data.get("value")
+        if not key:
+            self._json_response(400, {"error": "Missing 'key'"})
+            return
+        if value is None:
+            _db_delete(key)
+        else:
+            _db_set(key, str(value))
+        self._json_response(200, {"ok": True})
 
     def _json_response(self, code: int, data: dict):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
