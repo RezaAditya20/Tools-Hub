@@ -1000,6 +1000,13 @@
     const engineNames = {};
     let heroMovie = null;
 
+    // ── Infinite scroll state ──
+    let activeView = null;      // 'filtered' | 'search' | null
+    let currentPath = '';        // TMDB path (without page param)
+    let currentPage = 1;
+    let totalPages = 1;
+    let isLoadingMore = false;
+
     // ── Filter popover data ──
     const FP_GENRES = [
       { id: 28, name: "Action", icon: "🥊" }, { id: 12, name: "Adventure", icon: "🗺️" },
@@ -1171,10 +1178,12 @@
     let activeTmdbPath = '/trending/movie/week';
 
     async function loadTrending() {
+      activeView = null;
+      currentPath = '';
       const container = document.getElementById('trending-rows');
       container.innerHTML = '';
       // Hero from trending week
-      const heroData = await fetchCategory('/trending/movie/week');
+      const { results: heroData } = await fetchCategory('/trending/movie/week');
       renderHero(heroData);
       // Render each row
       for (const cat of CATEGORIES) {
@@ -1191,7 +1200,7 @@
           </div>`;
         container.appendChild(row);
         const wrap = row.querySelector('.scroll-wrap');
-        const items = await fetchCategory(cat.path);
+        const { results: items } = await fetchCategory(cat.path);
         wrap.innerHTML = '';
         if (!items.length) { wrap.innerHTML = '<div class="loading-row">No results.</div>'; row.querySelector('.arrow-left').style.display='none'; row.querySelector('.arrow-right').style.display='none'; continue; }
         for (const m of items.slice(0, 20)) wrap.appendChild(makeMovieCard(m, cat.type));
@@ -1243,11 +1252,16 @@
       const path = '/discover/movie?' + params.toString();
 
       try {
-        const items = await fetchCategory(path);
+        const { results: items, total_pages } = await fetchCategory(path);
         if (!items.length) {
           loader.innerHTML = `<i class="fa-solid fa-film" style="font-size:2rem;margin-bottom:12px;display:block;color:var(--muted)"></i>No results for "${filterLabel}"`;
           return;
         }
+        // Set infinite scroll state
+        activeView = 'filtered';
+        currentPath = path;
+        currentPage = 1;
+        totalPages = total_pages;
         // Hero = first item
         heroMovie = items[0];
         const hero = items[0];
@@ -1284,8 +1298,8 @@
         const r = await fetch(`${API}/tmdb?path=${encodeURIComponent(path)}`);
         const data = await r.json();
         if (data.error) throw new Error(data.error);
-        return data.results || [];
-      } catch { return []; }
+        return { results: data.results || [], total_pages: data.total_pages || 1, page: data.page || 1 };
+      } catch { return { results: [], total_pages: 1, page: 1 }; }
     }
 
     function makeMovieCard(m, catType) {
@@ -1364,10 +1378,9 @@
       content.style.display = 'none';
       grid.innerHTML = '';
       try {
-        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/search/multi')}&query=${encodeURIComponent(q)}`);
-        let data = await r.json();
-        if (data.error) throw new Error(data.error);
-        let items = (data.results || []).filter(m => m.media_type === 'movie' || m.media_type === 'tv');
+        const searchPath = '/search/multi?query=' + encodeURIComponent(q) + '&language=en-US';
+        const { results: rawItems, total_pages } = await fetchCategory(searchPath);
+        let items = rawItems.filter(m => m.media_type === 'movie' || m.media_type === 'tv');
         if (!items.length) {
           loader.innerHTML = '<i class="fa-solid fa-magnifying-glass" style="font-size:2rem;margin-bottom:12px;display:block;color:var(--muted)"></i>No results found.';
           return;
@@ -1408,6 +1421,11 @@
         }
         loader.style.display = 'none';
         content.style.display = '';
+        // Set infinite scroll state
+        activeView = 'search';
+        currentPath = searchPath;
+        currentPage = 1;
+        totalPages = total_pages;
         // Rest go to grid
         const rest = items.slice(1, 25);
         if (rest.length) {
@@ -1418,9 +1436,9 @@
       }
     }
 
-    function renderSearchGrid(items) {
+    function renderSearchGrid(items, append = false) {
       const grid = document.getElementById('search-grid');
-      grid.innerHTML = '';
+      if (!append) grid.innerHTML = '';
       for (const m of items) {
         const isTV = m.media_type === 'tv';
         const title = isTV ? (m.name || m.original_name) : (m.title || m.original_title);
@@ -1443,10 +1461,56 @@
       }
     }
 
+    // ── Infinite scroll: auto load more TMDB pages ──
+    window.addEventListener('scroll', () => {
+      if (isLoadingMore || !activeView || currentPage >= totalPages) return;
+      const scrollBottom = window.innerHeight + window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      if (docHeight - scrollBottom < 400) loadMoreTMDB();
+    });
+
+    async function loadMoreTMDB() {
+      isLoadingMore = true;
+      const grid = document.getElementById('search-grid');
+      // Show skeleton loader
+      const skel = document.createElement('div');
+      skel.className = 'loading-row';
+      skel.id = 'load-more-skel';
+      skel.innerHTML = '<span class="spinner"></span> Loading more...';
+      grid.appendChild(skel);
+
+      currentPage++;
+      const sep = currentPath.includes('?') ? '&' : '?';
+      const nextPagePath = currentPath + sep + 'page=' + currentPage;
+      const { results, total_pages } = await fetchCategory(nextPagePath);
+
+      document.getElementById('load-more-skel')?.remove();
+      totalPages = total_pages;
+
+      let items = results;
+      if (activeView === 'search') {
+        items = items.filter(m => m.media_type === 'movie' || m.media_type === 'tv');
+      }
+      if (items.length) renderSearchGrid(items, true);
+      // Show end-of-results indicator
+      if (currentPage >= totalPages && items.length) {
+        const end = document.createElement('div');
+        end.className = 'loading-row';
+        end.style.cssText = 'color:var(--muted);font-size:0.78rem;padding:20px 0';
+        end.textContent = '— You\'ve reached the end —';
+        grid.appendChild(end);
+      }
+      isLoadingMore = false;
+    }
+
     function clearMovieSearch() {
       document.getElementById('q').value = '';
       document.getElementById('search-section').style.display = 'none';
       document.getElementById('search-grid').innerHTML = '';
+      activeView = null;
+      currentPath = '';
+      currentPage = 1;
+      totalPages = 1;
       // Restore hero to trending
       document.getElementById('hero-badge').textContent = 'FEATURED';
       const backBtn = document.getElementById('hero-back');
@@ -1457,6 +1521,8 @@
 
     // ── My List view (inline) ──
     async function showMyList() {
+      activeView = null;
+      currentPath = '';
       const watchlist = Settings.get('watchlist', []);
       const completed = Settings.get('completed', []);
       const allItems = [...watchlist, ...completed];
