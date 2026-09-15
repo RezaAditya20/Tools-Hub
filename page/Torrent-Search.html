@@ -676,7 +676,7 @@
       }
       .detail-close:hover { background: rgba(0,0,0,0.85); }
       .detail-body { padding: 0 28px 28px; margin-top: -60px; position: relative; z-index: 2; }
-      .detail-top { display: flex; flex-wrap: wrap; }
+      .detail-top { display: flex; flex-wrap: wrap; position: relative; }
       .detail-info { flex: 1; min-width: 240px; }
       .detail-info h2 { margin: 0 0 8px; font-size: 1.6rem; font-weight: 800; }
       .detail-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; }
@@ -691,6 +691,7 @@
         background: var(--card-bg-2); color: var(--text); font-size: 0.82rem; cursor: pointer; outline: none;
       }
       .detail-season select:focus { border-color: var(--accent); }
+      .detail-season label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
       .detail-season .ep-count { font-size: 0.74rem; color: var(--muted); }
       .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
       .detail-actions .spacer { flex: 1; }
@@ -1962,7 +1963,11 @@
                 .join('');
               return `<div class="detail-season">
                 <label><i class="fa-solid fa-tv"></i> Season:</label>
-                <select id="detail-season-select" onchange="updateEpCount(this)">${opts}</select>
+                <select id="detail-season-select" data-show-id="${d.id}" onchange="onSeasonChange(this)">${opts}</select>
+                <label style="margin-left:12px">Episode:</label>
+                <select id="detail-ep-select" style="display:none" onchange="onEpisodeChange(this)">
+                  <option value="">All Episodes</option>
+                </select>
                 <span class="ep-count" id="detail-ep-count"></span>
               </div>`;
             })() : ''}
@@ -2035,6 +2040,9 @@
       currentDetailImdbId = d.imdb_id || (d.external_ids || {}).imdb_id || '';
       const subSection = document.getElementById('subtitle-section');
       if (subSection) subSection.style.display = '';
+      // Save original cast for episode selector restore
+      const castRow = document.querySelector('.detail-cast .cast-row');
+      if (castRow) _origCastHtml = castRow.innerHTML;
 
       // Wire up actions after render to avoid HTML-escaping quotes
       const actions = document.getElementById('detail-actions');
@@ -2095,19 +2103,85 @@
       if (selInit) updateEpCount(selInit);
     }
 
-    function updateEpCount(sel) {
+    // Store original series cast for restore
+    let _origCastHtml = '';
+
+    async function onSeasonChange(sel) {
       const epEl = document.getElementById('detail-ep-count');
+      const epSel = document.getElementById('detail-ep-select');
       if (!sel || !epEl) return;
       const opt = sel.options[sel.selectedIndex];
       if (!opt) { epEl.textContent = ''; return; }
       const eps = parseInt(opt.getAttribute('data-eps') || '0', 10);
       epEl.textContent = eps ? `${eps} episode${eps !== 1 ? 's' : ''}` : '—';
+      // Fetch episodes for this season
+      const sn = parseInt(sel.value, 10);
+      const showId = sel.getAttribute('data-show-id');
+      if (isNaN(sn) || sn < 1 || !epSel || !showId) { if (epSel) epSel.style.display = 'none'; return; }
+      epSel.innerHTML = '<option value="">Loading...</option>';
+      epSel.style.display = '';
+      try {
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/tv/' + showId + '/season/' + sn)}`);
+        const d = await r.json();
+        const episodes = d.episodes || [];
+        epSel.innerHTML = '<option value="">All Episodes</option>' +
+          episodes.map(e => `<option value="${e.episode_number}">E${String(e.episode_number).padStart(2,'0')} — ${escHtml(e.name || '')}</option>`).join('');
+      } catch {
+        epSel.innerHTML = '<option value="">All Episodes</option>';
+      }
+      // Restore series cast when season changes
+      _restoreCast();
+    }
+
+    function _restoreCast() {
+      const castRow = document.querySelector('.detail-cast .cast-row');
+      if (castRow && _origCastHtml) castRow.innerHTML = _origCastHtml;
+    }
+
+    async function onEpisodeChange(epSel) {
+      const seasonSel = document.getElementById('detail-season-select');
+      if (!seasonSel || !epSel) return;
+      const showId = seasonSel.getAttribute('data-show-id');
+      const sn = parseInt(seasonSel.value, 10);
+      const en = parseInt(epSel.value, 10);
+      // "All Episodes" — restore series cast
+      if (!epSel.value || isNaN(en)) { _restoreCast(); return; }
+      // Fetch episode credits
+      const castRow = document.querySelector('.detail-cast .cast-row');
+      const castHeading = document.querySelector('.detail-cast h3');
+      if (!castRow) return;
+      castHeading.textContent = 'Cast (Loading...)';
+      try {
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/tv/' + showId + '/season/' + sn + '/episode/' + en)}&append_to_response=credits`);
+        const d = await r.json();
+        const cast = (d.credits && d.credits.cast || []).slice(0, 12);
+        if (cast.length) {
+          castHeading.textContent = `Cast — E${String(en).padStart(2, '0')}`;
+          castRow.innerHTML = cast.map(c => `
+            <div class="cast-card" onclick="openActor(${c.id})" style="cursor:pointer">
+              <div class="pic">
+                ${c.profile_url ? `<img src="${c.profile_url}" alt="" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=\\'ph\\'><i class=\\'fa-solid fa-user\\'></i></div>'">` : '<div class="ph"><i class="fa-solid fa-user"></i></div>'}
+              </div>
+              <div class="name">${escHtml(c.name || '')}</div>
+              <div class="char">${escHtml(c.character || '')}</div>
+            </div>`).join('');
+        } else {
+          castHeading.textContent = `No cast info for E${String(en).padStart(2, '0')}`;
+          castRow.innerHTML = '';
+        }
+      } catch {
+        castHeading.textContent = 'Cast';
+        _restoreCast();
+      }
     }
 
     // ── Actor filmography ──
     async function openActor(id) {
-      const modal = document.getElementById('detail-modal');
+      // Save current detail for back button
       const body = document.getElementById('detail-body');
+      _prevDetailData = { html: body.innerHTML, backdrop: document.getElementById('detail-backdrop').style.backgroundImage };
+
+      const modal = document.getElementById('detail-modal');
       const backdrop = document.getElementById('detail-backdrop');
       modal.classList.add('open');
       document.body.style.overflow = 'hidden';
@@ -2115,7 +2189,7 @@
       body.innerHTML = '<div class="detail-loading"><div class="skel-detail"><div class="skel-row"><div class="skel-info"><div class="skeleton skel-badge" style="width:180px"></div><div class="skeleton skel-line w80"></div><div class="skeleton skel-line w60"></div><div class="skeleton skel-line w80"></div><div class="skeleton skel-line w40"></div></div></div></div></div>';
 
       try {
-        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/person/' + id)}&append_to_response=${encodeURIComponent('movie_credits')}`);
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/person/' + id)}&append_to_response=${encodeURIComponent('movie_credits,tv_credits')}`);
         const d = await r.json();
         if (d.error) throw new Error(d.error);
         renderActor(d);
@@ -2124,20 +2198,36 @@
       }
     }
 
+    function actorGoBack() {
+      if (!_prevDetailData) return;
+      const body = document.getElementById('detail-body');
+      const backdrop = document.getElementById('detail-backdrop');
+      body.innerHTML = _prevDetailData.html;
+      backdrop.style.backgroundImage = _prevDetailData.backdrop || 'none';
+      _prevDetailData = null;
+    }
+
     function renderActor(d) {
       const body = document.getElementById('detail-body');
       const backdrop = document.getElementById('detail-backdrop');
       const photo = d.profile_url || (d.profile_path ? 'https://image.tmdb.org/t/p/w500' + d.profile_path : '');
       if (photo) backdrop.style.backgroundImage = `url("${photo}")`;
 
-      const credits = (d.movie_credits && d.movie_credits.cast) || [];
-      const sorted = credits
-        .filter(m => m.release_date)
-        .sort((a, b) => b.release_date.localeCompare(a.release_date))
-        .slice(0, 30);
+      // Combine movie + TV credits
+      const movieCredits = (d.movie_credits && d.movie_credits.cast) || [];
+      const tvCredits = (d.tv_credits && d.tv_credits.cast) || [];
+      const allCredits = [...movieCredits, ...tvCredits]
+        .filter(m => m.release_date || m.first_air_date)
+        .sort((a, b) => (b.release_date || b.first_air_date || '').localeCompare(a.release_date || a.first_air_date || ''));
+
+      _filmographyAll = allCredits;
+      _filmographyPage = 0;
 
       body.innerHTML = `
         <div class="detail-top">
+          <button class="btn-hero ghost" id="actor-back-btn" onclick="actorGoBack()" style="position:absolute;top:12px;left:12px;z-index:10">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </button>
           <div class="detail-info">
             <h2>${escHtml(d.name || 'Unknown')}</h2>
             <div class="detail-meta">
@@ -2148,39 +2238,42 @@
             ${d.biography ? `<p class="detail-overview">${escHtml(d.biography)}</p>` : '<p class="detail-overview">No biography available.</p>'}
           </div>
         </div>
-        ${sorted.length ? `<div class="detail-cast">
-          <h3><i class="fa-solid fa-film"></i> Filmography (${sorted.length})</h3>
+        ${allCredits.length ? `<div class="detail-cast">
+          <h3><i class="fa-solid fa-film"></i> Filmography (${allCredits.length})</h3>
           <div class="row-grid" style="margin-top:12px" id="filmography-grid"></div>
         </div>` : ''}`;
 
-      // Wire filmography cards
-      const fGrid = document.getElementById('filmography-grid');
-      if (fGrid) {
-        for (const m of sorted) {
-          const card = document.createElement('div');
-          card.className = 'movie-card';
-          const title = m.title || m.original_title || 'Unknown';
-          const year = (m.release_date || '').slice(0, 4);
-          const posterUrl = m.poster_url || (m.poster_path ? 'https://image.tmdb.org/t/p/w342' + m.poster_path : '');
-          card.innerHTML = `
-            <div class="poster-wrap">
-              ${posterUrl
-                ? `<img src="${posterUrl}" alt="${escHtml(title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=\\'poster-ph\\'><i class=\\'fa-solid fa-film\\'></i></div>'">`
-                : '<div class="poster-ph"><i class="fa-solid fa-film"></i></div>'}
-              ${m.vote_average ? `<div class="rating-badge">${m.vote_average.toFixed(1)}</div>` : ''}
-            </div>
-            <div class="info">
-              <div class="title">${escHtml(title)}</div>
-              <div class="year">${year}</div>
-            </div>`;
-          card.onclick = () => openDetail({ id: m.id, media_type: 'movie' });
-          fGrid.appendChild(card);
-        }
-      }
+      // Render first page of filmography
+      _renderFilmographyPage();
+    }
 
-      // Back button in detail for actor
-      const existingBack = document.getElementById('detail-back');
-      if (existingBack) existingBack.remove();
+    function _renderFilmographyPage() {
+      const fGrid = document.getElementById('filmography-grid');
+      if (!fGrid) return;
+      const start = _filmographyPage * FILMOGRAPHY_PAGE_SIZE;
+      const slice = _filmographyAll.slice(start, start + FILMOGRAPHY_PAGE_SIZE);
+      for (const m of slice) {
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        const title = m.title || m.name || m.original_title || m.original_name || 'Unknown';
+        const year = (m.release_date || m.first_air_date || '').slice(0, 4);
+        const posterUrl = m.poster_url || (m.poster_path ? 'https://image.tmdb.org/t/p/w342' + m.poster_path : '');
+        const mediaType = m.media_type || (m.first_air_date ? 'tv' : 'movie');
+        card.innerHTML = `
+          <div class="poster-wrap">
+            ${posterUrl
+              ? `<img src="${posterUrl}" alt="${escHtml(title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=\\'poster-ph\\'><i class=\\'fa-solid fa-film\\'></i></div>'">`
+              : '<div class="poster-ph"><i class="fa-solid fa-film"></i></div>'}
+            ${m.vote_average ? `<div class="rating-badge">${m.vote_average.toFixed(1)}</div>` : ''}
+          </div>
+          <div class="info">
+            <div class="title">${escHtml(title)}</div>
+            <div class="year">${year} ${mediaType === 'tv' ? '<span style="color:var(--accent);font-size:0.7rem">TV</span>' : ''}</div>
+          </div>`;
+        card.onclick = () => openDetail({ id: m.id, media_type: mediaType });
+        fGrid.appendChild(card);
+      }
+      _filmographyPage++;
     }
 
     function closeDetail() {
@@ -2192,6 +2285,15 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDetail(); closeCmd(); closeFilterPopover(); } });
     document.getElementById('detail-modal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeDetail();
+    });
+    // Filmography infinite scroll in actor detail
+    document.getElementById('detail-modal').addEventListener('scroll', function() {
+      if (!_filmographyAll.length || _filmographyPage < 1) return;
+      const fGrid = document.getElementById('filmography-grid');
+      if (!fGrid) return;
+      if (this.scrollTop + this.clientHeight < this.scrollHeight - 400) return;
+      if (_filmographyPage * FILMOGRAPHY_PAGE_SIZE >= _filmographyAll.length) return;
+      _renderFilmographyPage();
     });
 
     // ── Command copy modal (peerflix + mpv) ──
@@ -2489,6 +2591,10 @@
     let currentDetailTitle = '';
     let currentDetailType = 'movie';
     let currentDetailImdbId = '';
+    let _prevDetailData = null; // For actor back button
+    let _filmographyAll = [];  // Combined movie+TV credits
+    let _filmographyPage = 0;
+    const FILMOGRAPHY_PAGE_SIZE = 20;
 
     function toggleSubtitles() {
       const wrap = document.getElementById('subtitle-wrap');
