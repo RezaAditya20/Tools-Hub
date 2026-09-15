@@ -633,7 +633,22 @@
       }
       .detail-season select:focus { border-color: var(--accent); }
       .detail-season .ep-count { font-size: 0.74rem; color: var(--muted); }
-      .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+      .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      .detail-actions .spacer { flex: 1; }
+      .btn-icon-only {
+        width: 38px; height: 38px; border-radius: 50%; padding: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.95rem;
+      }
+      .track-btns { display: inline-flex; gap: 4px; align-items: center; margin-left: 6px; }
+      .track-btn {
+        background: none; border: none; color: var(--muted); cursor: pointer;
+        font-size: 0.9rem; padding: 2px 4px; display: inline-flex;
+        align-items: center; transition: color 0.2s; line-height: 1;
+      }
+      .track-btn:hover { color: var(--text); }
+      .track-btn.active-watchlist { color: #facc15; }
+      .track-btn.active-done { color: #10b981; }
       .btn-find {
         display: inline-flex; align-items: center; gap: 8px;
         padding: 11px 26px; border: none; border-radius: 5px;
@@ -720,6 +735,24 @@
       :root[data-theme="light"] .btn-find.ghost-trailer { background: #444; color: #fff; }
       .btn-find.ghost-trailer:hover { opacity: 0.85; }
       .btn-find.ghost-trailer:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      /* Track buttons in detail-meta */
+
+      /* ── Toast ── */
+      .toast-wrap {
+        position: fixed; bottom: 24px; right: 24px; z-index: 2000;
+        display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+      }
+      .toast {
+        padding: 10px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+        color: #fff; pointer-events: auto;
+        background: #333; opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      }
+      .toast.show { opacity: 1; transform: translateY(0); }
+      .toast.hide { opacity: 0; transform: translateY(-8px); }
 
       /* ── Mobile ── */
       @media (max-width: 760px) {
@@ -1254,6 +1287,7 @@
               ${runtime ? `<span>${runtime}</span>` : ''}
               ${genres ? `<span class="badge">${escHtml(genres)}</span>` : ''}
               ${isTV ? '<span class="badge">TV</span>' : '<span class="badge">Movie</span>'}
+              <span id="detail-track-btns" class="track-btns"></span>
             </div>
             <p class="detail-overview">${escHtml(d.overview || 'No description available.')}</p>
             ${isTV && Array.isArray(d.seasons) && d.seasons.length ? (() => {
@@ -1368,6 +1402,27 @@
         btnTrailer.innerHTML = '<i class="fa-solid fa-film"></i> Watch Trailer';
         btnTrailer.onclick = () => openTrailer(d.id, isTV ? 'tv' : 'movie');
         actions.appendChild(btnTrailer);
+
+        // Watchlist & Completed buttons — in detail-meta
+        const movieData = { id: d.id, title, year, type: isTV ? 'tv' : 'movie', poster_url: d.poster_url || '' };
+        const trackBtns = document.getElementById('detail-track-btns');
+        if (trackBtns) {
+          const inWatchlist = isInWatchlist(d.id);
+          const btnList = document.createElement('button');
+          btnList.className = 'track-btn' + (inWatchlist ? ' active-watchlist' : '');
+          btnList.title = inWatchlist ? 'Hapus dari list' : 'Tambah ke list';
+          btnList.innerHTML = `<i class="fa-solid fa-${inWatchlist ? 'bookmark' : 'bookmark'}"></i>`;
+          btnList.onclick = () => toggleWatchlist(movieData, btnList);
+          trackBtns.appendChild(btnList);
+
+          const inCompleted = isInCompleted(d.id);
+          const btnDone = document.createElement('button');
+          btnDone.className = 'track-btn' + (inCompleted ? ' active-done' : '');
+          btnDone.title = inCompleted ? 'Batal selesai' : 'Tandai selesai';
+          btnDone.innerHTML = `<i class="fa-solid fa-${inCompleted ? 'check' : 'check'}"></i>`;
+          btnDone.onclick = () => toggleCompleted(movieData, btnDone);
+          trackBtns.appendChild(btnDone);
+        }
       }
 
       // Initial episode count
@@ -1953,6 +2008,70 @@
         const d = new Date(ts * 1000);
         return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
       } catch { return ''; }
+    }
+
+    /* ── Toast ── */
+    function showToast(msg) {
+      let wrap = document.querySelector('.toast-wrap');
+      if (!wrap) { wrap = document.createElement('div'); wrap.className = 'toast-wrap'; document.body.appendChild(wrap); }
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      wrap.appendChild(t);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { t.classList.add('show'); });
+      });
+      setTimeout(() => {
+        t.classList.remove('show');
+        t.classList.add('hide');
+        setTimeout(() => t.remove(), 300);
+      }, 2200);
+    }
+
+    /* ── Watchlist & Completed ── */
+    function isInWatchlist(id) {
+      const list = Settings.get('watchlist', []);
+      return list.some(m => m.id === id);
+    }
+    function isInCompleted(id) {
+      const list = Settings.get('completed', []);
+      return list.some(m => m.id === id);
+    }
+    async function toggleWatchlist(movie, btn) {
+      let list = Settings.get('watchlist', []);
+      const idx = list.findIndex(m => m.id === movie.id);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+        btn.className = 'track-btn';
+        btn.title = 'Tambah ke list';
+        btn.innerHTML = '<i class="fa-solid fa-bookmark"></i>';
+        showToast('Dihapus dari watchlist', 'info');
+      } else {
+        list.push(movie);
+        btn.className = 'track-btn active-watchlist';
+        btn.title = 'Hapus dari list';
+        btn.innerHTML = '<i class="fa-solid fa-bookmark"></i>';
+        showToast('Ditambahkan ke watchlist');
+      }
+      await Settings.set('watchlist', list);
+    }
+    async function toggleCompleted(movie, btn) {
+      let list = Settings.get('completed', []);
+      const idx = list.findIndex(m => m.id === movie.id);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+        btn.className = 'track-btn';
+        btn.title = 'Tandai selesai';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        showToast('Dibatalkan dari selesai', 'info');
+      } else {
+        list.push(movie);
+        btn.className = 'track-btn active-done';
+        btn.title = 'Batal selesai';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        showToast('Ditandai selesai');
+      }
+      await Settings.set('completed', list);
     }
 
     /* ── Trailer ── */
