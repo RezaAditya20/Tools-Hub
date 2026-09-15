@@ -232,7 +232,7 @@
       .btn-hero.ghost { background: rgba(255,255,255,0.18); color: #fff; }
       .btn-hero.ghost:hover { background: rgba(255,255,255,0.3); }
       :root[data-theme="light"] .btn-hero.ghost { background: rgba(0,0,0,0.12); color: #1a1a1a; }
-      .hero-loader { color: var(--muted); text-align: center; padding: 200px 0; font-size: 0.9rem; width: 100%; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .hero-loader { color: var(--muted); text-align: center; padding: 200px 0; font-size: 0.9rem; width: 100%; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 3; }
 
       /* ── Section / rows ── */
       .section {
@@ -1754,14 +1754,13 @@
       const watchlist = Settings.get('watchlist', []);
       const completed = Settings.get('completed', []);
       const allItems = [...watchlist, ...completed];
-      // Dedupe by id+type
-      const seen = new Set();
-      const items = allItems.filter(m => {
+      // Dedupe by id+type, keep last occurrence (most recent)
+      const seen = new Map();
+      allItems.forEach(m => {
         const key = (m.id || m.title) + '|' + (m.type || 'movie');
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
+        seen.set(key, m);
       });
+      const items = [...seen.values()].reverse(); // newest first
 
       document.getElementById('q').value = '';
       document.getElementById('trending-rows').style.display = 'none';
@@ -1769,6 +1768,14 @@
       const grid = document.getElementById('search-grid');
       section.style.display = '';
       grid.innerHTML = '';
+      // Clear previous hero state
+      document.getElementById('hero-bg').style.backgroundImage = '';
+      const heroContent = document.getElementById('hero-content');
+      heroContent.style.display = 'none';
+      heroContent.querySelector('#hero-badge').textContent = '';
+      heroContent.querySelector('#hero-title').textContent = '';
+      heroContent.querySelector('#hero-overview').textContent = '';
+      document.getElementById('hero-loader').style.display = '';
 
       const loader = document.getElementById('hero-loader');
       const content = document.getElementById('hero-content');
@@ -1808,14 +1815,13 @@
           document.getElementById('hero-overview').textContent = d.overview || '';
           document.getElementById('hero-play').onclick = () => openDetail(d);
           const titleEl = document.getElementById('hero-title');
-          const logoUrl = await fetchLogo(d.id, firstType);
-          if (logoUrl) {
-            titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
-          } else {
-            titleEl.textContent = heroTitle;
-          }
+          titleEl.textContent = heroTitle;
           loader.style.display = 'none';
           content.style.display = '';
+          // Fetch logo async, don't block hero display
+          fetchLogo(d.id, firstType).then(logoUrl => {
+            if (logoUrl) titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+          });
         }
       } catch {}
 
