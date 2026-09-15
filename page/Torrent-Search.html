@@ -646,6 +646,7 @@
         background: rgba(0,0,0,0.8);
         display: none; align-items: flex-start; justify-content: center;
         overflow-y: auto; padding: 40px 16px;
+        scroll-behavior: auto;
       }
       .detail-modal.open { display: flex; }
       .detail-box {
@@ -727,7 +728,7 @@
       .cast-card .ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--border); font-size: 1.2rem; }
       .cast-card .name { font-size: 0.72rem; font-weight: 600; line-height: 1.2; }
       .cast-card .char { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
-      .detail-loading { padding: 80px 0; text-align: center; color: var(--muted); }
+      .detail-loading { padding: 20px 0; text-align: center; color: var(--muted); }
 
       /* ── Command copy modal ── */
       .cmd-modal {
@@ -990,6 +991,7 @@
     <div class="detail-modal" id="detail-modal">
       <div class="detail-box">
         <div class="detail-backdrop" id="detail-backdrop">
+          <button class="detail-close" id="actor-back-btn" onclick="actorGoBack()" style="display:none;left:12px;right:auto"><i class="fa-solid fa-arrow-left"></i></button>
           <button class="detail-close" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="detail-body" id="detail-body">
@@ -1905,6 +1907,7 @@
       const backdrop = document.getElementById('detail-backdrop');
       const body = document.getElementById('detail-body');
       modal.classList.add('open');
+      modal.scrollTop = 0;
       document.body.style.overflow = 'hidden';
       // Set backdrop from passed data first
       const bd = movie.backdrop_url || (movie.backdrop_path ? ('https://image.tmdb.org/t/p/original' + movie.backdrop_path) : '');
@@ -2043,6 +2046,11 @@
       // Save original cast for episode selector restore
       const castRow = document.querySelector('.detail-cast .cast-row');
       if (castRow) _origCastHtml = castRow.innerHTML;
+      // Scroll modal to top
+      document.getElementById('detail-modal').scrollTop = 0;
+      // Auto-load episodes for default season
+      const seasonSelInit = document.getElementById('detail-season-select');
+      if (seasonSelInit) onSeasonChange(seasonSelInit);
 
       // Wire up actions after render to avoid HTML-escaping quotes
       const actions = document.getElementById('detail-actions');
@@ -2109,23 +2117,29 @@
     async function onSeasonChange(sel) {
       const epEl = document.getElementById('detail-ep-count');
       const epSel = document.getElementById('detail-ep-select');
+      const epLabel = epSel ? epSel.previousElementSibling : null;
       if (!sel || !epEl) return;
       const opt = sel.options[sel.selectedIndex];
       if (!opt) { epEl.textContent = ''; return; }
       const eps = parseInt(opt.getAttribute('data-eps') || '0', 10);
-      epEl.textContent = eps ? `${eps} episode${eps !== 1 ? 's' : ''}` : '—';
+      epEl.textContent = eps ? `${eps} episode${eps !== 1 ? 's' : ''}` : '';
       // Fetch episodes for this season
       const sn = parseInt(sel.value, 10);
       const showId = sel.getAttribute('data-show-id');
-      if (isNaN(sn) || sn < 1 || !epSel || !showId) { if (epSel) epSel.style.display = 'none'; return; }
+      if (isNaN(sn) || sn < 1 || !epSel || !showId) {
+        if (epSel) epSel.style.display = 'none';
+        if (epLabel && epLabel.tagName === 'LABEL') epLabel.style.display = 'none';
+        return;
+      }
       epSel.innerHTML = '<option value="">Loading...</option>';
       epSel.style.display = '';
+      if (epLabel && epLabel.tagName === 'LABEL') epLabel.style.display = '';
       try {
         const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/tv/' + showId + '/season/' + sn)}`);
         const d = await r.json();
         const episodes = d.episodes || [];
         epSel.innerHTML = '<option value="">All Episodes</option>' +
-          episodes.map(e => `<option value="${e.episode_number}">E${String(e.episode_number).padStart(2,'0')} — ${escHtml(e.name || '')}</option>`).join('');
+          episodes.map(e => `<option value="${e.episode_number}">E${String(e.episode_number).padStart(2,'0')} - ${escHtml(e.name || '')}</option>`).join('');
       } catch {
         epSel.innerHTML = '<option value="">All Episodes</option>';
       }
@@ -2150,13 +2164,15 @@
       const castRow = document.querySelector('.detail-cast .cast-row');
       const castHeading = document.querySelector('.detail-cast h3');
       if (!castRow) return;
-      castHeading.textContent = 'Cast (Loading...)';
+      castHeading.textContent = 'Cast - Loading...';
+      // Show skeleton
+      castRow.innerHTML = Array(6).fill('<div class="cast-card"><div class="pic"><div class="skeleton" style="width:70px;height:70px;border-radius:50%"></div></div><div class="skeleton" style="height:10px;width:50px;border-radius:4px;margin:4px auto 0"></div><div class="skeleton" style="height:8px;width:40px;border-radius:4px;margin:3px auto 0"></div></div>').join('');
       try {
         const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/tv/' + showId + '/season/' + sn + '/episode/' + en)}&append_to_response=credits`);
         const d = await r.json();
         const cast = (d.credits && d.credits.cast || []).slice(0, 12);
         if (cast.length) {
-          castHeading.textContent = `Cast — E${String(en).padStart(2, '0')}`;
+          castHeading.textContent = `Cast - E${String(en).padStart(2, '0')}`;
           castRow.innerHTML = cast.map(c => `
             <div class="cast-card" onclick="openActor(${c.id})" style="cursor:pointer">
               <div class="pic">
@@ -2178,14 +2194,16 @@
     // ── Actor filmography ──
     async function openActor(id) {
       // Save current detail for back button
+      const modal = document.getElementById('detail-modal');
       const body = document.getElementById('detail-body');
       _prevDetailData = { html: body.innerHTML, backdrop: document.getElementById('detail-backdrop').style.backgroundImage };
 
-      const modal = document.getElementById('detail-modal');
       const backdrop = document.getElementById('detail-backdrop');
       modal.classList.add('open');
       document.body.style.overflow = 'hidden';
       backdrop.style.backgroundImage = 'none';
+      body.innerHTML = '';
+      modal.scrollTo({ top: 0, behavior: 'instant' });
       body.innerHTML = '<div class="detail-loading"><div class="skel-detail"><div class="skel-row"><div class="skel-info"><div class="skeleton skel-badge" style="width:180px"></div><div class="skeleton skel-line w80"></div><div class="skeleton skel-line w60"></div><div class="skeleton skel-line w80"></div><div class="skeleton skel-line w40"></div></div></div></div></div>';
 
       try {
@@ -2193,6 +2211,9 @@
         const d = await r.json();
         if (d.error) throw new Error(d.error);
         renderActor(d);
+        modal.scrollTo({ top: 0, behavior: 'instant' });
+        setTimeout(() => { modal.scrollTo({ top: 0, behavior: 'instant' }); }, 100);
+        setTimeout(() => { modal.scrollTo({ top: 0, behavior: 'instant' }); }, 300);
       } catch (e) {
         body.innerHTML = `<div class="detail-loading">Failed to load actor: ${escHtml(e.message)}</div>`;
       }
@@ -2200,17 +2221,21 @@
 
     function actorGoBack() {
       if (!_prevDetailData) return;
+      document.getElementById('actor-back-btn').style.display = 'none';
+      const modal = document.getElementById('detail-modal');
       const body = document.getElementById('detail-body');
       const backdrop = document.getElementById('detail-backdrop');
       body.innerHTML = _prevDetailData.html;
       backdrop.style.backgroundImage = _prevDetailData.backdrop || 'none';
       _prevDetailData = null;
+      modal.scrollTop = 0;
     }
 
     function renderActor(d) {
       const body = document.getElementById('detail-body');
       const backdrop = document.getElementById('detail-backdrop');
-      const photo = d.profile_url || (d.profile_path ? 'https://image.tmdb.org/t/p/w500' + d.profile_path : '');
+      document.getElementById('actor-back-btn').style.display = '';
+      const photo = d.profile_path ? 'https://image.tmdb.org/t/p/original' + d.profile_path : (d.profile_url || '');
       if (photo) backdrop.style.backgroundImage = `url("${photo}")`;
 
       // Combine movie + TV credits
@@ -2225,9 +2250,6 @@
 
       body.innerHTML = `
         <div class="detail-top">
-          <button class="btn-hero ghost" id="actor-back-btn" onclick="actorGoBack()" style="position:absolute;top:12px;left:12px;z-index:10">
-            <i class="fa-solid fa-arrow-left"></i> Back
-          </button>
           <div class="detail-info">
             <h2>${escHtml(d.name || 'Unknown')}</h2>
             <div class="detail-meta">
@@ -2245,6 +2267,7 @@
 
       // Render first page of filmography
       _renderFilmographyPage();
+      setTimeout(() => { document.getElementById('detail-modal').scrollTop = 0; }, 50);
     }
 
     function _renderFilmographyPage() {
@@ -2252,27 +2275,42 @@
       if (!fGrid) return;
       const start = _filmographyPage * FILMOGRAPHY_PAGE_SIZE;
       const slice = _filmographyAll.slice(start, start + FILMOGRAPHY_PAGE_SIZE);
-      for (const m of slice) {
-        const card = document.createElement('div');
-        card.className = 'movie-card';
-        const title = m.title || m.name || m.original_title || m.original_name || 'Unknown';
-        const year = (m.release_date || m.first_air_date || '').slice(0, 4);
-        const posterUrl = m.poster_url || (m.poster_path ? 'https://image.tmdb.org/t/p/w342' + m.poster_path : '');
-        const mediaType = m.media_type || (m.first_air_date ? 'tv' : 'movie');
-        card.innerHTML = `
-          <div class="poster-wrap">
-            ${posterUrl
-              ? `<img src="${posterUrl}" alt="${escHtml(title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=\\'poster-ph\\'><i class=\\'fa-solid fa-film\\'></i></div>'">`
-              : '<div class="poster-ph"><i class="fa-solid fa-film"></i></div>'}
-            ${m.vote_average ? `<div class="rating-badge">${m.vote_average.toFixed(1)}</div>` : ''}
-          </div>
-          <div class="info">
-            <div class="title">${escHtml(title)}</div>
-            <div class="year">${year} ${mediaType === 'tv' ? '<span style="color:var(--accent);font-size:0.7rem">TV</span>' : ''}</div>
-          </div>`;
-        card.onclick = () => openDetail({ id: m.id, media_type: mediaType });
-        fGrid.appendChild(card);
+      if (!slice.length) return;
+      // Show skeleton placeholders
+      const skels = [];
+      for (let i = 0; i < slice.length; i++) {
+        const skel = document.createElement('div');
+        skel.className = 'movie-card filmography-skel';
+        skel.innerHTML = '<div class="poster-wrap"><div class="skeleton" style="aspect-ratio:2/3;border-radius:8px;width:100%"></div></div><div class="info"><div class="skeleton" style="height:12px;width:80%;border-radius:4px;margin-bottom:4px"></div><div class="skeleton" style="height:10px;width:40%;border-radius:4px"></div></div>';
+        fGrid.appendChild(skel);
+        skels.push(skel);
       }
+      // Replace skeletons with real cards after a brief delay
+      setTimeout(() => {
+        skels.forEach((skel, i) => {
+          const m = slice[i];
+          if (!m) return;
+          const card = document.createElement('div');
+          card.className = 'movie-card';
+          const title = m.title || m.name || m.original_title || m.original_name || 'Unknown';
+          const year = (m.release_date || m.first_air_date || '').slice(0, 4);
+          const posterUrl = m.poster_url || (m.poster_path ? 'https://image.tmdb.org/t/p/w342' + m.poster_path : '');
+          const mediaType = m.media_type || (m.first_air_date ? 'tv' : 'movie');
+          card.innerHTML = `
+            <div class="poster-wrap">
+              ${posterUrl
+                ? `<img src="${posterUrl}" alt="${escHtml(title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=\\'poster-ph\\'><i class=\\'fa-solid fa-film\\'></i></div>'">`
+                : '<div class="poster-ph"><i class="fa-solid fa-film"></i></div>'}
+              ${m.vote_average ? `<div class="rating-badge">${m.vote_average.toFixed(1)}</div>` : ''}
+            </div>
+            <div class="info">
+              <div class="title">${escHtml(title)}</div>
+              <div class="year">${year} ${mediaType === 'tv' ? '<span style="color:var(--accent);font-size:0.7rem">TV</span>' : ''}</div>
+            </div>`;
+          card.onclick = () => openDetail({ id: m.id, media_type: mediaType });
+          skel.replaceWith(card);
+        });
+      }, 150);
       _filmographyPage++;
     }
 
@@ -2280,6 +2318,8 @@
       const modal = document.getElementById('detail-modal');
       modal.classList.remove('open');
       document.body.style.overflow = '';
+      document.getElementById('actor-back-btn').style.display = 'none';
+      _prevDetailData = null;
       subtitleData = [];
     }
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDetail(); closeCmd(); closeFilterPopover(); } });
