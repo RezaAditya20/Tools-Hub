@@ -695,6 +695,32 @@
       .btn-copy:hover { opacity: 0.85; }
       .btn-copy.copied { background: #1db954; }
 
+      /* ── Trailer modal ── */
+      .trailer-modal {
+        position: fixed; inset: 0; z-index: 1200;
+        background: rgba(0,0,0,0.88);
+        display: none; align-items: center; justify-content: center;
+        padding: 16px;
+      }
+      .trailer-modal.open { display: flex; }
+      .trailer-box {
+        position: relative; width: 100%; max-width: 860px;
+        aspect-ratio: 16/9; border-radius: 10px; overflow: hidden;
+        box-shadow: 0 12px 50px rgba(0,0,0,0.7);
+        animation: detailIn 0.24s ease-out;
+      }
+      .trailer-box iframe { width: 100%; height: 100%; border: none; }
+      .trailer-close {
+        position: absolute; top: -40px; right: 0; z-index: 3;
+        background: none; border: none; color: #fff; font-size: 1.2rem;
+        cursor: pointer; padding: 4px 8px; border-radius: 6px;
+      }
+      .trailer-close:hover { color: var(--accent); }
+      .btn-find.ghost-trailer { background: #333; color: #fff; }
+      :root[data-theme="light"] .btn-find.ghost-trailer { background: #444; color: #fff; }
+      .btn-find.ghost-trailer:hover { opacity: 0.85; }
+      .btn-find.ghost-trailer:disabled { opacity: 0.5; cursor: not-allowed; }
+
       /* ── Mobile ── */
       @media (max-width: 760px) {
         .topnav { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
@@ -838,6 +864,14 @@
             <button class="btn-copy" id="btn-copy" onclick="copyCmd()">Copy</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Trailer modal -->
+    <div class="trailer-modal" id="trailer-modal">
+      <div class="trailer-box">
+        <button class="trailer-close" onclick="closeTrailer()"><i class="fa-solid fa-xmark"></i></button>
+        <iframe id="trailer-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
       </div>
     </div>
 
@@ -1325,6 +1359,13 @@
           btnFind.style.display = 'none';
         };
         actions.appendChild(btnFind);
+
+        // Trailer button
+        const btnTrailer = document.createElement('button');
+        btnTrailer.className = 'btn-find ghost-trailer';
+        btnTrailer.innerHTML = '<i class="fa-solid fa-film"></i> Watch Trailer';
+        btnTrailer.onclick = () => openTrailer(d.id, isTV ? 'tv' : 'movie');
+        actions.appendChild(btnTrailer);
       }
 
       // Initial episode count
@@ -1911,6 +1952,47 @@
         return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
       } catch { return ''; }
     }
+
+    /* ── Trailer ── */
+    async function openTrailer(id, type) {
+      const modal = document.getElementById('trailer-modal');
+      const iframe = document.getElementById('trailer-iframe');
+      iframe.src = '';
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      try {
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + type + '/' + id + '/videos')}`);
+        const data = await r.json();
+        const videos = data.results || [];
+        // Prefer official YouTube trailer, fallback to any YouTube trailer
+        const trailer = videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official)
+          || videos.find(v => v.site === 'YouTube' && v.type === 'Trailer')
+          || videos.find(v => v.site === 'YouTube' && v.type === 'Teaser')
+          || videos.find(v => v.site === 'YouTube');
+        if (trailer && trailer.key) {
+          iframe.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0`;
+        } else {
+          iframe.src = '';
+          modal.classList.remove('open');
+          document.body.style.overflow = '';
+          alert('No trailer available for this title.');
+        }
+      } catch {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    }
+    function closeTrailer() {
+      const modal = document.getElementById('trailer-modal');
+      const iframe = document.getElementById('trailer-iframe');
+      iframe.src = '';
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('trailer-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeTrailer();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTrailer(); } });
 
     /* ── Player: launch MPV via server ── */
     let torrserv = localStorage.getItem('torrserver-url') || 'http://127.0.0.1:8090';
