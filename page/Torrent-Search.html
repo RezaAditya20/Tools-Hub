@@ -174,7 +174,7 @@
       }
       .hero-bg {
         position: absolute; inset: 0; background-size: cover; background-position: center top;
-        transform: scale(1.02);
+        transform: scale(1.02); opacity: 1;
       }
       .hero-bg::after {
         content: ""; position: absolute; inset: 0;
@@ -1269,7 +1269,19 @@
         const heroTitle = hero.title || hero.original_title || 'Unknown';
         const heroYear = (hero.release_date || '').slice(0, 4);
         const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/original' + hero.backdrop_path : '');
-        document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
+        // Fetch logo first, preload image
+        const titleEl = document.getElementById('hero-title');
+        const logoUrl = await fetchLogo(hero.id, 'movie').catch(() => '');
+        if (logoUrl) {
+          await new Promise(resolve => { const img = new Image(); img.onload = img.onerror = resolve; img.src = logoUrl; });
+          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+        } else {
+          titleEl.textContent = heroTitle;
+        }
+        // Show everything together
+        const heroBg = document.getElementById('hero-bg');
+        heroBg.style.opacity = '0';
+        heroBg.style.backgroundImage = bd ? `url("${bd}")` : '';
         document.getElementById('hero-badge').textContent = filterLabel.toUpperCase();
         document.getElementById('hero-meta').innerHTML =
           (hero.vote_average ? `<span class="rating">${hero.vote_average.toFixed(1)}</span>` : '') +
@@ -1279,13 +1291,8 @@
         document.getElementById('hero-play').onclick = () => openDetail(hero);
         loader.style.display = 'none';
         content.style.display = '';
-        const titleEl = document.getElementById('hero-title');
-        const logoUrl = await fetchLogo(hero.id, 'movie');
-        if (logoUrl) {
-          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
-        } else {
-          titleEl.textContent = heroTitle;
-        }
+        void heroBg.offsetWidth;
+        heroBg.style.opacity = '1';
         // Grid = rest
         const rest = items.slice(1, 20);
         if (rest.length) renderSearchGrid(rest);
@@ -1493,7 +1500,19 @@
         const heroTitle = hero.title || hero.original_title || 'Unknown';
         const heroYear = (hero.release_date || '').slice(0, 4);
         const bd = hero.backdrop_url || (hero.backdrop_path ? 'https://image.tmdb.org/t/p/original' + hero.backdrop_path : '');
-        document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
+        // Fetch logo first, preload image
+        const titleEl = document.getElementById('hero-title');
+        const logoUrl = await fetchLogo(hero.id, 'movie').catch(() => '');
+        if (logoUrl) {
+          await new Promise(resolve => { const img = new Image(); img.onload = img.onerror = resolve; img.src = logoUrl; });
+          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+        } else {
+          titleEl.textContent = heroTitle;
+        }
+        // Show everything together
+        const heroBg = document.getElementById('hero-bg');
+        heroBg.style.opacity = '0';
+        heroBg.style.backgroundImage = bd ? `url("${bd}")` : '';
         document.getElementById('hero-badge').textContent = filterLabel.toUpperCase();
         document.getElementById('hero-meta').innerHTML =
           (hero.vote_average ? `<span class="rating">${hero.vote_average.toFixed(1)}</span>` : '') +
@@ -1503,13 +1522,8 @@
         document.getElementById('hero-play').onclick = () => openDetail(hero);
         loader.style.display = 'none';
         content.style.display = '';
-        const titleEl = document.getElementById('hero-title');
-        const logoUrl = await fetchLogo(hero.id, 'movie');
-        if (logoUrl) {
-          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
-        } else {
-          titleEl.textContent = heroTitle;
-        }
+        void heroBg.offsetWidth;
+        heroBg.style.opacity = '1';
         // Grid = rest
         const rest = items.slice(1, 30);
         if (rest.length) renderSearchGrid(rest);
@@ -1562,6 +1576,17 @@
       const title = isTV ? (featured.name || featured.original_name) : (featured.title || featured.original_title);
       const year = (featured.release_date || featured.first_air_date || '').slice(0, 4);
       const bd = featured.backdrop_url || (featured.backdrop_path ? ('https://image.tmdb.org/t/p/original' + featured.backdrop_path) : '');
+      // Fetch logo first, preload image
+      const titleEl = document.getElementById('hero-title');
+      const logoUrl = await fetchLogo(featured.id, isTV ? 'tv' : 'movie').catch(() => '');
+      if (logoUrl) {
+        await new Promise(resolve => { const img = new Image(); img.onload = img.onerror = resolve; img.src = logoUrl; });
+        titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(title)}" referrerpolicy="no-referrer">`;
+      } else {
+        titleEl.textContent = title;
+      }
+      // Show everything together
+      bg.style.opacity = '0';
       if (bd) bg.style.backgroundImage = `url("${bd}")`;
       document.getElementById('hero-meta').innerHTML =
         (featured.vote_average ? `<span class="rating">${featured.vote_average.toFixed(1)}</span>` : '') +
@@ -1569,16 +1594,10 @@
         (isTV ? '<span>TV Series</span>' : '<span>Movie</span>');
       document.getElementById('hero-overview').textContent = featured.overview || '';
       document.getElementById('hero-play').onclick = () => openDetail(featured);
-      // Hide skeleton immediately, then load logo async
       loader.style.display = 'none';
       content.style.display = '';
-      const titleEl = document.getElementById('hero-title');
-      const logoUrl = await fetchLogo(featured.id, isTV ? 'tv' : 'movie');
-      if (logoUrl) {
-        titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(title)}" referrerpolicy="no-referrer">`;
-      } else {
-        titleEl.textContent = title;
-      }
+      void bg.offsetWidth;
+      bg.style.opacity = '1';
     }
 
     function searchFromMovie(title, isTV) {
@@ -1617,7 +1636,19 @@
         const heroTitle = isHeroTV ? (heroItem.name || heroItem.original_name) : (heroItem.title || heroItem.original_title);
         const heroYear = (heroItem.release_date || heroItem.first_air_date || '').slice(0, 4);
         const bd = heroItem.backdrop_url || (heroItem.backdrop_path ? ('https://image.tmdb.org/t/p/original' + heroItem.backdrop_path) : '');
-        document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
+        // Fetch logo first, preload image
+        const titleEl = document.getElementById('hero-title');
+        const logoUrl = await fetchLogo(heroItem.id, isHeroTV ? 'tv' : 'movie').catch(() => '');
+        if (logoUrl) {
+          await new Promise(resolve => { const img = new Image(); img.onload = img.onerror = resolve; img.src = logoUrl; });
+          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+        } else {
+          titleEl.textContent = heroTitle;
+        }
+        // Show everything together
+        const heroBg = document.getElementById('hero-bg');
+        heroBg.style.opacity = '0';
+        heroBg.style.backgroundImage = bd ? `url("${bd}")` : '';
         document.getElementById('hero-badge').textContent = 'SEARCH RESULT';
         document.getElementById('hero-meta').innerHTML =
           (heroItem.vote_average ? `<span class="rating">${heroItem.vote_average.toFixed(1)}</span>` : '') +
@@ -1637,15 +1668,10 @@
           heroActions.appendChild(backBtn);
         }
         backBtn.style.display = '';
-        const titleEl = document.getElementById('hero-title');
-        const logoUrl = await fetchLogo(heroItem.id, isHeroTV ? 'tv' : 'movie');
-        if (logoUrl) {
-          titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
-        } else {
-          titleEl.textContent = heroTitle;
-        }
         loader.style.display = 'none';
         content.style.display = '';
+        void heroBg.offsetWidth;
+        heroBg.style.opacity = '1';
         // Set infinite scroll state
         activeView = 'search';
         currentPath = searchPath;
@@ -1769,7 +1795,9 @@
       section.style.display = '';
       grid.innerHTML = '';
       // Clear previous hero state
-      document.getElementById('hero-bg').style.backgroundImage = '';
+      const heroBg = document.getElementById('hero-bg');
+      heroBg.style.backgroundImage = '';
+      heroBg.style.opacity = '0';
       const heroContent = document.getElementById('hero-content');
       heroContent.style.display = 'none';
       heroContent.querySelector('#hero-badge').textContent = '';
@@ -1806,7 +1834,22 @@
           const heroTitle = firstType === 'tv' ? (d.name || d.original_name) : (d.title || d.original_title);
           const heroYear = (d.release_date || d.first_air_date || '').slice(0, 4);
           const bd = d.backdrop_url || (d.backdrop_path ? 'https://image.tmdb.org/t/p/original' + d.backdrop_path : '');
+          // Fetch logo first, then preload image
+          const titleEl = document.getElementById('hero-title');
+          const logoUrl = await fetchLogo(d.id, firstType).catch(() => '');
+          if (logoUrl) {
+            await new Promise(resolve => {
+              const img = new Image();
+              img.onload = img.onerror = resolve;
+              img.src = logoUrl;
+            });
+            titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
+          } else {
+            titleEl.textContent = heroTitle;
+          }
+          // Now show everything together
           document.getElementById('hero-bg').style.backgroundImage = bd ? `url("${bd}")` : '';
+          document.getElementById('hero-bg').style.opacity = '1';
           document.getElementById('hero-badge').textContent = 'MY LIST';
           document.getElementById('hero-meta').innerHTML =
             (d.vote_average ? `<span class="rating">${d.vote_average.toFixed(1)}</span>` : '') +
@@ -1814,14 +1857,8 @@
             (firstType === 'tv' ? '<span>TV</span>' : '<span>Movie</span>');
           document.getElementById('hero-overview').textContent = d.overview || '';
           document.getElementById('hero-play').onclick = () => openDetail(d);
-          const titleEl = document.getElementById('hero-title');
-          titleEl.textContent = heroTitle;
           loader.style.display = 'none';
           content.style.display = '';
-          // Fetch logo async, don't block hero display
-          fetchLogo(d.id, firstType).then(logoUrl => {
-            if (logoUrl) titleEl.innerHTML = `<img class="logo-img" src="${logoUrl}" alt="${escHtml(heroTitle)}" referrerpolicy="no-referrer">`;
-          });
         }
       } catch {}
 
