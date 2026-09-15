@@ -1214,6 +1214,17 @@
       section.style.display = '';
       grid.innerHTML = '';
 
+      // Clear previous hero state
+      const heroBgReset = document.getElementById('hero-bg');
+      heroBgReset.style.backgroundImage = '';
+      heroBgReset.style.opacity = '0';
+      const heroContentReset = document.getElementById('hero-content');
+      heroContentReset.style.display = 'none';
+      heroContentReset.querySelector('#hero-badge').textContent = '';
+      heroContentReset.querySelector('#hero-title').textContent = '';
+      heroContentReset.querySelector('#hero-overview').textContent = '';
+      document.getElementById('hero-loader').style.display = '';
+
       // Show skeleton hero
       const loader = document.getElementById('hero-loader');
       const content = document.getElementById('hero-content');
@@ -1624,6 +1635,16 @@
       loader.style.display = '';
       content.style.display = 'none';
       grid.innerHTML = '';
+      // Clear previous hero state
+      const heroBgReset = document.getElementById('hero-bg');
+      heroBgReset.style.backgroundImage = '';
+      heroBgReset.style.opacity = '0';
+      const heroContentReset = document.getElementById('hero-content');
+      heroContentReset.style.display = 'none';
+      heroContentReset.querySelector('#hero-badge').textContent = '';
+      heroContentReset.querySelector('#hero-title').textContent = '';
+      heroContentReset.querySelector('#hero-overview').textContent = '';
+      document.getElementById('hero-loader').style.display = '';
       try {
         const searchPath = '/search/multi?query=' + encodeURIComponent(q) + '&language=en-US';
         const { results: rawItems, total_pages } = await fetchCategory(searchPath);
