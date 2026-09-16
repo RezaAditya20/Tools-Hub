@@ -160,7 +160,7 @@
       .school-card {
         padding: 16px;
         border-radius: 16px;
-        border: none;
+        border: 1px solid var(--border);
         background: color-mix(in srgb, var(--input) 80%, var(--bg));
         cursor: pointer;
         transition:
@@ -2121,9 +2121,7 @@
           <input type="text" id="search-school" placeholder="Cari sekolah / kegiatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
           <datalist id="category-list"></datalist>
         </div>
-        <div class="panel">
-          <div id="school-list" class="school-list"></div>
-        </div>
+        <div id="school-list" class="school-list"></div>
       </div>
 
       <!-- VIEW 2: DETAIL SEKOLAH (NOTES) -->
