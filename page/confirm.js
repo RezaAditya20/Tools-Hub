@@ -169,7 +169,7 @@ function showPinModal(title, opts = {}) {
 
 /* showNoteEdit(name, subname) → Promise<{name, subname}|null>.
    Modal edit nama + subname catatan. Batal/Esc → null. */
-function showNoteEdit(name = "", subname = "") {
+function showNoteEdit(name = "", subname = "", pengaju = "") {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
     overlay.className = "confirm-overlay";
@@ -180,6 +180,8 @@ function showNoteEdit(name = "", subname = "") {
         <input type="text" id="edit-note-name" value="${name.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" autocomplete="off" />
         <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Subname (opsional)</label>
         <input type="text" id="edit-note-subname" value="${subname.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" autocomplete="off" />
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Pengaju (opsional)</label>
+        <input type="text" id="edit-note-pengaju" value="${pengaju.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" placeholder="Pengaju" autocomplete="off" />
         <div class="confirm-actions">
           <button class="btn-confirm-ok">Simpan</button>
           <button class="btn-confirm-cancel">Batal</button>
@@ -188,15 +190,20 @@ function showNoteEdit(name = "", subname = "") {
     document.body.appendChild(overlay);
     const nameInput = overlay.querySelector("#edit-note-name");
     const subInput = overlay.querySelector("#edit-note-subname");
+    const pengInput = overlay.querySelector("#edit-note-pengaju");
     nameInput.focus();
     nameInput.select();
     const close = (val) => { if (window.closeOverlay) closeOverlay(overlay, val, resolve); else { overlay.remove(); resolve(val); } };
-    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim() });
+    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim(), pengaju: pengInput.value.trim() });
     nameInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); save(); }
       if (e.key === "Escape") close(null);
     });
     subInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    pengInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); save(); }
       if (e.key === "Escape") close(null);
     });
@@ -245,7 +252,7 @@ function showSchoolAdd() {
   });
 }
 
-/* showNoteAdd(defaultProgress?) → Promise<{name, subname, progress}|null>.
+/* showNoteAdd(defaultProgress?) → Promise<{name, subname, pengaju, progress}|null>.
    Bila defaultProgress diisi, pilihan Progress disembunyikan & nilai tsb yang dipakai. */
 function showNoteAdd(defaultProgress) {
   const hideProgress = defaultProgress !== undefined;
@@ -259,6 +266,8 @@ function showNoteAdd(defaultProgress) {
         <input type="text" id="add-note-name" placeholder="Nama Catatan..." autocomplete="off" />
         <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Subname (opsional)</label>
         <input type="text" id="add-note-subname" placeholder="Subname" autocomplete="off" />
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Pengaju (opsional)</label>
+        <input type="text" id="add-note-pengaju" placeholder="Pengaju" autocomplete="off" />
         ${hideProgress ? "" : `<label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Progress</label>
         <select id="add-note-progress" class="progress-edit liquid-in-panel add-note-progress">
           <option value="">Pending</option>
@@ -275,15 +284,20 @@ function showNoteAdd(defaultProgress) {
     document.body.appendChild(overlay);
     const nameInput = overlay.querySelector("#add-note-name");
     const subInput = overlay.querySelector("#add-note-subname");
+    const pengInput = overlay.querySelector("#add-note-pengaju");
     const progInput = overlay.querySelector("#add-note-progress");
     nameInput.focus();
     const close = (val) => { if (window.closeOverlay) closeOverlay(overlay, val, resolve); else { overlay.remove(); resolve(val); } };
-    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim(), progress: progInput ? progInput.value : defaultProgress });
+    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim(), pengaju: pengInput.value.trim(), progress: progInput ? progInput.value : defaultProgress });
     nameInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); save(); }
       if (e.key === "Escape") close(null);
     });
     subInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    pengInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); save(); }
       if (e.key === "Escape") close(null);
     });

@@ -2054,6 +2054,8 @@
                   <span>Otomatis tersimpan</span>
                   <span id="desc-subname-sep" style="display: none"> • </span>
                   <span id="desc-subname-show" style="display: none; color: var(--muted)"></span>
+                  <span id="desc-pengaju-sep" style="display: none"> · </span>
+                  <span id="desc-pengaju-show" style="display: none; color: var(--muted)"></span>
                 </span>
               </div>
             </div>
@@ -2555,6 +2557,11 @@
           subShow.textContent = note.subname || "";
           subShow.style.display = note.subname ? "inline" : "none";
           subSep.style.display = note.subname ? "inline" : "none";
+          const pengShow = document.getElementById("desc-pengaju-show");
+          const pengSep = document.getElementById("desc-pengaju-sep");
+          pengShow.textContent = note.pengaju || "";
+          pengShow.style.display = note.pengaju ? "inline" : "none";
+          pengSep.style.display = note.pengaju ? "inline" : "none";
           const progShow = document.getElementById("desc-progress-show");
           const progLabel = note.progress || "Pending";
           progShow.textContent = "Progress: " + progLabel;
@@ -2965,7 +2972,7 @@
           // Sync navbar (daftar catatan) — jangan nimpa view aktif (bisa dipanggil dr view 3)
           window.dispatchEvent(new CustomEvent("sn-view", { detail: { schoolId: currentSchoolId, activeNoteId: currentNoteId } }));
           const allNotes = db[currentSchoolId].notes;
-          const notes = noteQuery ? allNotes.filter((n) => n.text.toLowerCase().includes(noteQuery) || (n.subname || "").toLowerCase().includes(noteQuery)) : allNotes;
+          const notes = noteQuery ? allNotes.filter((n) => n.text.toLowerCase().includes(noteQuery) || (n.subname || "").toLowerCase().includes(noteQuery) || (n.pengaju || "").toLowerCase().includes(noteQuery)) : allNotes;
           const pending = notes.filter((n) => !n.done);
           const done = notes.filter((n) => n.done);
 
@@ -3080,6 +3087,8 @@
           card.className = "note-card liquid-glass row-clickable" + (isDone ? " row-done" : "") + (n.pinned ? " row-pinned" : "");
           card.dataset.id = n.id;
           const subname = n.subname ? `<span class="note-subname">${escapeHtml(n.subname)}</span>` : "";
+          const pengaju = n.pengaju ? `<span class="note-subname">${escapeHtml(n.pengaju)}</span>` : "";
+          const subPeng = (subname && pengaju) ? subname + `<span style="margin:0 4px;opacity:0.4">·</span>` + pengaju : subname || pengaju;
           card.innerHTML = `
             <div class="note-card-head">
               <span class="note-title">${escapeHtml(n.text)}</span>
@@ -3091,7 +3100,7 @@
                 ${showPin ? `<button class="btn-pin${n.pinned ? " is-pinned" : ""}" data-id="${n.id}" title="${n.pinned ? "Unpin" : "Pin"}"><i class="fad fa-thumbtack"></i></button>` : ""}
               </span>
             </div>
-            ${subname ? `<div class="note-sub">${subname}</div>` : ""}
+            ${subPeng ? `<div class="note-sub">${subPeng}</div>` : ""}
             <div class="note-card-meta">
               <span class="note-date"><i class="fad fa-calendar"></i> ${n.date}</span>
               <span class="note-task-count">${taskCountHtml(n)}</span>
@@ -3116,7 +3125,10 @@
             return out;
           }
           const meta = note.done && note.doneDate ? note.date + " • Selesai : " + note.doneDate + " • " + formatHours(elapsedHours(note.date, note.doneDate)) : note.date;
-          const title = note.subname ? note.text + " (" + note.subname + ")" : note.text;
+          const parts = [note.text];
+          if (note.subname) parts.push(note.subname);
+          if (note.pengaju) parts.push(note.pengaju);
+          const title = parts.length > 1 ? parts.join(" · ") : parts[0];
           const txt = [title, meta, "", note.desc || "", "", taskLines(note.tasks || [], 0).join("\n")]
             .join("\n")
             .replace(/\n{3,}/g, "\n\n")
@@ -3356,6 +3368,7 @@
             id: generateId(),
             text: res.name,
             subname: res.subname,
+            pengaju: res.pengaju || "",
             date: formatDate(new Date()),
             updatedAt: formatDate(new Date()),
             done: isDone,
@@ -3404,6 +3417,7 @@
             id: generateId(),
             text: name,
             subname: res.subname,
+            pengaju: res.pengaju || "",
             date: formatDate(new Date()),
             updatedAt: formatDate(new Date()),
             done: isDone,
@@ -3747,7 +3761,7 @@
           if (!currentSchoolId || !currentNoteId) return;
           const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
           if (!note) return;
-          const res = await showNoteEdit(note.text, note.subname || "");
+          const res = await showNoteEdit(note.text, note.subname || "", note.pengaju || "");
           if (!res) return;
           if (!res.name) {
             showToast("Nama tidak boleh kosong", "error");
@@ -3755,6 +3769,7 @@
           }
           note.text = res.name;
           note.subname = res.subname;
+          note.pengaju = res.pengaju;
           note.updatedAt = formatDate(new Date());
           saveData();
           topbarTitle.textContent = res.name;
@@ -3763,6 +3778,11 @@
           subShow.textContent = res.subname;
           subShow.style.display = res.subname ? "inline" : "none";
           subSep.style.display = res.subname ? "inline" : "none";
+          const pengShow = document.getElementById("desc-pengaju-show");
+          const pengSep = document.getElementById("desc-pengaju-sep");
+          pengShow.textContent = res.pengaju;
+          pengShow.style.display = res.pengaju ? "inline" : "none";
+          pengSep.style.display = res.pengaju ? "inline" : "none";
           renderNotes();
           showToast("Catatan diperbarui");
         });
