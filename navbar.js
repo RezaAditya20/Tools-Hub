@@ -143,7 +143,7 @@
       <a class="nav-brand" href="${ROOT}index.html">Tools Hub</a>
     </div>
     <div class="nav-search-wrap">
-      <i data-lucide="search" class="nav-search-icon"></i>
+      <svg class="nav-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
       <input class="nav-search" id="nav-search" type="text" placeholder="Cari program..." autocomplete="off" />
     </div>
     <nav class="nav-items"></nav>

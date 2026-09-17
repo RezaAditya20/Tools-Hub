@@ -19,11 +19,15 @@
       .topbar-row { align-items: flex-start; }
 
       /* Drop zones */
-      .drop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+      .drop-grid {display: grid;grid-template-columns: 1fr 1fr;gap: 16px;margin-bottom: 16px;/* background-color: var(--bg); */}
       .drop-zone {
-        border: 2px dashed var(--border); border-radius: 6px; padding: 32px 16px;
-        text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.2s;
-        background: var(--input);
+        border: 2px dashed var(--border);
+        border-radius: 6px;
+        padding: 32px 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s, transform 0.2s;
+        background: var(--bg);
       }
       .drop-zone:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, var(--input)); }
       .drop-zone.drag-over {
@@ -183,7 +187,7 @@
             </div>
           </div>
           <div class="compare-bar">
-            <button class="btn btn-primary" id="btn-compare" disabled>Compare</button>
+            <button class="panel-btn btn btn-primary" id="btn-compare" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>Compare</button>
           </div>
           </div>
         </div>
@@ -205,13 +209,13 @@
         <div class="panel-title-row">
           <div class="panel-title">
             <div style="display:flex;align-items:center;gap:12px">
-              <button class="btn" id="btn-back">← Kembali</button>
+              <button class="panel-btn btn" id="btn-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Kembali</button>
               <h2>Hasil Perbandingan</h2>
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
             <span style="font-size:0.75rem;color:var(--muted)" id="result-info"></span>
-            <button class="btn" id="btn-export-csv">Export CSV</button>
+            <button class="panel-btn btn" id="btn-export-csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
           </div>
         </div>
         <div class="panel">
@@ -221,7 +225,7 @@
               <span>Base Data</span>
               <div style="display:flex;gap:6px;align-items:center">
                 <select id="base-file-sel" style="padding:2px 6px;border-radius: 6px;border:1px solid var(--border);background:var(--input);color:var(--fg);font-size:0.7rem"></select>
-                <button id="base-toggle">Sembunyikan</button>
+                <button id="base-toggle" class="panel-btn btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Sembunyikan</button>
               </div>
             </div>
             <div id="base-wrap">

@@ -212,17 +212,17 @@
               <option value="parent">Parent</option>
             </select>
           </div>
-          <button id="btn-add" class="btn-primary">+ Tambah Baris</button>
-          <button id="btn-add-multi">+ Tambah Banyak</button>
+          <button id="btn-add" class="panel-btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah Baris</button>
+          <button id="btn-add-multi" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah Banyak</button>
         </div>
         <div id="bulk-panel" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
           <div class="panel-title-row" style="margin-bottom: 8px;">
             <h2 style="font-size: 0.95rem;">Input Banyak (satu nama per baris)</h2>
-            <button id="btn-close-bulk">✕ Tutup</button>
+            <button id="btn-close-bulk" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Tutup</button>
           </div>
           <textarea id="bulk-input" placeholder="Masukkan nama lengkap, satu per baris..." style="min-height: 100px;"></textarea>
           <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap">
-            <button id="btn-process-bulk" class="btn-primary">Proses</button>
+            <button id="btn-process-bulk" class="panel-btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Proses</button>
           </div>
         </div>
         </div>
@@ -233,11 +233,11 @@
         <div class="panel-title-row">
           <h2>Data</h2>
           <div style="display: flex; gap: 8px; flex-wrap: wrap">
-            <button id="btn-copy-user" class="btn-success">Salin Username</button>
-            <button id="btn-copy-email">Salin Email</button>
-            <button id="btn-copy-all">Salin Semua</button>
-            <button id="btn-csv">Download CSV</button>
-            <button id="btn-clear-all">Hapus Semua</button>
+            <button id="btn-copy-user" class="panel-btn btn-success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin Username</button>
+            <button id="btn-copy-email" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin Email</button>
+            <button id="btn-copy-all" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin Semua</button>
+            <button id="btn-csv" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download CSV</button>
+            <button id="btn-clear-all" class="panel-btn btn-danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Hapus Semua</button>
           </div>
         </div>
         <div class="panel">
@@ -387,8 +387,8 @@
             <td class="col-belakang generated" data-copy="${ln}">${ln}</td>
             <td class="col-username generated" data-copy="${uname}">${uname}</td>
             <td class="col-email generated" data-copy="${email}">${email}</td>
-            <td class="col-copy"><button class="btn-row-copy" data-id="${r.id}" type="button">Salin</button></td>
-            <td class="col-del"><button class="btn-del" data-id="${r.id}" aria-label="Hapus">✕</button></td>
+            <td class="col-copy"><button class="btn-row-copy" data-id="${r.id}" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin</button></td>
+            <td class="col-del"><button class="btn-del" data-id="${r.id}" aria-label="Hapus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
           `;
 
             function updateGeneratedCells() {

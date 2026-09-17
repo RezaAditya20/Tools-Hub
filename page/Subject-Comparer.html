@@ -128,8 +128,8 @@
             <textarea id="class-subjects" placeholder="10A	11B&#10;Mathematics	Physics&#10;English	Chemistry"></textarea>
             <p class="hint">Paste langsung — baris 1 = nama kelas (tab), baris berikutnya = subject per kelas (tab).</p>
             <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap">
-              <button class="btn-primary" id="btn-add-class">+ Tambah Kelas</button>
-              <button id="btn-clear">Bersihkan</button>
+              <button class="panel-btn btn-primary" id="btn-add-class"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah Kelas</button>
+              <button id="btn-clear" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Bersihkan</button>
             </div>
 
             <!-- Class list -->
@@ -140,8 +140,8 @@
 
             <!-- Actions -->
             <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap">
-              <button class="btn-success" id="btn-compare">Bandingkan</button>
-              <button class="btn-danger" id="btn-reset">Reset Semua</button>
+              <button class="panel-btn btn-success" id="btn-compare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Bandingkan</button>
+              <button class="panel-btn btn-danger" id="btn-reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Reset Semua</button>
             </div>
           </div>
         </div>
@@ -155,7 +155,7 @@
                 <p id="table-subtitle"></p>
               </div>
               <div class="btn-group">
-                <button id="btn-copy-all">Salin Semua</button>
+                <button id="btn-copy-all" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin Semua</button>
               </div>
             </div>
             <div class="panel">
@@ -380,7 +380,7 @@
 
           // Header
           const thtml = "<tr>" + names.map(n =>
-            '<th><div class="th-inner"><span>' + esc(n) + '</span><span class="copy-btns"><button class="copy-btn" data-copy-class="' + esc(n) + '" data-sep="|" title="Salin dengan |">|</button><button class="copy-btn" data-copy-class="' + esc(n) + '" data-sep="\\n" title="Salin per baris">↵</button><button class="copy-btn" data-edit-class="' + esc(n) + '" title="Rename kelas">✎</button><button class="copy-btn copy-btn-del" data-del-class="' + esc(n) + '" title="Hapus kelas">✕</button></span></div></th>'
+            '<th><div class="th-inner"><span>' + esc(n) + '</span><span class="copy-btns"><button class="copy-btn" data-copy-class="' + esc(n) + '" data-sep="|" title="Salin dengan |">|</button><button class="copy-btn" data-copy-class="' + esc(n) + '" data-sep="\\n" title="Salin per baris">↵</button><button class="copy-btn" data-edit-class="' + esc(n) + '" title="Rename kelas"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button><button class="copy-btn copy-btn-del" data-del-class="' + esc(n) + '" title="Hapus kelas"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span></div></th>'
           ).join("") + "</tr>";
           document.getElementById("compare-thead").innerHTML = thtml;
           document.getElementById("compare-thead").querySelectorAll(".copy-btn").forEach(btn => {
@@ -448,8 +448,8 @@
               }
               const clsName = names[i];
               const hasVal = v !== "—";
-              const editBtn = hasVal ? '<button class="subj-action" data-edit-subj="' + ri + '" data-cls="' + esc(clsName) + '" title="Edit">✎</button>' : '';
-              const delBtn = hasVal ? '<button class="subj-action subj-del" data-del-subj="' + ri + '" data-cls="' + esc(clsName) + '" title="Hapus">✕</button>' : '';
+              const editBtn = hasVal ? '<button class="subj-action" data-edit-subj="' + ri + '" data-cls="' + esc(clsName) + '" title="Edit"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' : '';
+              const delBtn = hasVal ? '<button class="subj-action subj-del" data-del-subj="' + ri + '" data-cls="' + esc(clsName) + '" title="Hapus"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '';
               return '<td class="' + cls + '"><div class="cell-inner"><span class="cell-text">' + esc(v) + '</span><span class="cell-actions">' + editBtn + delBtn + '</span></div></td>';
             }).join("");
 

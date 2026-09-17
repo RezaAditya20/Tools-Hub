@@ -375,7 +375,7 @@
         <div class="panel-title">
           <div class="panel-title-row">
             <h2>${title}</h2>
-            <button class="btn-clear">Bersihkan</button>
+            <button class="panel-btn btn-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Bersihkan</button>
           </div>
           <p class="panel-meta"><span class="count">0</span> dipilih dari ${fields.length}<span class="warning-inline hidden" role="alert"></span></p>
         </div>
@@ -384,6 +384,7 @@
 
         const searchWrap = document.createElement("div");
         searchWrap.className = "search-wrap";
+        searchWrap.innerHTML = `<svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`;
         const searchInput = document.createElement("input");
         searchInput.type = "text";
         searchInput.placeholder = "Cari field…";
@@ -420,14 +421,14 @@
         <div>
           <div class="output-label">
             <span class="label-1">Baris 1 — 0 karakter</span>
-            <button class="btn-primary btn-copy-1" disabled>Salin</button>
+            <button class="panel-btn btn-primary btn-copy-1" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin</button>
           </div>
           <textarea class="line-1" readonly></textarea>
         </div>
         <div class="line-2-block">
           <div class="output-label">
             <span class="label-2">Baris 2 (≤ 255 karakter) — 0 karakter</span>
-            <button class="btn-primary btn-copy-2" disabled>Salin</button>
+            <button class="panel-btn btn-primary btn-copy-2" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin</button>
           </div>
           <textarea class="line-2" readonly></textarea>
         </div>

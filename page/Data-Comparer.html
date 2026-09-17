@@ -50,6 +50,7 @@
         white-space: pre;
         overflow-wrap: normal;
         overflow-x: auto;
+        border-radius: 10px;
       }
 
       /* Buttons */
@@ -149,21 +150,21 @@
             <div class="field">
               <div class="field-title">
                 <label for="input-1">Sumber 1 (Format: ID &lt;tab&gt; Data 1)</label>
-                <button class="btn-paste-source" data-target="input-1" type="button">Paste</button>
+                <button class="panel-btn btn-paste-source" data-target="input-1" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Paste</button>
               </div>
               <textarea id="input-1" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;D1mZW8h3kNU1kt...&#10;page_order&#9;2"></textarea>
             </div>
             <div class="field">
               <div class="field-title">
                 <label for="input-2">Sumber 2 (Format: ID Compare &lt;tab&gt; Data 2)</label>
-                <button class="btn-paste-source" data-target="input-2" type="button">Paste</button>
+                <button class="panel-btn btn-paste-source" data-target="input-2" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Paste</button>
               </div>
               <textarea id="input-2" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;1ua5daCHEaQlR7...&#10;page_order&#9;2"></textarea>
             </div>
           </div>
           <div class="action-row">
-            <button id="btn-compare" class="btn-primary">Bandingkan Data</button>
-            <button id="btn-clear-inputs">Bersihkan Input</button>
+            <button id="btn-compare" class="panel-btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>Bandingkan Data</button>
+            <button id="btn-clear-inputs" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Bersihkan Input</button>
           </div>
         </div>
       </div>
@@ -172,9 +173,9 @@
         <div class="panel-title-row">
           <h2>Hasil Perbandingan</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="btn-copy-beda" class="btn-success">Salin yang Beda</button>
-            <button id="btn-copy-selected">Salin Pilih</button>
-            <button id="btn-csv">Download CSV</button>
+            <button id="btn-copy-beda" class="panel-btn btn-success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin yang Beda</button>
+            <button id="btn-copy-selected" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin Pilih</button>
+            <button id="btn-csv" class="panel-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download CSV</button>
           </div>
         </div>
         <div class="panel">
