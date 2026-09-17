@@ -142,7 +142,10 @@
     <div class="nav-top">
       <a class="nav-brand" href="${ROOT}index.html">Tools Hub</a>
     </div>
-    <input class="nav-search" id="nav-search" type="text" placeholder="Cari program..." autocomplete="off" />
+    <div class="nav-search-wrap">
+      <i data-lucide="search" class="nav-search-icon"></i>
+      <input class="nav-search" id="nav-search" type="text" placeholder="Cari program..." autocomplete="off" />
+    </div>
     <nav class="nav-items"></nav>
   `;
 

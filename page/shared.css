@@ -171,16 +171,22 @@ code {
     flex-wrap: wrap;
     margin-bottom: 10px;
     z-index: 100;
-    background: var(--bg);
+    position: sticky;
+    top: 0;
+    background: transparent;
     overflow: visible;
     transition: padding 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
-                box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+                box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+                background 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .topbar.scroll-compact {
     padding-left: 16px;
     padding-right: 16px;
-    box-shadow: 0 1px 0 var(--border), 0 24px 24px -24px var(--bg);
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 var(--border);
 }
 
 .topbar::after {
@@ -190,14 +196,13 @@ code {
     right: 0;
     bottom: 0;
     height: 0;
-    background: linear-gradient(to bottom, var(--bg), transparent);
     pointer-events: none;
     transition: height 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .topbar.scroll-compact::after {
-    height: 24px;
-    bottom: -24px;
+    height: 0;
+    bottom: 0;
 }
 
 /* School Notes: collapse subtitle wrappers (view 2 button row / view 3 date row) */
@@ -1434,11 +1439,37 @@ textarea {
     padding: 4px 0;
 }
 
-.nav-search {
+.nav-search-wrap {
+    position: relative;
     width: 100%;
     flex-shrink: 0;
     margin-bottom: 8px;
-    padding: 6px 10px;
+}
+
+.nav-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    color: var(--muted);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-search-icon svg {
+    width: 15px !important;
+    height: 15px !important;
+    flex-shrink: 0;
+}
+
+.nav-search {
+    width: 100%;
+    flex-shrink: 0;
+    padding: 6px 10px 6px 34px !important;
     border: 1px solid color-mix(in srgb, var(--muted) 15%, transparent);
     border-radius: 6px;
     background: transparent !important;
