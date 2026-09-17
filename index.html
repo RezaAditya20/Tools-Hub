@@ -16,7 +16,6 @@
         max-width: 1400px;
       }
       .topbar {
-        margin-bottom: 20px;
       }
       .topbar-row {
         align-items: flex-start;
@@ -30,16 +29,6 @@
         flex: 1;
         min-width: 0;
         position: relative;
-      }
-      .search-wrap .search-ico {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 16px;
-        height: 16px;
-        color: var(--muted);
-        pointer-events: none;
       }
       .search-wrap input {
         width: 100%;
@@ -647,6 +636,27 @@
           render();
           updateToolbarBadges();
           if (Settings.get("view") === "list") setView("list");
+        })();
+
+        // ── Topbar scroll: padding + fade band ──
+        (function () {
+          const topbar = document.querySelector(".topbar");
+          if (!topbar) return;
+          let ticking = false;
+          function onScroll() {
+            const y = window.scrollY || document.documentElement.scrollTop || 0;
+            const compact = topbar.classList.contains("scroll-compact");
+            const next = compact ? y > 4 : y > 12;
+            topbar.classList.toggle("scroll-compact", next);
+            ticking = false;
+          }
+          window.addEventListener("scroll", () => {
+            if (!ticking) {
+              ticking = true;
+              requestAnimationFrame(onScroll);
+            }
+          }, { passive: true });
+          onScroll();
         })();
       </script>
 

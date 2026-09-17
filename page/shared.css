@@ -88,7 +88,7 @@ body {
 
 /* ═══════════════════════════ 3. TYPOGRAPHY ═══════════════════════════ */
 h1 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 600;
     margin: 0;
     letter-spacing: -0.02em;
@@ -169,12 +169,35 @@ code {
     justify-content: space-between;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 24px;
-    position: sticky;
-    top: 0;
+    margin-bottom: 10px;
     z-index: 100;
-    padding: 8px 0;
     background: var(--bg);
+    overflow: visible;
+    transition: padding 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+                box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.topbar.scroll-compact {
+    padding-left: 16px;
+    padding-right: 16px;
+    box-shadow: 0 1px 0 var(--border), 0 24px 24px -24px var(--bg);
+}
+
+.topbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0;
+    background: linear-gradient(to bottom, var(--bg), transparent);
+    pointer-events: none;
+    transition: height 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.topbar.scroll-compact::after {
+    height: 24px;
+    bottom: -24px;
 }
 
 /* School Notes: collapse subtitle wrappers (view 2 button row / view 3 date row) */
@@ -220,10 +243,13 @@ code {
     }
 
     .topbar {
-        position: sticky;
-        top: 0;
         padding-top: 8px;
         padding-left: 40px;
+    }
+
+    .topbar.scroll-compact {
+        padding-left: 56px;
+        padding-right: 16px;
     }
 }
 
@@ -232,6 +258,7 @@ code {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    margin-bottom: 10px;
 }
 
 .panel {
@@ -285,7 +312,7 @@ code {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 12px;
+    /* margin-bottom: 12px; */
 }
 
 .panel-title-row h2 {
@@ -625,9 +652,20 @@ tbody tr.selected:hover {
     min-width: 200px;
 }
 
+.search-wrap .search-ico {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+}
+
 .search-wrap input {
     width: 100%;
-    padding: 10px 36px 10px 14px;
+    padding: 10px 36px 10px 36px;
     border-radius: 6px;
     border: 1px solid var(--border);
     background: var(--input);

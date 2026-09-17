@@ -17,7 +17,7 @@
     <script src="xlsx.full.min.js"></script>
     <script>if(typeof XLSX==="undefined"){var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";document.head.appendChild(s)}</script>
     <style>
-      .topbar { margin-bottom: 24px; }
+      .topbar { }
       .topbar-row { align-items: flex-start; }
       .panel { padding: 16px; margin-bottom: 0; }
       .upload-area {
@@ -122,6 +122,7 @@
       </div>
 
       <div class="search-wrap" id="search-wrap" style="display:none">
+        <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input type="text" id="search-input" placeholder="Cari mata pelajaran atau username..." />
         <button class="search-clear" id="clear-search" aria-label="Hapus pencarian">
           <i class="fad fa-xmark"></i>

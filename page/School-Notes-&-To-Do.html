@@ -17,7 +17,6 @@
     <meta name="description" content="Manajemen catatan tiap sekolah." />
     <style>
       .topbar {
-        margin-bottom: 24px;
       }
       .topbar-row {
         display: flex;
@@ -2118,7 +2117,10 @@
       <!-- VIEW 1: DAFTAR SEKOLAH -->
       <div id="view-home" class="view active">
         <div style="display: flex; gap: 8px; margin-bottom: 16px">
-          <input type="text" id="search-school" placeholder="Cari sekolah / kegiatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
+          <div class="search-wrap">
+            <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="search-school" placeholder="Cari sekolah / kegiatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
+          </div>
           <datalist id="category-list"></datalist>
         </div>
         <div id="school-list" class="school-list"></div>
@@ -2127,7 +2129,10 @@
       <!-- VIEW 2: DETAIL SEKOLAH (NOTES) -->
       <div id="view-detail" class="view">
         <div style="display: flex; gap: 8px; margin-bottom: 16px">
-          <input type="text" id="search-note" placeholder="Cari catatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
+          <div class="search-wrap">
+            <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="search-note" placeholder="Cari catatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
+          </div>
         </div>
         <div class="table-wrap">
           <div class="note-card-grid" id="note-tbody"></div>

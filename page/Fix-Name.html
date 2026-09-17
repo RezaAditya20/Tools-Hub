@@ -15,7 +15,7 @@
     <link rel="icon" type="image/svg+xml" href="../icon.svg" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-      .topbar { margin-bottom: 24px; }
+      .topbar { }
       .topbar-row { align-items: flex-start; }
 
       .panel {
@@ -449,7 +449,10 @@
         </div>
         <div class="panel" id="match-panel" style="display: none">
           <div class="search-bar">
-          <input type="text" id="search-input" placeholder="Cari nama input..." />
+          <div class="search-wrap">
+            <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="search-input" placeholder="Cari nama input..." />
+          </div>
           <select id="status-filter">
             <option value="">Semua</option>
             <option value="Exact">Exact</option>

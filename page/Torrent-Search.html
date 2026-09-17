@@ -852,6 +852,7 @@
         <button class="filter-btn" id="list-btn" onclick="showMyList()"><i class="fa-solid fa-bookmark"></i> List</button>
       </div>
       <div class="search-wrap">
+        <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input id="q" type="text" placeholder="Search movies & TV shows…" />
         <button class="btn-search" id="btn-search" onclick="searchMovies()">
           <i class="fa-solid fa-magnifying-glass"></i> Search
@@ -2021,7 +2022,10 @@
                   </select>
                 </div>
               </div>
-              <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()" style="display:none">
+              <div class="search-wrap">
+                <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()" style="display:none">
+              </div>
               <div id="all-list-wrap" style="display:none"></div>
             </div>
             <!-- Subtitles -->

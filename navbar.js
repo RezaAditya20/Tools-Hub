@@ -195,7 +195,7 @@
   // navbar tidak kembali ke state base opacity:0 (penyebab kedip di semua halaman).
   mount.classList.add("loaded");
 
-  // ── Scroll: blur gradual + fade band + subtitle collapse (shared, all pages) ──
+  // ── Scroll: padding + fade band + subtitle collapse (shared, all pages) ──
   // navbar.js di-load SEBELUM .topbar diparse → tunggu DOM siap dulu.
   (function () {
     function initScroll() {
@@ -208,9 +208,6 @@
         const compact = topbar.classList.contains("scroll-compact");
         const next = compact ? y > 4 : y > 12;
         topbar.classList.toggle("scroll-compact", next);
-        const b = Math.min(20, (y / 120) * 20); // 0px → 20px over 120px
-        topbar.style.backdropFilter = `saturate(180%) blur(${b}px)`;
-        topbar.style.webkitBackdropFilter = `saturate(180%) blur(${b}px)`;
         ticking = false;
       }
       window.addEventListener(
