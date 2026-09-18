@@ -19,4 +19,4 @@
 
 Setiap mulai session baru:
 1. Tambahkan session baru ke `session.txt`
-2. Format: `YYYY-MM-DD HH:mm - <session description>`
+2. Format: `YYYY-MM-DD HH:mm (session code) - <session description>`

@@ -1,1 +1,2 @@
 2026-09-18 - Tambahkan empty state di Torrent Search saat Find Torrent tidak menghasilkan data
+2026-09-18 - Tambahkan section Similar Movies/TV di detail modal

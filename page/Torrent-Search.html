@@ -1948,7 +1948,7 @@
       const id = movie.id;
       const type = isTV ? 'tv' : 'movie';
       try {
-        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + type + '/' + id)}&append_to_response=${encodeURIComponent('credits,external_ids')}`);
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + type + '/' + id)}&append_to_response=${encodeURIComponent('credits,external_ids,similar')}`);
         const d = await r.json();
         if (d.error) throw new Error(d.error);
         // Update backdrop from fetched data (filmography items don't have backdrop)
@@ -1967,6 +1967,7 @@
       const genres = (d.genres || []).map(g => g.name).join(', ');
       const runtime = d.runtime ? (d.runtime + ' min') : ((d.episode_run_time || [])[0] ? (d.episode_run_time[0] + ' min') : '');
       const cast = (d.credits && d.credits.cast ? d.credits.cast : []).slice(0, 12);
+      const similar = (d.similar && d.similar.results ? d.similar.results : []).slice(0, 10);
 
       // Fetch logo first
       const type = isTV ? 'tv' : 'movie';
@@ -2067,6 +2068,23 @@
                 <div class="name">${escHtml(c.name || '')}</div>
                 <div class="char">${escHtml(c.character || '')}</div>
               </div>`).join('')}
+          </div>
+        </div>` : ''}
+        ${similar.length ? `<div class="detail-cast" style="margin-top:20px">
+          <h3><i class="fa-solid fa-film" style="color:var(--accent)"></i> Similar</h3>
+          <div class="cast-row" style="gap:10px">
+            ${similar.map(m => {
+              const sTitle = isTV ? (m.name || m.original_name || '') : (m.title || m.original_title || '');
+              const sYear = (m.release_date || m.first_air_date || '').slice(0, 4);
+              const sPoster = m.poster_url || (m.poster_path ? 'https://image.tmdb.org/t/p/w342' + m.poster_path : '');
+              return `<div class="cast-card" onclick="openDetail({id:${m.id},media_type:'${m.media_type || (isTV ? 'tv' : 'movie')}'})" style="cursor:pointer;width:100px">
+                <div class="pic" style="width:100px;height:150px;border-radius:6px;overflow:hidden;background:var(--card-bg-2);margin-bottom:4px">
+                  ${sPoster ? `<img src="${sPoster}" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=\\'ph\\'><i class=\\'fa-solid fa-film\\'></i></div>'">` : '<div class="ph"><i class="fa-solid fa-film"></i></div>'}
+                </div>
+                <div class="name" style="font-size:0.7rem;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3">${escHtml(sTitle)}</div>
+                <div class="char" style="font-size:0.66rem">${sYear}</div>
+              </div>`;
+            }).join('')}
           </div>
         </div>` : ''}`;
 
