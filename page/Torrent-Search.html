@@ -554,12 +554,14 @@
       .btn-all-list:hover { border-color: var(--accent); color: var(--accent); }
       .all-list-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
       .all-list-search {
-        height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px;
+        height: 36px; padding: 0 12px 0 36px; border: 1px solid var(--border); border-radius: 6px;
         background: var(--card-bg-2); color: var(--text); font-size: 0.78rem;
-        outline: none; transition: border-color 0.18s; width: 100%; margin-top: 8px;
+        outline: none; transition: border-color 0.18s; width: 100%;
       }
       .all-list-search:focus { border-color: var(--accent); }
       .all-list-search::placeholder { color: var(--muted); }
+      #all-list-search-wrap {position: relative;display: flex;align-items: center;margin-top: 10px;}
+      #all-list-search-wrap .search-ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
       .select-wrap {
         position: relative; display: inline-flex; align-items: center; flex-shrink: 0;
       }
@@ -1989,6 +1991,7 @@
             ${isTV && Array.isArray(d.seasons) && d.seasons.length ? (() => {
               const opts = d.seasons
                 .filter(s => s && (s.season_number || 0) >= 0)
+                .sort((a, b) => (b.season_number || 0) - (a.season_number || 0))
                 .map(s => `<option value="${s.season_number}" data-eps="${s.episode_count || 0}">${s.name || ('Season ' + s.season_number)}</option>`)
                 .join('');
               return `<div class="detail-season">
@@ -2010,7 +2013,7 @@
               </div>
               <div class="quality-grid" id="quality-grid"></div>
               <div class="all-list-row">
-                <button class="btn-all-list" id="btn-all-list" onclick="toggleAllList()">
+                <button class="btn-all-list" id="btn-all-list" onclick="toggleAllList()" style="display:none">
                   <i class="fa-solid fa-list"></i> All List (<span id="all-list-count">0</span>)
                 </button>
                 <div class="select-wrap" id="all-list-quality-wrap" style="display:none">
@@ -2027,9 +2030,9 @@
                   </select>
                 </div>
               </div>
-              <div class="search-wrap">
+              <div class="search-wrap" id="all-list-search-wrap" style="display:none">
                 <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()" style="display:none">
+                <input type="text" class="all-list-search" id="all-list-search" placeholder="Filter by name..." oninput="filterAllList()">
               </div>
               <div id="all-list-wrap" style="display:none"></div>
             </div>
@@ -2503,6 +2506,21 @@
       if (!grid || !picksEl) return;
       grid.innerHTML = '';
 
+      // Empty state: no torrent results at all
+      if (allResults.length === 0) {
+        picksEl.style.display = '';
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:32px 16px;color:var(--muted)">
+            <i class="fa-solid fa-magnifying-glass" style="font-size:2.5rem;margin-bottom:12px;display:block;opacity:0.5"></i>
+            <div style="font-size:0.85rem;font-weight:600">Torrent Kosong</div>
+          </div>`;
+        const countEl = document.getElementById('all-list-count');
+        if (countEl) countEl.textContent = '0';
+        const btnAllList = document.getElementById('btn-all-list');
+        if (btnAllList) btnAllList.style.display = 'none';
+        return;
+      }
+
       const picks = {};
       for (const r of allResults) {
         const q = detectQuality(r.name);
@@ -2523,13 +2541,14 @@
         }
       }
 
-      const hasPicks = Object.keys(picks).length > 0;
-      picksEl.style.display = hasPicks ? '' : 'none';
+      picksEl.style.display = '';
       const countEl = document.getElementById('all-list-count');
       if (countEl) {
         const activeCount = allResults.filter(r => (parseInt(r.seeds, 10) || 0) > 0 || (parseInt(r.leech, 10) || 0) > 0).length;
         countEl.textContent = activeCount;
       }
+      const btnAllList = document.getElementById('btn-all-list');
+      if (btnAllList) btnAllList.style.display = '';
 
       for (const q of ['720', '1080', '2k']) {
         const card = document.createElement('div');
@@ -2567,6 +2586,7 @@
 
     function toggleAllList() {
       const wrap = document.getElementById('all-list-wrap');
+      const searchWrap = document.getElementById('all-list-search-wrap');
       const search = document.getElementById('all-list-search');
       const qualitySelect = document.getElementById('all-list-quality');
       const qualityWrap = document.getElementById('all-list-quality-wrap');
@@ -2574,12 +2594,13 @@
       if (!wrap) return;
       if (wrap.style.display !== 'none') {
         wrap.style.display = 'none';
-        if (search) search.style.display = 'none';
+        if (searchWrap) searchWrap.style.display = 'none';
         if (qualityWrap) qualityWrap.style.display = 'none';
         if (sortWrap) sortWrap.style.display = 'none';
         return;
       }
-      if (search) { search.style.display = ''; search.value = ''; }
+      if (searchWrap) searchWrap.style.display = '';
+      if (search) search.value = '';
       if (sortWrap) sortWrap.style.display = '';
 
       // Populate quality filter from available results
