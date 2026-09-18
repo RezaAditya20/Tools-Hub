@@ -2030,6 +2030,11 @@
                     <option value="name">Sort: Name</option>
                   </select>
                 </div>
+                <div class="select-wrap" id="all-list-episode-wrap" style="display:none">
+                  <select class="all-list-filter" id="all-list-episode" onchange="filterAllList()">
+                    <option value="">All Episodes</option>
+                  </select>
+                </div>
               </div>
               <div class="search-wrap" id="all-list-search-wrap" style="display:none">
                 <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -2635,6 +2640,23 @@
         });
         qualityWrap.style.display = qualities.size > 1 ? '' : 'none';
       }
+
+      // Populate episode filter from available results
+      const episodeSelect = document.getElementById('all-list-episode');
+      const episodeWrap = document.getElementById('all-list-episode-wrap');
+      if (episodeSelect && episodeWrap) {
+        const episodes = new Set();
+        const epPattern = /S\d+E(\d+)/i;
+        for (const r of allResults) {
+          const m = (r.name || '').match(epPattern);
+          if (m) episodes.add(m[1].padStart(2, '0'));
+        }
+        episodeSelect.innerHTML = '<option value="">All Episodes</option>';
+        [...episodes].sort().forEach(ep => {
+          episodeSelect.innerHTML += `<option value="${ep}">${ep}</option>`;
+        });
+        episodeWrap.style.display = episodes.size > 1 ? '' : 'none';
+      }
       wrap.innerHTML = '';
       renderAllList();
       wrap.style.display = '';
@@ -2645,22 +2667,25 @@
       const search = document.getElementById('all-list-search');
       const qualitySelect = document.getElementById('all-list-quality');
       const sortSelect = document.getElementById('all-list-sort');
+      const episodeSelect = document.getElementById('all-list-episode');
       if (!wrap) return;
       const nameQ = (search ? search.value : '').toLowerCase();
       const qualQ = qualitySelect ? qualitySelect.value : '';
+      const epQ = episodeSelect ? episodeSelect.value : '';
       const sortBy = sortSelect ? sortSelect.value : 'seeds';
       // Filter out seeds < 100
       let filtered = allResults.filter(r => {
         const s = parseInt(r.seeds, 10) || 0;
         return s >= 100;
       });
-      // Apply name + quality filter
-      if (nameQ || qualQ) {
+      // Apply name + quality + episode filter
+      if (nameQ || qualQ || epQ) {
         filtered = filtered.filter(r => {
           const text = (r.name || '').toLowerCase();
           const matchName = !nameQ || text.includes(nameQ);
           const matchQual = !qualQ || text.includes(qualQ.toLowerCase());
-          return matchName && matchQual;
+          const matchEp = !epQ || text.includes(epQ);
+          return matchName && matchQual && matchEp;
         });
       }
       // Sort
