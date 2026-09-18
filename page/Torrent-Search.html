@@ -1948,7 +1948,7 @@
       const id = movie.id;
       const type = isTV ? 'tv' : 'movie';
       try {
-        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + type + '/' + id)}&append_to_response=${encodeURIComponent('credits,external_ids,similar')}`);
+        const r = await fetch(`${API}/tmdb?path=${encodeURIComponent('/' + type + '/' + id)}&append_to_response=${encodeURIComponent('credits,external_ids,recommendations')}`);
         const d = await r.json();
         if (d.error) throw new Error(d.error);
         // Update backdrop from fetched data (filmography items don't have backdrop)
@@ -1967,7 +1967,7 @@
       const genres = (d.genres || []).map(g => g.name).join(', ');
       const runtime = d.runtime ? (d.runtime + ' min') : ((d.episode_run_time || [])[0] ? (d.episode_run_time[0] + ' min') : '');
       const cast = (d.credits && d.credits.cast ? d.credits.cast : []).slice(0, 12);
-      const similar = (d.similar && d.similar.results ? d.similar.results : []).slice(0, 10);
+      const similar = (d.recommendations && d.recommendations.results ? d.recommendations.results : []).slice(0, 10);
 
       // Fetch logo first
       const type = isTV ? 'tv' : 'movie';
@@ -2071,7 +2071,7 @@
           </div>
         </div>` : ''}
         ${similar.length ? `<div class="detail-cast" style="margin-top:20px">
-          <h3><i class="fa-solid fa-film" style="color:var(--accent)"></i> Similar</h3>
+          <h3><i class="fa-solid fa-film" style="color:var(--accent)"></i> You May Also Like</h3>
           <div class="cast-row" style="gap:10px">
             ${similar.map(m => {
               const sTitle = isTV ? (m.name || m.original_name || '') : (m.title || m.original_title || '');
