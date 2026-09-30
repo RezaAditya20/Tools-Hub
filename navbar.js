@@ -98,12 +98,14 @@
       nav.innerHTML = buildNoteItems();
       const s = mount.querySelector("#nav-search");
       if (s) s.placeholder = "Cari catatan...";
+      applySearchFilter();
       return;
     }
     if (isSchoolNotes && snState.schoolId && snState.view === "detail") {
       nav.innerHTML = buildSchoolItems();
       const s = mount.querySelector("#nav-search");
       if (s) s.placeholder = "Cari sekolah...";
+      applySearchFilter();
       return;
     }
     const hidden = getHidden();
@@ -136,6 +138,7 @@
     nav.innerHTML = items;
     const s = mount.querySelector("#nav-search");
     if (s) s.placeholder = "Cari program...";
+    applySearchFilter();
   }
 
   mount.className = "navbar";
@@ -162,7 +165,7 @@
   buildItems();
   refreshIcons();
   /* Scroll sidebar ke item active */
-  const activeItem = nav.querySelector(".nav-item.active");
+  const activeItem = mount.querySelector(".nav-item.active");
   if (activeItem) activeItem.scrollIntoView({ block: "center", behavior: "instant" });
   window.addEventListener("tools-hidden-change", () => { buildItems(); refreshIcons(); });
 
@@ -234,8 +237,9 @@
   })();
 
   // ── Search filter item ──
-  const searchInput = mount.querySelector("#nav-search");
-  searchInput.addEventListener("input", () => {
+  function applySearchFilter() {
+    const searchInput = mount.querySelector("#nav-search");
+    if (!searchInput) return;
     const q = searchInput.value.trim().toLowerCase();
     mount.querySelectorAll(".nav-item").forEach((a) => {
       const label = (a.querySelector(".label") || {}).textContent || "";
@@ -251,7 +255,9 @@
       }
       cat.style.display = hasVisible ? "" : "none";
     });
-  });
+  }
+
+  mount.querySelector("#nav-search").addEventListener("input", applySearchFilter);
 
 
   // Burger (muncul < 1048px, toggle sidebar) — auto-close saat pointer keluar

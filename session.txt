@@ -6,3 +6,4 @@
 2026-09-18 - Setup Electron app + stremio-server-go (HLS transcoding)
 2026-09-24 - Tambahkan tool Address Fixer (parse & perbaikan alamat → Excel)
 2026-09-30 - Address Fixer: hasil fixed otomatis diubah dari UPPERCASE ke proper case (RT/RW, singkatan & angka romawi tetap kapital)
+2026-09-30 - Perbaiki search navbar yang tidak berfungsi (ReferenceError nav is not defined di navbar.js)
