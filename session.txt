@@ -1,2 +1,8 @@
 2026-09-18 - Tambahkan empty state di Torrent Search saat Find Torrent tidak menghasilkan data
 2026-09-18 - Tambahkan section Similar Movies/TV di detail modal
+2026-09-18 - Ganti Similar ke You May Also Like (recommendations endpoint)
+2026-09-18 - Tambahkan filter episode di All List
+2026-09-18 - Tambahkan web player dengan hls.js + audio/subtitle selector
+2026-09-18 - Setup Electron app + stremio-server-go (HLS transcoding)
+2026-09-24 - Tambahkan tool Address Fixer (parse & perbaikan alamat → Excel)
+2026-09-30 - Address Fixer: hasil fixed otomatis diubah dari UPPERCASE ke proper case (RT/RW, singkatan & angka romawi tetap kapital)

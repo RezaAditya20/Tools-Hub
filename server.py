@@ -480,7 +480,7 @@ class TorrentHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def _proxy_torrserver(self, params: dict):
-        base = params.get("base", ["http://127.0.0.1:8090"])[0].rstrip("/")
+        base = params.get("base", ["http://127.0.0.1:11471"])[0].rstrip("/")
         path = params.get("path", ["/torrents"])[0]
         url = f"{base}{path}"
         try:
@@ -507,7 +507,7 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             self._json_response(502, {"error": str(e)})
 
     def _proxy_torrserver_post(self, params: dict, body: bytes):
-        base = params.get("base", ["http://127.0.0.1:8090"])[0].rstrip("/")
+        base = params.get("base", ["http://127.0.0.1:11471"])[0].rstrip("/")
         path = params.get("path", ["/torrents"])[0]
         url = f"{base}{path}"
         try:

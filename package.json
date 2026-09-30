@@ -1,0 +1,45 @@
+{
+  "name": "tools-hub",
+  "version": "1.0.0",
+  "description": "Tools Hub - Torrent Search & More",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win --dir"
+  },
+  "author": "Reza Aditya",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0",
+    "cross-env": "^7.0.3"
+  },
+  "build": {
+    "appId": "com.tools.hub",
+    "productName": "Tools Hub",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "index.html",
+      "page/**/*",
+      "fontawesome/**/*",
+      "navbar.js",
+      "icon.svg",
+      "engines.py",
+      "server.py",
+      "settings.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.svg"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

@@ -32,6 +32,7 @@
     { label: "Extract Subjects", href: "page/Extract-Subjects.html", c1: "#fb923c", icon: "folder-tree", cat: "Academic" },
     { label: "Kalender Akademik", href: "page/Kalender-Akademik.html", c1: "#60a5fa", icon: "calendar", cat: "Academic" },
     { label: "School Notes & To Do", href: "page/School-Notes-&-To-Do.html", c1: "#2dd4bf", icon: "notebook-pen", cat: "Academic" },
+    { label: "Address Fixer", href: "page/Address-Fixer.html", c1: "#f87171", icon: "map-pin", cat: "Utilities" },
     { label: "Fix Name", href: "page/Fix-Name.html", c1: "#f472b6", icon: "user-pen", cat: "Utilities" },
     { label: "Username Maker", href: "page/Username-Maker.html", c1: "#22d3ee", icon: "user", cat: "Utilities" },
     { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "code", cat: "Utilities" },

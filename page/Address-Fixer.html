@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-duotone-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Address Fixer</title>
+    <link rel="icon" type="image/svg+xml" href="../icon.svg" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+      .topbar-row {
+        align-items: flex-start;
+      }
+
+      .panel {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      textarea {
+        min-height: 180px;
+      }
+
+      .format-hint {
+        font-size: 0.6875rem;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .drop-zone {
+        border: 2px dashed var(--border);
+        border-radius: 6px;
+        padding: 48px 16px;
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--muted);
+        transition: all 0.2s;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      .drop-zone.dragover {
+        border-color: var(--green);
+        background: rgba(30, 142, 62, 0.08);
+      }
+
+      .search-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+
+      .table-wrap {
+        max-height: 60vh;
+        overflow: auto;
+      }
+
+      .result-table {
+        min-width: 1500px;
+        table-layout: auto;
+      }
+
+      .result-table th,
+      .result-table td {
+        width: auto !important;
+        min-width: 0 !important;
+        text-align: left !important;
+        white-space: nowrap;
+      }
+
+      .result-table th:first-child,
+      .result-table td:first-child {
+        width: 44px !important;
+        min-width: 44px !important;
+        text-align: center !important;
+        position: sticky;
+        left: 0;
+        background: color-mix(in srgb, var(--bg) 92%, var(--fg));
+        z-index: 1;
+      }
+
+      .result-table th:nth-child(2),
+      .result-table td:nth-child(2) {
+        min-width: 320px !important;
+        white-space: normal;
+      }
+
+      .result-table th:nth-child(3),
+      .result-table td:nth-child(3) {
+        min-width: 260px !important;
+        white-space: normal;
+      }
+
+      .result-table td.cell-edit {
+        padding: 2px 6px;
+      }
+
+      .cell-input {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid transparent;
+        color: var(--fg);
+        font-size: 0.8125rem;
+        font-family: inherit;
+        width: 100%;
+        min-width: 70px;
+        outline: none;
+        padding: 4px 0;
+        letter-spacing: -0.01em;
+        transition: border-color 0.15s;
+      }
+
+      .cell-input:hover {
+        border-bottom-color: var(--border);
+      }
+
+      .cell-input:focus {
+        border-bottom-color: var(--primary);
+      }
+
+      .cell-input.pos-input {
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        font-weight: 500;
+      }
+
+      .status-ok {
+        background: rgba(30, 142, 62, 0.15);
+        color: var(--green);
+      }
+
+      .status-miss {
+        background: rgba(255, 69, 58, 0.15);
+        color: var(--red);
+      }
+
+      .addr-asli {
+        color: var(--muted);
+        font-size: 0.75rem;
+        white-space: normal;
+        display: block;
+        margin-top: 2px;
+      }
+
+      .summary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 8px;
+        padding-top: 8px;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      .summary-row strong {
+        color: var(--fg);
+      }
+
+      .empty-msg {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <script src="../navbar.js"></script>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Address Fixer</h1>
+            <p class="subtitle">Perbaiki &amp; pecah alamat jadi kolom terstruktur (jalan → kode pos), siap export Excel.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="panel-group">
+        <div class="panel-title-row">
+          <div class="panel-title">
+            <h2>1. Input Alamat</h2>
+            <p>Paste alamat (satu per baris) atau tarik file .txt ke area bawah.</p>
+          </div>
+          <div class="btn-group">
+            <button id="btn-clear" class="panel-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              Bersihkan
+            </button>
+          </div>
+        </div>
+        <div class="panel">
+          <textarea id="input-addresses" placeholder="Jl. Duri Selatan No. 65 Kel. Duri Selatan Kec. Tambora Jakarta Barat 11270&#10;Jl. Cideng Barat No. 24 RT 011 RW 001 Kel. Duri Pulo Kec. Gambir Jakarta Barat 10140&#10;Jl Kramat Jaya Baru E5 No 142, Kel. Johar Baru, Johar Baru, Jakarta Pusat 10560"></textarea>
+          <p class="format-hint">Satu alamat per baris. Baris kosong diabaikan. Otomatis deteksi RT/RW, Kelurahan, Kecamatan, Kota, Provinsi, dan Kode Pos. Teks HURUF KAPITAL otomatis diubah ke proper case (contoh: <code>Jl. PADEMANGAN IV GG.21 NO.4</code> → <code>Jl. Pademangan IV Gg.21 No.4</code>), sedangkan RT/RW, singkatan (SDN, SMP, DKI, dst.) dan angka romawi tetap kapital.</p>
+          <div id="import-dropzone" class="drop-zone">Tarik &amp; lepas file .txt di sini, atau klik untuk pilih file</div>
+          <input type="file" id="file-input" accept=".txt,.csv,.md" style="display: none" />
+        </div>
+      </div>
+
+      <!-- Hasil -->
+      <div class="panel-group">
+        <div class="panel-title-row" id="result-title" style="display: none">
+          <div class="panel-title">
+            <h2>2. Hasil Perbaikan</h2>
+            <p id="result-subtitle"></p>
+          </div>
+          <div class="btn-group">
+            <button id="btn-reprocess" class="panel-btn btn-primary" title="Parse ulang dari teks asli (membatalkan edit manual)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Proses Ulang
+            </button>
+            <button id="btn-copy" class="panel-btn" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Salin TSV
+            </button>
+            <button id="btn-export" class="panel-btn btn-success" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Excel
+            </button>
+          </div>
+        </div>
+        <div class="panel" id="result-panel" style="display: none">
+          <div class="search-bar">
+            <div class="search-wrap">
+              <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" id="search-input" placeholder="Cari alamat / kelurahan / kecamatan..." />
+            </div>
+            <select id="status-filter">
+              <option value="">Semua Status</option>
+              <option value="Lengkap">Lengkap</option>
+              <option value="Kurang">Kurang</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Alamat Lengkap (Hasil Perbaikan)</th>
+                  <th>Alamat Tanpa Kota &amp; Kode Pos</th>
+                  <th>Jalan</th>
+                  <th>RT/RW</th>
+                  <th>Kelurahan</th>
+                  <th>Kecamatan</th>
+                  <th>Kota/Kabupaten</th>
+                  <th>Provinsi</th>
+                  <th>Kode Pos</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="result-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-msg" id="empty-msg" style="display: none">Tidak ada baris yang cocok dengan filter.</div>
+          <div class="summary-row" id="summary-row"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        /* ══════════ Reference data ══════════ */
+        // Kecamatan Jakarta → kota administrasi yang benar
+        const KEC_TO_KOTA = {
+          "Tambora": "Jakarta Barat",
+          "Taman Sari": "Jakarta Barat",
+          "Kebon Jeruk": "Jakarta Barat",
+          "Cengkareng": "Jakarta Barat",
+          "Grogol Petamburan": "Jakarta Barat",
+          "Kalideres": "Jakarta Barat",
+          "Cengkareng": "Jakarta Barat",
+          "Gambir": "Jakarta Pusat",
+          "Menteng": "Jakarta Pusat",
+          "Tanah Abang": "Jakarta Pusat",
+          "Senen": "Jakarta Pusat",
+          "Kemayoran": "Jakarta Pusat",
+          "Johar Baru": "Jakarta Pusat",
+          "Sawah Besar": "Jakarta Pusat",
+          "Cempaka Putih": "Jakarta Pusat",
+          "Pademangan": "Jakarta Utara",
+          "Penjaringan": "Jakarta Utara",
+          "Tanjung Priok": "Jakarta Utara",
+          "Koja": "Jakarta Utara",
+          "Cilincing": "Jakarta Utara",
+          "Matraman": "Jakarta Timur",
+          "Pulogadung": "Jakarta Timur",
+          "Jatinegara": "Jakarta Timur",
+          "Kramat Jati": "Jakarta Timur",
+          "Pasar Rebo": "Jakarta Timur",
+          "Cakung": "Jakarta Timur",
+          "Duren Sawit": "Jakarta Timur",
+          "Makasar": "Jakarta Timur",
+          "Cipayung": "Jakarta Timur",
+          "Jagakarsa": "Jakarta Selatan",
+          "Pasar Minggu": "Jakarta Selatan",
+          "Cilandak": "Jakarta Selatan",
+          "Kebayoran Baru": "Jakarta Selatan",
+          "Kebayoran Lama": "Jakarta Selatan",
+          "Pancoran": "Jakarta Selatan",
+          "Tebet": "Jakarta Selatan",
+          "Setiabudi": "Jakarta Selatan",
+        };
+
+        // Ejaan salah → ejaan benar (case-insensitive)
+        const KEC_FIX = {
+          "kebun jeruk": "Kebon Jeruk",
+          "grogol petambutan": "Grogol Petamburan",
+          "groger petamburan": "Grogol Petamburan",
+          "grogol petamburan": "Grogol Petamburan",
+          "penjaringam": "Penjaringan",
+          "tanjung priok": "Tanjung Priok",
+          "johar baru": "Johar Baru",
+          "sawah besar": "Sawah Besar",
+          "tanah abang": "Tanah Abang",
+        };
+
+        // lowercase kecamatan → ejaan benar (dari KEC_TO_KOTA)
+        const KEC_CANON = {};
+        Object.keys(KEC_TO_KOTA).forEach((k) => {
+          KEC_CANON[k.toLowerCase()] = k;
+        });
+
+        /* ══════════ Helpers ══════════ */
+        function showToast(msg, err) {
+          const c = document.getElementById("toast-container");
+          const t = document.createElement("div");
+          t.className = "toast" + (err ? " error" : "");
+          t.textContent = msg;
+          c.appendChild(t);
+          requestAnimationFrame(() => t.classList.add("show"));
+          setTimeout(() => {
+            t.classList.remove("show");
+            setTimeout(() => t.remove(), 220);
+          }, 2200);
+        }
+
+        function esc(s) {
+          const d = document.createElement("div");
+          d.textContent = s == null ? "" : String(s);
+          return d.innerHTML;
+        }
+
+        function norm(s) {
+          return String(s || "")
+            .replace(/\s+/g, " ")
+            .replace(/\s+,/g, ",")
+            .replace(/,\s*,/g, ",")
+            .replace(/^[\s,]+|[\s,]+$/g, "")
+            .trim();
+        }
+
+        function pad3(n) {
+          return String(n).padStart(3, "0");
+        }
+
+        /* UPPERCASE → proper case, tanpa merusak singkatan & angka romawi */
+        const KEEP_UPPER = new Set([
+          "RT", "RW", "DKI", "JK",
+          "SD", "SDN", "SMP", "SMA", "SMK", "MTS", "MA", "TK", "PAUD",
+          "SMPN", "SMAN", "MTSN", "SLTP", "SLTA",
+          "RS", "RSU", "RSUD", "RSIA",
+          "BCA", "BRI", "BNI", "BTN",
+          "SP", "SH", "SE", "ST", "SKOM", "PD", "PG",
+        ]);
+        const CANON_UPPER = new Set(["RT", "RW", "DKI"]);
+        const ROMAN_RE = /^(?:M{0,4})(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$/;
+
+        function isRoman(w) {
+          return w.length >= 2 && w.length <= 8 && w !== "DI" && ROMAN_RE.test(w);
+        }
+
+        function titleWord(w) {
+          return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+        }
+
+        function properCase(s) {
+          return norm(s).replace(/[A-Za-z]+/g, (w) => {
+            const up = w.toUpperCase();
+            if (w === up) {
+              if (KEEP_UPPER.has(up) || isRoman(up)) return up;
+              return titleWord(w);
+            }
+            if (w === w.toLowerCase()) {
+              if (CANON_UPPER.has(up)) return up;
+              return titleWord(w);
+            }
+            return w;
+          });
+        }
+
+        function titleCase(s) {
+          return properCase(s);
+        }
+
+        function findKecKey(s) {
+          const k = norm(s).toLowerCase();
+          if (KEC_FIX[k]) return KEC_FIX[k];
+          if (KEC_CANON[k]) return KEC_CANON[k];
+          return null;
+        }
+
+        /* ══════════ Parser ══════════ */
+        function parseAddress(raw) {
+          const asli = norm(raw);
+          let s = asli;
+          const notes = [];
+
+          /* 1. Kode pos — 5 digit di akhir */
+          let kodePos = "";
+          const mPos = s.match(/(\d{5})\s*$/);
+          if (mPos) {
+            kodePos = mPos[1];
+            s = norm(s.slice(0, mPos.index));
+          }
+
+          /* 2. Provinsi */
+          let provinsi = "";
+          let m = s.match(/,\s*(DKI\s+Jakarta)\s*(?=,|$)/i) || s.match(/\b(DKI\s+Jakarta)\b\s*(?=,|$)/i);
+          if (m) {
+            provinsi = "DKI Jakarta";
+            s = norm(s.replace(m[0], ","));
+          } else {
+            m = s.match(/,\s*(Jawa\s+(?:Barat|Tengah|Timur|Selatan|Utara|DIY))\s*(?=,|$)/i);
+            if (m) {
+              provinsi = titleCase(m[1]);
+              s = norm(s.replace(m[0], ","));
+            }
+          }
+
+          /* 3. Kota / Kabupaten */
+          let kota = "";
+          let kecEarly = "";
+          m = s.match(/(?:Kota\s+(?:Administrasi\s+)?)?(Jakarta\s+(Barat|Pusat|Utara|Selatan|Timur))/i);
+          if (m) {
+            kota = "Jakarta " + titleCase(m[2]);
+            s = norm(s.replace(m[0], ","));
+          } else {
+            m = s.match(/\b(Kab(?:upaten)?\.?|Kota)\s+([A-Za-z][A-Za-z .'-]+?)(?=,|\s+\d{5}$|$)/i);
+            if (m) {
+              const jenis = /kab/i.test(m[1]) ? "Kabupaten" : "Kota";
+              kota = jenis + " " + titleCase(m[2]);
+              s = norm(s.replace(m[0], ","));
+            }
+          }
+          // Sisa "Kota <nama>" yang ternyata nama kecamatan (mis. "Kota Grogol Petambutan")
+          m = s.match(/\bKota\s+([A-Za-z][A-Za-z .'-]+?)(?=,\s*[^,]*$|$)/);
+          if (m) {
+            const asKec = findKecKey(m[1]);
+            if (asKec) kecEarly = asKec;
+            s = norm(s.replace(m[0], ","));
+          }
+
+          /* 4. RT / RW */
+          let rtrw = "";
+          const rtrwPatterns = [
+            /\bRt\s*\/\s*Rw\.?\s*(\d{1,3})\s*\/\s*(\d{1,3})\b/i,
+            /\bRT\.?\s*(\d{1,3})\s*\/\s*RW\.?\s*(\d{1,3})\b/i,
+            /\bRT\.?\s*(\d{1,3})\s+RW\.?\s*(\d{1,3})\b/i,
+            /\bRT\.?\s*(\d{1,3})\s*\/\s*(\d{1,3})\b/i,
+          ];
+          for (const re of rtrwPatterns) {
+            const rm = s.match(re);
+            if (rm) {
+              rtrw = "RT " + pad3(rm[1]) + " RW " + pad3(rm[2]);
+              s = norm(s.slice(0, rm.index) + " " + s.slice(rm.index + rm[0].length));
+              break;
+            }
+          }
+
+          /* 5. Kecamatan (prefix Kec./Kecamatan → sampai koma atau akhir) */
+          let kecamatan = kecEarly;
+          if (!kecamatan) {
+            m = s.match(/\bKec(?:amatan)?\.?\s+([^,]+?)(?=,\s*[^,]*$|$)/i);
+            if (!m) m = s.match(/\bKec(?:amatan)?\.?\s+(.+)$/i);
+            if (m) {
+              kecamatan = titleCase(m[1]);
+              s = norm(s.slice(0, m.index) + " " + s.slice(m.index + m[0].length));
+            }
+          }
+
+          /* 6. Kelurahan (prefix Kel./Kelurahan) */
+          let kelurahan = "";
+          m = s.match(/\bKel(?:urahan)?\.?\s+([^,]+)(?=,|$)/i);
+          if (m) {
+            kelurahan = titleCase(m[1]);
+            s = norm(s.slice(0, m.index) + " " + s.slice(m.index + m[0].length));
+          }
+
+          /* 7. Fallback: sisa setelah koma terakhir → kecamatan / kelurahan */
+          {
+            const parts = s.split(",");
+            if (parts.length > 1) {
+              const tail = norm(parts[parts.length - 1]);
+              if (tail && !/^jalan\s|^jl\.?\s/i.test(tail) && !/\bno\.?\s*\d/i.test(tail)) {
+                const fixed = findKecKey(tail);
+                if (fixed && !kecamatan) {
+                  kecamatan = fixed;
+                  s = norm(parts.slice(0, -1).join(","));
+                } else if (fixed && kecamatan && fixed.toLowerCase() === kecamatan.toLowerCase()) {
+                  s = norm(parts.slice(0, -1).join(","));
+                } else if (!kelurahan) {
+                  kelurahan = titleCase(tail);
+                  s = norm(parts.slice(0, -1).join(","));
+                }
+              }
+            }
+          }
+
+          /* 8. Jalan = sisa teks */
+          let jalan = fixJalan(s);
+
+          /* 9. Koreksi ejaan kecamatan */
+          const beforeFix = kecamatan;
+          const fixedKec = findKecKey(kecamatan);
+          if (fixedKec && fixedKec !== kecamatan) {
+            notes.push("Kec: '" + kecamatan + "' → '" + fixedKec + "'");
+            kecamatan = fixedKec;
+          } else if (fixedKec) {
+            kecamatan = fixedKec;
+          }
+
+          /* 10. Inferensi / koreksi kota dari kecamatan */
+          const kotaBenar = KEC_TO_KOTA[kecamatan];
+          if (kotaBenar) {
+            if (!kota) {
+              kota = kotaBenar;
+              notes.push("Kota dilengkapi: " + kota);
+            } else if (kota !== kotaBenar) {
+              notes.push("Kota: '" + kota + "' → '" + kotaBenar + "'");
+              kota = kotaBenar;
+            }
+          }
+
+          /* 11. Provinsi default */
+          if (!provinsi && kota.startsWith("Jakarta")) provinsi = "DKI Jakarta";
+
+          const rec = {
+            asli: asli,
+            jalan: jalan,
+            rtrw: rtrw,
+            kelurahan: kelurahan,
+            kecamatan: kecamatan,
+            kota: kota,
+            provinsi: provinsi,
+            kodePos: kodePos,
+            notes: notes,
+          };
+          rec.lengkap = buildLengkap(rec);
+          rec.tanpaKota = buildTanpaKota(rec);
+          rec.status = statusOf(rec);
+          return rec;
+        }
+
+        function fixJalan(s) {
+          let t = norm(s);
+          t = t.replace(/\bJL\.\s*/gi, "Jl. ");
+          t = t.replace(/^Jl\s+/i, "Jl. ");
+          t = t.replace(/\s+Jl\s+/g, " Jl. ");
+          t = t.replace(/\bNO\s+(?=\d)/g, "No. ");
+          t = t.replace(/\bNo\s+(?=\d)/gi, "No. ");
+          t = t.replace(/\bGang\s+/gi, "Gg. ");
+          t = t.replace(/\bgg\.?\s+/gi, "Gg. ");
+          t = t.replace(/\bKl\.\s*/gi, "Komp. ");
+          t = t.replace(/\bKomplek\s+/gi, "Komp. ");
+          t = t.replace(/\bProf\s+(?!\.)/gi, "Prof. ");
+          t = t.replace(/\s{2,}/g, " ");
+          return properCase(t);
+        }
+
+        function buildLengkap(r) {
+          const parts = [];
+          parts.push(r.jalan);
+          if (r.rtrw) parts.push(r.rtrw);
+          if (r.kelurahan) parts.push("Kel. " + r.kelurahan);
+          if (r.kecamatan) parts.push("Kec. " + r.kecamatan);
+          if (r.kota) parts.push(r.kota);
+          if (r.provinsi) parts.push(r.provinsi);
+          let out = norm(parts.join(", "));
+          if (r.kodePos) out += " " + r.kodePos;
+          return out;
+        }
+
+        function buildTanpaKota(r) {
+          const parts = [];
+          parts.push(r.jalan);
+          if (r.rtrw) parts.push(r.rtrw);
+          if (r.kelurahan) parts.push("Kel. " + r.kelurahan);
+          if (r.kecamatan) parts.push("Kec. " + r.kecamatan);
+          return norm(parts.join(", "));
+        }
+
+        function statusOf(r) {
+          const miss = [];
+          if (!r.jalan) miss.push("Jalan");
+          if (!r.kelurahan) miss.push("Kelurahan");
+          if (!r.kecamatan) miss.push("Kecamatan");
+          if (!r.kota) miss.push("Kota");
+          if (!r.kodePos) miss.push("Kode Pos");
+          return miss.length ? { ok: false, label: "Kurang: " + miss.join(", ") } : { ok: true, label: "Lengkap" };
+        }
+
+        function refreshDerived(r) {
+          r.lengkap = buildLengkap(r);
+          r.tanpaKota = buildTanpaKota(r);
+          r.status = statusOf(r);
+        }
+
+        /* ══════════ State ══════════ */
+        let rows = [];
+        let searchQuery = "";
+        let filterStatus = "";
+        let rawLines = [];
+
+        const input = document.getElementById("input-addresses");
+
+        function process() {
+          rawLines = input.value
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter(Boolean);
+          rows = rawLines.map(parseAddress);
+          render();
+        }
+
+        /* ══════════ Render ══════════ */
+        function render() {
+          const title = document.getElementById("result-title");
+          const panel = document.getElementById("result-panel");
+          if (!rows.length) {
+            title.style.display = "none";
+            panel.style.display = "none";
+            document.getElementById("btn-export").disabled = true;
+            document.getElementById("btn-copy").disabled = true;
+            return;
+          }
+          title.style.display = "flex";
+          panel.style.display = "block";
+
+          const tbody = document.getElementById("result-tbody");
+          const q = searchQuery.toLowerCase();
+          let html = "";
+          let visible = 0;
+
+          rows.forEach((r, i) => {
+            const hay = (r.asli + " " + r.lengkap + " " + r.kelurahan + " " + r.kecamatan + " " + r.kota + " " + r.kodePos).toLowerCase();
+            if (q && !hay.includes(q)) return;
+            if (filterStatus === "Lengkap" && !r.status.ok) return;
+            if (filterStatus === "Kurang" && r.status.ok) return;
+            visible++;
+
+            html +=
+              "<tr>" +
+              '<td style="text-align:center">' + (i + 1) + ".</td>" +
+              "<td>" + esc(r.lengkap) +
+              (r.notes.length ? '<span class="addr-asli" title="' + esc(r.notes.join(" | ")) + '">⚠ ' + esc(r.notes.join(" | ")) + "</span>" : "") +
+              '<span class="addr-asli">' + esc(r.asli) + "</span></td>" +
+              "<td>" + esc(r.tanpaKota) + "</td>" +
+              '<td class="cell-edit"><input class="cell-input" data-idx="' + i + '" data-field="jalan" value="' + esc(r.jalan) + '"></td>' +
+              '<td class="cell-edit"><input class="cell-input" data-idx="' + i + '" data-field="rtrw" value="' + esc(r.rtrw) + '" placeholder="-"></td>' +
+              '<td class="cell-edit"><input class="cell-input" data-idx="' + i + '" data-field="kelurahan" value="' + esc(r.kelurahan) + '" placeholder="-"></td>' +
+              '<td class="cell-edit"><input class="cell-input" data-idx="' + i + '" data-field="kecamatan" value="' + esc(r.kecamatan) + '" placeholder="-"></td>' +
+              '<td class="cell-edit"><input class="cell-input" data-idx="' + i + '" data-field="kota" value="' + esc(r.kota) + '" placeholder="-"></td>' +
+              '<td class="cell-edit"><input class="cell-input" data-idx="' + i + '" data-field="provinsi" value="' + esc(r.provinsi) + '" placeholder="-"></td>' +
+              '<td class="cell-edit"><input class="cell-input pos-input" data-idx="' + i + '" data-field="kodePos" value="' + esc(r.kodePos) + '" placeholder="-" maxlength="5"></td>' +
+              '<td><span class="status-badge ' + (r.status.ok ? "status-ok" : "status-miss") + '" title="' + esc(r.status.label) + '">' +
+              (r.status.ok ? "Lengkap" : esc(r.status.label.replace("Kurang: ", ""))) +
+              "</span></td>" +
+              "</tr>";
+          });
+
+          tbody.innerHTML = html;
+          document.getElementById("empty-msg").style.display = visible ? "none" : "block";
+
+          /* Inline edit */
+          tbody.querySelectorAll(".cell-input").forEach((inp) => {
+            inp.addEventListener("input", function () {
+              const idx = parseInt(this.dataset.idx, 10);
+              const f = this.dataset.field;
+              rows[idx][f] = norm(this.value);
+              refreshDerived(rows[idx]);
+              const tr = this.closest("tr");
+              const tds = tr.querySelectorAll("td");
+              tds[1].innerHTML =
+                esc(rows[idx].lengkap) +
+                (rows[idx].notes.length ? '<span class="addr-asli" title="' + esc(rows[idx].notes.join(" | ")) + '">⚠ ' + esc(rows[idx].notes.join(" | ")) + "</span>" : "") +
+                '<span class="addr-asli">' + esc(rows[idx].asli) + "</span>";
+              tds[2].textContent = rows[idx].tanpaKota;
+              const badge = tds[10].querySelector(".status-badge");
+              badge.className = "status-badge " + (rows[idx].status.ok ? "status-ok" : "status-miss");
+              badge.title = rows[idx].status.label;
+              badge.textContent = rows[idx].status.ok ? "Lengkap" : rows[idx].status.label.replace("Kurang: ", "");
+              updateSummary();
+            });
+          });
+
+          updateSummary();
+          document.getElementById("btn-export").disabled = false;
+          document.getElementById("btn-copy").disabled = false;
+        }
+
+        function updateSummary() {
+          const total = rows.length;
+          const ok = rows.filter((r) => r.status.ok).length;
+          const miss = total - ok;
+          const fixed = rows.filter((r) => r.notes.length).length;
+          document.getElementById("result-subtitle").textContent = total + " alamat";
+          document.getElementById("summary-row").innerHTML =
+            "<div><strong>" + total + "</strong> Total</div>" +
+            '<div style="color:var(--green)"><strong>' + ok + "</strong> Lengkap</div>" +
+            '<div style="color:var(--red)"><strong>' + miss + "</strong> Kurang</div>" +
+            '<div style="color:var(--yellow)"><strong>' + fixed + "</strong> Dikoreksi otomatis</div>";
+        }
+
+        /* ══════════ Input events ══════════ */
+        let debounce = null;
+        input.addEventListener("input", function () {
+          clearTimeout(debounce);
+          debounce = setTimeout(process, 350);
+        });
+
+        document.getElementById("btn-clear").addEventListener("click", () => {
+          input.value = "";
+          rows = [];
+          rawLines = [];
+          render();
+        });
+
+        document.getElementById("btn-reprocess").addEventListener("click", () => {
+          if (!input.value.trim()) return;
+          process();
+          showToast("Diproses ulang dari teks asli");
+        });
+
+        document.getElementById("search-input").addEventListener("input", function () {
+          searchQuery = this.value;
+          render();
+        });
+
+        document.getElementById("status-filter").addEventListener("change", function () {
+          filterStatus = this.value;
+          render();
+        });
+
+        /* ══════════ File import (.txt) ══════════ */
+        const dz = document.getElementById("import-dropzone");
+        const fileInput = document.getElementById("file-input");
+        dz.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", function () {
+          if (this.files.length) importTextFile(this.files[0]);
+          this.value = "";
+        });
+        ["dragenter", "dragover"].forEach((ev) =>
+          dz.addEventListener(ev, (e) => {
+            e.preventDefault();
+            dz.classList.add("dragover");
+          })
+        );
+        ["dragleave", "drop"].forEach((ev) =>
+          dz.addEventListener(ev, (e) => {
+            e.preventDefault();
+            dz.classList.remove("dragover");
+          })
+        );
+        dz.addEventListener("drop", (e) => {
+          if (e.dataTransfer.files.length) importTextFile(e.dataTransfer.files[0]);
+        });
+        document.addEventListener("dragover", (e) => e.preventDefault());
+        document.addEventListener("drop", (e) => e.preventDefault());
+
+        function importTextFile(file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              const text = new TextDecoder("utf-8").decode(new Uint8Array(e.target.result));
+              input.value = text.replace(/\r/g, "").trim();
+              process();
+              dz.innerHTML = '<span style="color:var(--green)">' + esc(file.name) + "</span> diload (" + rawLines.length + " baris)";
+              showToast(rawLines.length + " alamat dimuat dari " + file.name);
+            } catch (err) {
+              showToast("Gagal baca file: " + err.message, true);
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        }
+
+        /* ══════════ Copy TSV ══════════ */
+        const HEADERS = ["No", "Alamat Lengkap", "Alamat Tanpa Kota & Kode Pos", "Alamat Asli", "Jalan", "RT/RW", "Kelurahan", "Kecamatan", "Kota/Kabupaten", "Provinsi", "Kode Pos", "Status"];
+        const EXPORT_HEADERS = ["No", "Alamat Lengkap", "Alamat Tanpa Kota & Kode Pos", "Alamat Asli", "Jalan", "Jalan + RT/RW", "RT/RW", "Kelurahan", "Kecamatan", "Kota/Kabupaten", "Provinsi", "Kode Pos", "Status"];
+
+        function toRow(r, i) {
+          return [i + 1, r.lengkap, r.tanpaKota, r.asli, r.jalan, r.rtrw, r.kelurahan, r.kecamatan, r.kota, r.provinsi, r.kodePos, r.status.ok ? "Lengkap" : r.status.label];
+        }
+
+        function toExportRow(r, i) {
+          const jalanRt = norm(r.jalan + (r.rtrw ? " " + r.rtrw : ""));
+          return [i + 1, r.lengkap, r.tanpaKota, r.asli, r.jalan, jalanRt, r.rtrw, r.kelurahan, r.kecamatan, r.kota, r.provinsi, r.kodePos, r.status.ok ? "Lengkap" : r.status.label];
+        }
+
+        document.getElementById("btn-copy").addEventListener("click", () => {
+          if (!rows.length) return;
+          const lines = [HEADERS.join("\t")].concat(rows.map((r, i) => toRow(r, i).join("\t")));
+          navigator.clipboard
+            .writeText(lines.join("\n"))
+            .then(() => showToast("Tersalin: " + rows.length + " baris (TSV)"))
+            .catch(() => showToast("Gagal menyalin", true));
+        });
+
+        /* ══════════ Export Excel ══════════ */
+        document.getElementById("btn-export").addEventListener("click", () => {
+          if (!rows.length) return;
+          const data = rows.map((r, i) => {
+            const obj = {};
+            EXPORT_HEADERS.forEach((h, ci) => (obj[h] = toExportRow(r, i)[ci]));
+            return obj;
+          });
+          const ws = XLSX.utils.json_to_sheet(data);
+          ws["!cols"] = [
+            { wch: 5 }, { wch: 70 }, { wch: 55 }, { wch: 70 },
+            { wch: 55 }, { wch: 60 }, { wch: 16 }, { wch: 22 },
+            { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 10 }, { wch: 22 },
+          ];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Alamat");
+          XLSX.writeFile(wb, "Address Fixer Hasil.xlsx");
+          showToast("File diunduh");
+        });
+      })();
+    </script>
+  </body>
+</html>

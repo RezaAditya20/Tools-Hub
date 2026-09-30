@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
     <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
     <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <link rel="stylesheet" href="../fontawesome/css/solid.css" />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.4"></script>
     <title>Torrent Search</title>
     <link rel="icon" type="image/svg+xml" href="../icon.svg" />
     <style>
@@ -799,6 +801,173 @@
         cursor: pointer; padding: 4px 8px; border-radius: 6px;
       }
       .trailer-close:hover { color: var(--accent); }
+
+      /* Player Modal */
+      .player-modal {
+        position: fixed; inset: 0; z-index: 1300;
+        background: #000;
+        display: none; align-items: center; justify-content: center;
+        flex-direction: column;
+      }
+      .player-modal.open { display: flex; }
+      .player-container {
+        position: relative; width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        background: #000;
+      }
+      .player-container video {
+        max-width: 100%; max-height: 100%;
+        width: 100%; height: 100%;
+        object-fit: contain;
+      }
+      .player-controls {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.9));
+        padding: 40px 16px 16px;
+        display: flex; flex-direction: column; gap: 10px;
+        opacity: 0; transition: opacity 0.3s;
+      }
+      .player-container:hover .player-controls { opacity: 1; }
+      .player-progress {
+        width: 100%; height: 4px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 2px; cursor: pointer;
+        position: relative;
+      }
+      .player-progress:hover { height: 6px; }
+      .player-progress-fill {
+        height: 100%; background: var(--accent, #e50914);
+        border-radius: 2px; position: relative;
+        transition: width 0.1s;
+      }
+      .player-progress-fill::after {
+        content: ''; position: absolute; right: -6px; top: 50%;
+        transform: translateY(-50%); width: 12px; height: 12px;
+        background: var(--accent, #e50914); border-radius: 50%;
+        opacity: 0; transition: opacity 0.2s;
+      }
+      .player-progress:hover .player-progress-fill::after { opacity: 1; }
+      .player-buttons {
+        display: flex; align-items: center; gap: 12px;
+      }
+      .player-btn {
+        background: none; border: none; color: #fff;
+        font-size: 1rem; cursor: pointer; padding: 6px;
+        border-radius: 4px; transition: background 0.2s;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .player-btn:hover { background: rgba(255,255,255,0.15); }
+      .player-btn.play-btn { font-size: 1.4rem; }
+      .player-time {
+        color: rgba(255,255,255,0.8); font-size: 0.8rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .player-volume {
+        display: flex; align-items: center; gap: 6px;
+      }
+      .player-volume-slider {
+        width: 80px; height: 4px;
+        -webkit-appearance: none; appearance: none;
+        background: rgba(255,255,255,0.3); border-radius: 2px;
+        cursor: pointer;
+      }
+      .player-volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 12px; height: 12px;
+        background: #fff; border-radius: 50%; cursor: pointer;
+      }
+      .player-spacer { flex: 1; }
+      .player-tracks {
+        display: flex; gap: 8px; margin-left: auto;
+      }
+      .player-track-btn {
+        background: rgba(255,255,255,0.15); border: none; color: #fff;
+        font-size: 0.75rem; padding: 4px 10px; border-radius: 4px;
+        cursor: pointer; transition: background 0.2s;
+      }
+      .player-track-btn:hover { background: rgba(255,255,255,0.3); }
+      .player-track-btn.active { background: var(--accent, #e50914); }
+      .player-close {
+        position: absolute; top: 16px; right: 16px; z-index: 10;
+        background: rgba(0,0,0,0.6); border: none; color: #fff;
+        width: 40px; height: 40px; border-radius: 50%;
+        font-size: 1.1rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s;
+      }
+      .player-close:hover { background: rgba(0,0,0,0.85); }
+      .player-title {
+        position: absolute; top: 16px; left: 16px; z-index: 10;
+        color: #fff; font-size: 0.9rem; font-weight: 600;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .track-dropdown {
+        position: absolute; bottom: 60px; right: 16px;
+        background: rgba(20,20,20,0.95); border-radius: 8px;
+        padding: 8px 0; min-width: 180px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        display: none; z-index: 20;
+      }
+      .track-dropdown.open { display: block; }
+      .track-dropdown-item {
+        padding: 8px 16px; color: #fff; font-size: 0.82rem;
+        cursor: pointer; display: flex; align-items: center; gap: 8px;
+        transition: background 0.15s;
+      }
+      .track-dropdown-item:hover { background: rgba(255,255,255,0.1); }
+      .track-dropdown-item.active { color: var(--accent, #e50914); }
+      .track-dropdown-item .check { width: 14px; opacity: 0; }
+      .track-dropdown-item.active .check { opacity: 1; }
+      .player-loading {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.7); z-index: 5;
+      }
+      .player-loading.hidden { display: none; }
+      .player-loading-content {
+        text-align: center; padding: 40px;
+      }
+      .player-loading-title {
+        font-size: 1.8rem; font-weight: 700; color: #fff;
+        margin-bottom: 24px; letter-spacing: 1px;
+        background: linear-gradient(90deg, 
+          rgba(255,255,255,0.3) 0%, 
+          rgba(255,255,255,1) 50%, 
+          rgba(255,255,255,0.3) 100%);
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shimmerText 2s ease-in-out infinite;
+      }
+      @keyframes shimmerText {
+        0% { background-position: 200% center; }
+        100% { background-position: -200% center; }
+      }
+      .player-loading-bar {
+        width: 200px; height: 3px; margin: 0 auto;
+        background: rgba(255,255,255,0.2); border-radius: 2px;
+        overflow: hidden;
+      }
+      .player-loading-fill {
+        width: 40%; height: 100%;
+        background: linear-gradient(90deg, transparent, var(--accent, #e50914), transparent);
+        border-radius: 2px;
+        animation: loadingBar 1.5s ease-in-out infinite;
+      }
+      @keyframes loadingBar {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(350%); }
+      }
+      .player-error {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.8); z-index: 5;
+        color: #fff; gap: 12px;
+      }
+      .player-error.hidden { display: none; }
+      .player-error i { font-size: 2rem; color: var(--accent, #e50914); }
       .btn-find.ghost-trailer { background: #333; color: #fff; }
       :root[data-theme="light"] .btn-find.ghost-trailer { background: #444; color: #fff; }
       .btn-find.ghost-trailer:hover { opacity: 0.85; }
@@ -926,7 +1095,7 @@
     <!-- TorrServer settings -->
     <div class="player-settings" style="display:none">
       <span><i class="fa-solid fa-server"></i> TorrServer:</span>
-      <input class="torrserv-url" type="text" value="" placeholder="http://127.0.0.1:8090" />
+      <input class="torrserv-url" type="text" value="" placeholder="http://127.0.0.1:11471" />
       <span class="mpv-hint">Opens in MPV</span>
     </div>
 
@@ -992,6 +1161,51 @@
       <div class="trailer-box">
         <button class="trailer-close" onclick="closeTrailer()"><i class="fa-solid fa-xmark"></i></button>
         <iframe id="trailer-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <!-- Player modal -->
+    <div class="player-modal" id="player-modal">
+      <div class="player-container" id="player-container">
+        <div class="player-title" id="player-title"></div>
+        <button class="player-close" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
+        <video id="player-video" playsinline></video>
+        <div class="player-loading" id="player-loading">
+          <div class="player-loading-content">
+            <div class="player-loading-title" id="player-loading-title">Loading...</div>
+            <div class="player-loading-bar">
+              <div class="player-loading-fill"></div>
+            </div>
+          </div>
+        </div>
+        <div class="player-error hidden" id="player-error">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="player-error-msg">Gagal memutar video</span>
+          <button class="player-btn" onclick="closePlayer()" style="border:1px solid rgba(255,255,255,0.3);padding:6px 16px;border-radius:6px">Tutup</button>
+        </div>
+        <div class="player-controls" id="player-controls">
+          <div class="player-progress" id="player-progress">
+            <div class="player-progress-fill" id="player-progress-fill" style="width:0%"></div>
+          </div>
+          <div class="player-buttons">
+            <button class="player-btn play-btn" id="player-play-btn" onclick="togglePlay()">
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <div class="player-volume">
+              <button class="player-btn" id="player-mute-btn" onclick="toggleMute()">
+                <i class="fa-solid fa-volume-high"></i>
+              </button>
+              <input type="range" class="player-volume-slider" id="player-volume-slider" min="0" max="1" step="0.05" value="1">
+            </div>
+            <span class="player-time" id="player-time">0:00 / 0:00</span>
+            <div class="player-spacer"></div>
+            <div class="player-tracks" id="player-tracks"></div>
+            <button class="player-btn" onclick="toggleFullscreen()">
+              <i class="fa-solid fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div class="track-dropdown" id="track-dropdown"></div>
       </div>
     </div>
 
@@ -1327,7 +1541,7 @@
     (async function init() {
       await Settings.init();
       const tsInput = document.querySelector('.torrserv-url');
-      tsInput.value = Settings.get('torrserver-url') || 'http://127.0.0.1:8090';
+      tsInput.value = Settings.get('torrserver-url') || 'http://127.0.0.1:11471';
       tsInput.addEventListener('change', (e) => {
         Settings.set('torrserver-url', e.target.value);
       });
@@ -2164,7 +2378,7 @@
 
       // Initial episode count
       const selInit = document.getElementById('detail-season-select');
-      if (selInit) updateEpCount(selInit);
+      if (selInit) onSeasonChange(selInit);
     }
 
     // Store original series cast for restore
@@ -2846,6 +3060,14 @@
           cmd.title = 'Copy peerflix command';
           cmd.onclick = () => openCmd(r.link);
           act.appendChild(cmd);
+
+          const webBtn = document.createElement('button');
+          webBtn.className = 'btn-cmd';
+          webBtn.type = 'button';
+          webBtn.innerHTML = '<i class="fa-solid fa-globe"></i> Web';
+          webBtn.title = 'Play in browser';
+          webBtn.onclick = () => playTorrentWeb(r.name, infohash);
+          act.appendChild(webBtn);
         }
         const dl = document.createElement('a');
         dl.href = r.link; dl.innerHTML = '<i class="fa-solid fa-download"></i> Get';
@@ -3024,7 +3246,7 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTrailer(); } });
 
     /* ── Player: launch MPV via server ── */
-    let torrserv = Settings.get('torrserver-url') || 'http://127.0.0.1:8090';
+    let torrserv = Settings.get('torrserver-url') || 'http://127.0.0.1:11471';
     function extractHash(magnet) {
       const m = magnet.match(/btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
       return m ? m[1].toLowerCase() : null;
@@ -3047,6 +3269,291 @@
       } finally {
         btn.disabled = false; btn.innerHTML = orig;
       }
+    }
+// ── Web Player ──
+    let hls = null;
+    let playerVideo = null;
+    let currentTrackType = null;
+
+    function openPlayer(title, streamUrl) {
+      const modal = document.getElementById('player-modal');
+      const video = document.getElementById('player-video');
+      const titleEl = document.getElementById('player-title');
+      const loadingTitle = document.getElementById('player-loading-title');
+      const loading = document.getElementById('player-loading');
+      const error = document.getElementById('player-error');
+      
+      playerVideo = video;
+      titleEl.textContent = title || 'Playing...';
+      loadingTitle.textContent = title || 'Loading...';
+      loading.classList.remove('hidden');
+      error.classList.add('hidden');
+      
+      // Destroy previous HLS instance
+      if (hls) { hls.destroy(); hls = null; }
+      
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      
+      // Check if HLS stream
+      const isHls = streamUrl.includes('.m3u8');
+      const isTorrStream = streamUrl.includes('/stream/');
+      
+      if (isHls) {
+        if (Hls.isSupported()) {
+          hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: false,
+            maxBufferLength: 30,
+            maxMaxBufferLength: 60,
+          });
+          hls.loadSource(streamUrl);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            loading.classList.add('hidden');
+            video.play().catch(() => {});
+            updateTrackButtons();
+          });
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+              loading.classList.add('hidden');
+              error.classList.remove('hidden');
+              document.getElementById('player-error-msg').textContent = 
+                data.type === Hls.ErrorTypes.NETWORK_ERROR ? 'Network error' : 'Playback error';
+            }
+          });
+          hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => updateTrackButtons());
+          hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => updateTrackButtons());
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = streamUrl;
+          video.addEventListener('loadedmetadata', () => {
+            loading.classList.add('hidden');
+            video.play().catch(() => {});
+          }, { once: true });
+        } else {
+          loading.classList.add('hidden');
+          error.classList.remove('hidden');
+          document.getElementById('player-error-msg').textContent = 'HLS not supported';
+        }
+      } else {
+        // Direct stream (MP4/MKV from TorrServer)
+        video.src = streamUrl;
+              video.onloadedmetadata = () => {
+          loading.classList.add('hidden');
+          video.play().catch(() => {});
+        };
+        video.onerror = () => {
+          loading.classList.add('hidden');
+          const err = video.error;
+          let msg = 'Failed to load video';
+          if (err) {
+            if (err.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+              msg = 'Format tidak didukung browser (MKV/AC3). Gunakan MPV untuk playback.';
+            } else if (err.code === MediaError.MEDIA_ERR_NETWORK) {
+              msg = 'Network error - TorrServer mungkin belum siap atau hash salah.';
+            } else if (err.code === MediaError.MEDIA_ERR_DECODE) {
+              msg = 'Decode error - codec tidak didukung browser.';
+            }
+          }
+          error.classList.remove('hidden');
+          document.getElementById('player-error-msg').textContent = msg;
+        };
+        video.load();
+      }
+      
+      // Setup controls
+      setupPlayerControls();
+    }
+
+    function closePlayer() {
+      const modal = document.getElementById('player-modal');
+      const video = document.getElementById('player-video');
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+      video.pause();
+      video.src = '';
+      if (hls) { hls.destroy(); hls = null; }
+    }
+
+    function setupPlayerControls() {
+      const video = document.getElementById('player-video');
+      const progress = document.getElementById('player-progress');
+      const progressFill = document.getElementById('player-progress-fill');
+      const timeEl = document.getElementById('player-time');
+      const volumeSlider = document.getElementById('player-volume-slider');
+      
+      video.ontimeupdate = () => {
+        if (video.duration) {
+          const pct = (video.currentTime / video.duration) * 100;
+          progressFill.style.width = pct + '%';
+          timeEl.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+        }
+      };
+      
+      video.onplay = () => {
+        document.getElementById('player-play-btn').innerHTML = '<i class="fa-solid fa-pause"></i>';
+      };
+      
+      video.onpause = () => {
+        document.getElementById('player-play-btn').innerHTML = '<i class="fa-solid fa-play"></i>';
+      };
+      
+      progress.onclick = (e) => {
+        if (video.duration) {
+          const rect = progress.getBoundingClientRect();
+          const pct = (e.clientX - rect.left) / rect.width;
+          video.currentTime = pct * video.duration;
+        }
+      };
+      
+      volumeSlider.oninput = () => {
+        video.volume = parseFloat(volumeSlider.value);
+        updateVolumeIcon();
+      };
+      
+      video.onvolumechange = updateVolumeIcon;
+    }
+
+    function togglePlay() {
+      const video = document.getElementById('player-video');
+      if (video.paused) video.play();
+      else video.pause();
+    }
+
+    function toggleMute() {
+      const video = document.getElementById('player-video');
+      video.muted = !video.muted;
+    }
+
+    function updateVolumeIcon() {
+      const video = document.getElementById('player-video');
+      const btn = document.getElementById('player-mute-btn');
+      const slider = document.getElementById('player-volume-slider');
+      slider.value = video.muted ? 0 : video.volume;
+      if (video.muted || video.volume === 0) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+      } else if (video.volume < 0.5) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-low"></i>';
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+      }
+    }
+
+    function formatTime(s) {
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return m + ':' + String(sec).padStart(2, '0');
+    }
+
+    function toggleFullscreen() {
+      const container = document.getElementById('player-container');
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function updateTrackButtons() {
+      const tracksEl = document.getElementById('player-tracks');
+      const dropdown = document.getElementById('track-dropdown');
+      tracksEl.innerHTML = '';
+      dropdown.innerHTML = '';
+      
+      if (!hls) return;
+      
+      // Audio tracks
+      if (hls.audioTracks && hls.audioTracks.length > 1) {
+        const btn = document.createElement('button');
+        btn.className = 'player-track-btn';
+        btn.innerHTML = '<i class="fa-solid fa-headphones"></i> Audio';
+        btn.onclick = (e) => { e.stopPropagation(); showTrackDropdown('audio', e.target); };
+        tracksEl.appendChild(btn);
+      }
+      
+      // Subtitle tracks
+      if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
+        const btn = document.createElement('button');
+        btn.className = 'player-track-btn';
+        btn.innerHTML = '<i class="fa-solid fa-closed-captioning"></i> Sub';
+        btn.onclick = (e) => { e.stopPropagation(); showTrackDropdown('subtitle', e.target); };
+        tracksEl.appendChild(btn);
+        
+        // Add "Off" option for subtitles
+        const offItem = document.createElement('div');
+        offItem.className = 'track-dropdown-item' + (hls.subtitleTrack === -1 ? ' active' : '');
+        offItem.innerHTML = '<span class="check"><i class="fa-solid fa-check"></i></span> Off';
+        offItem.onclick = () => { hls.subtitleTrack = -1; updateTrackButtons(); closeTrackDropdown(); };
+        dropdown.appendChild(offItem);
+      }
+    }
+
+    function showTrackDropdown(type, btnEl) {
+      const dropdown = document.getElementById('track-dropdown');
+      currentTrackType = type;
+      dropdown.innerHTML = '';
+      
+      if (type === 'audio') {
+        hls.audioTracks.forEach((track, i) => {
+          const item = document.createElement('div');
+          item.className = 'track-dropdown-item' + (i === hls.audioTrack ? ' active' : '');
+          item.innerHTML = `<span class="check"><i class="fa-solid fa-check"></i></span> ${track.name || 'Audio ' + (i + 1)}`;
+          item.onclick = () => { hls.audioTrack = i; updateTrackButtons(); closeTrackDropdown(); };
+          dropdown.appendChild(item);
+        });
+      } else if (type === 'subtitle') {
+        hls.subtitleTracks.forEach((track, i) => {
+          const item = document.createElement('div');
+          item.className = 'track-dropdown-item' + (i === hls.subtitleTrack ? ' active' : '');
+          item.innerHTML = `<span class="check"><i class="fa-solid fa-check"></i></span> ${track.name || 'Sub ' + (i + 1)}`;
+          item.onclick = () => { hls.subtitleTrack = i; updateTrackButtons(); closeTrackDropdown(); };
+          dropdown.appendChild(item);
+        });
+      }
+      
+      dropdown.classList.add('open');
+    }
+
+    function closeTrackDropdown() {
+      document.getElementById('track-dropdown').classList.remove('open');
+    }
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('track-dropdown');
+      if (dropdown.classList.contains('open') && !dropdown.contains(e.target)) {
+        closeTrackDropdown();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('player-modal');
+      if (!modal.classList.contains('open')) return;
+      const video = document.getElementById('player-video');
+      if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
+      else if (e.key === 'ArrowLeft') { video.currentTime -= 10; }
+      else if (e.key === 'ArrowRight') { video.currentTime += 10; }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); video.volume = Math.min(1, video.volume + 0.1); document.getElementById('player-volume-slider').value = video.volume; }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); video.volume = Math.max(0, video.volume - 0.1); document.getElementById('player-volume-slider').value = video.volume; }
+      else if (e.key === 'f') { toggleFullscreen(); }
+      else if (e.key === 'm') { toggleMute(); }
+      else if (e.key === 'Escape') { closePlayer(); }
+    });
+
+    function playTorrentWeb(title, infoHash, base) {
+      base = base || getTorrServerUrl();
+      const isStremio = base.includes('1147');
+      let streamUrl;
+      if (isStremio) {
+        streamUrl = base + '/hlsv2/' + infoHash + '/master.m3u8';
+      } else {
+        streamUrl = base + '/stream/?link=' + infoHash + '&play';
+      }
+      openPlayer(title, streamUrl);
+    }
+
+    function getTorrServerUrl() {
+      const input = document.getElementById('torrserver-url');
+      return (input ? input.value : '').replace(/\/+$/, '') || 'http://127.0.0.1:11471';
     }
     </script>
   </body>
