@@ -21,8 +21,7 @@ window.Settings = (() => {
         // Migrate: if API empty but localStorage has data, push it up
         if (Object.keys(data).length === 0) {
           const toMigrate = [
-            'theme', 'tools-fav', 'tools-hidden', 'view',
-            'torrserver-url', 'school-notes-db', 'school-notes-catorder'
+            'theme', 'tools-fav', 'tools-hidden', 'view'
           ];
           for (const k of toMigrate) {
             const raw = localStorage.getItem(k);

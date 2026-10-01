@@ -431,14 +431,6 @@
             category: "🎓 Academic",
             icon: '<rect x="8" y="10" width="32" height="32" rx="4" fill="#dbeafe"/><rect x="8" y="10" width="32" height="10" rx="4" fill="#60a5fa"/><rect x="12" y="6" width="4" height="7" rx="2" fill="#2563eb"/><rect x="32" y="6" width="4" height="7" rx="2" fill="#2563eb"/><rect x="12" y="26" width="6" height="5" rx="1" fill="#2563eb"/><rect x="21" y="26" width="6" height="5" rx="1" fill="#2563eb"/><rect x="30" y="26" width="6" height="5" rx="1" fill="#2563eb"/><rect x="12" y="35" width="6" height="5" rx="1" fill="#3b82f6"/><rect x="21" y="35" width="6" height="5" rx="1" fill="#3b82f6"/><rect x="30" y="35" width="6" height="5" rx="1" fill="#3b82f6"/>',
           },
-          {
-            href: "page/School-Notes-&-To-Do.html",
-            title: "School Notes & To Do",
-            desc: "Catatan sekolah dan daftar tugas",
-            c1: "#2dd4bf",
-            category: "🎓 Academic",
-            icon: '<rect x="8" y="8" width="32" height="34" rx="4" fill="#ccfbf1"/><rect x="14" y="4" width="20" height="7" rx="2" fill="#0d9488"/><rect x="12" y="20" width="24" height="3" rx="1" fill="#14b8a6"/><rect x="12" y="27" width="18" height="3" rx="1" fill="#14b8a6"/><path fill="#0d9488" d="M14 38l4 4 8-8-1.6-1.6-6.4 6.4-2.4-2.4z"/>',
-          },
           /* ── 🛠️ Utilities ── */
           {
             href: "page/Address-Fixer.html",
@@ -489,15 +481,6 @@
             category: "🎬 Media & Streaming",
             icon: '<circle cx="24" cy="24" r="16" fill="#fce7f3"/><polygon points="20,16 34,24 20,32" fill="#ec4899"/>',
           },
-          /* ── 🔍 Search & Download ── */
-          {
-            href: "page/Torrent-Search.html",
-            title: "Torrent Search",
-            desc: "Cari torrent dari 12 engine sekaligus (perlu server Python)",
-            c1: "#38bdf8",
-            category: "🔍 Search & Download",
-            icon: '<circle cx="24" cy="24" r="16" fill="#e0f2fe"/><circle cx="22" cy="22" r="7" fill="none" stroke="#0ea5e9" stroke-width="2.5"/><line x1="27" y1="27" x2="34" y2="34" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round"/>',
-          },
         ];
 
         const grid = document.getElementById("grid");
@@ -535,7 +518,7 @@
         }
 
         // ── Render ──
-        const CAT_ORDER = ["📊 Data & Comparison", "📄 Documents & OCR", "🎓 Academic", "🛠️ Utilities", "🎬 Media & Streaming", "🔍 Search & Download"];
+        const CAT_ORDER = ["📊 Data & Comparison", "📄 Documents & OCR", "🎓 Academic", "🛠️ Utilities", "🎬 Media & Streaming"];
         function render() {
           const q = search.value.toLowerCase().trim();
           const favOnly = btnFav.classList.contains("active");

@@ -1,5 +1,5 @@
 """
-Torrent Search Server
+Tools Hub Server
 Run: python server.py
 Opens on http://localhost:8420
 """
@@ -7,20 +7,13 @@ Opens on http://localhost:8420
 import json
 import logging
 import os
-import shutil
 import sqlite3
 import sys
-import subprocess
 import time
 import threading
 import webbrowser
-import urllib.request
-import urllib.error
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs, quote as url_quote
-from typing import List
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from engines import ALL_ENGINES
+from urllib.parse import urlparse, parse_qs
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,20 +22,11 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("torrent-search")
+log = logging.getLogger("tools-hub")
 
 PORT = 8420
 HUB_ROOT = ROOT_DIR
 INDEX_FILE = os.path.join(HUB_ROOT, "index.html")
-TORRENT_FILE = os.path.join(HUB_ROOT, "page", "Torrent-Search.html")
-
-# TMDB (read access token v4). Override via env TMDB_TOKEN if needed.
-TMDB_TOKEN = os.environ.get(
-    "TMDB_TOKEN",
-    "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmM2VmNDNlYzY3MTc0YzYwNDk3NDE5MjcxNDljNzJhOCIsIm5iZiI6MTc0MzU2MTUzMS42OCwic3ViIjoiNjdlY2EzM2JiOTQyNGNkODk1YWFkYmNmIiwic2NvcGVzIjpbImFwaV9yZWFkIl0sInZlcnNpb24iOjF9._sJyNsBHNMvSPhoCQfb99FmLveDFdRLAOB67k08_ye8",
-)
-TMDB_API = "https://api.themoviedb.org/3"
-TMDB_IMG = "https://image.tmdb.org/t/p/w500"
 
 # ── SQLite settings DB ──
 DB_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "ToolsHub")
@@ -108,17 +92,7 @@ def _db_delete(key: str):
 _init_db()
 
 
-def _normalize_tmdb_images(item: dict) -> None:
-    """Add absolute *_url fields for poster/backdrop paths on a TMDB item."""
-    if not isinstance(item, dict):
-        return
-    if item.get("poster_path") and not item.get("poster_url"):
-        item["poster_url"] = TMDB_IMG + item["poster_path"]
-    if item.get("backdrop_path") and not item.get("backdrop_url"):
-        item["backdrop_url"] = "https://image.tmdb.org/t/p/original" + item["backdrop_path"]
-
-
-class TorrentHandler(SimpleHTTPRequestHandler):
+class HubHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         try:
             self._do_GET()
@@ -131,20 +105,6 @@ class TorrentHandler(SimpleHTTPRequestHandler):
 
         if path == "" or path == "/index.html":
             self._serve_file(INDEX_FILE)
-        elif path == "/page/torrent-search" or path == "/page/Torrent-Search.html":
-            self._serve_file(TORRENT_FILE)
-        elif path == "/api/search":
-            self._handle_search(parse_qs(parsed.query))
-        elif path == "/api/engines":
-            self._handle_engines()
-        elif path == "/api/torrserver":
-            self._proxy_torrserver(parse_qs(parsed.query))
-        elif path == "/api/play":
-            self._launch_mpv(parse_qs(parsed.query))
-        elif path == "/api/tmdb":
-            self._proxy_tmdb(parse_qs(parsed.query))
-        elif path == "/api/subtitles":
-            self._handle_subtitles(parse_qs(parsed.query))
         elif path == "/api/settings":
             self._handle_settings_get(parse_qs(parsed.query))
         else:
@@ -159,11 +119,7 @@ class TorrentHandler(SimpleHTTPRequestHandler):
     def _do_POST(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
-        if path == "/api/torrserver":
-            length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(length) if length else b""
-            self._proxy_torrserver_post(parse_qs(parsed.query), body)
-        elif path == "/api/settings":
+        if path == "/api/settings":
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length) if length else b""
             self._handle_settings_post(body)
@@ -213,235 +169,6 @@ class TorrentHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(404)
 
-    def _handle_search(self, params: dict):
-        query = params.get("q", [""])[0]
-        if not query:
-            self._json_response(400, {"error": "Missing query parameter 'q'"})
-            return
-
-        engines_param = params.get("engines", [""])[0]
-        cat = params.get("cat", ["all"])[0]
-        targets = [e.strip() for e in engines_param.split(",") if e.strip()] if engines_param else list(ALL_ENGINES.keys())
-
-        log.info(f"Search: q={query!r} cat={cat} engines={targets}")
-
-        # SSE response
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-
-        def _send(event: str, data: dict):
-            payload = json.dumps(data, ensure_ascii=False)
-            self.wfile.write(f"event: {event}\ndata: {payload}\n\n".encode("utf-8"))
-            self.wfile.flush()
-
-        def _run(name: str):
-            eng = ALL_ENGINES.get(name)
-            if not eng:
-                return name, []
-            t0 = time.time()
-            try:
-                res = eng.search(query, cat)
-                elapsed = time.time() - t0
-                log.info(f"  {name}: {len(res)} results in {elapsed:.1f}s")
-                return name, res
-            except Exception as e:
-                elapsed = time.time() - t0
-                log.error(f"  {name}: ERROR after {elapsed:.1f}s - {e}")
-                return name, []
-
-        total = 0
-
-        def _emit_results(name, res):
-            nonlocal total
-            # Sort by seeds desc (handle string seeds from some engines)
-            res.sort(key=lambda x: int(x.get("seeds", 0) or 0), reverse=True)
-            total += len(res)
-            _send("engine_done", {"engine": name, "count": len(res)})
-            for r in res:
-                r["engine"] = name
-                _send("result", r)
-
-        # Priority engines run & stream first (RARBG), then the rest in parallel.
-        PRIORITY = ["therarbg"]
-        first_batch = [n for n in PRIORITY if n in targets]
-        rest = [n for n in targets if n not in PRIORITY]
-
-        for n in first_batch:
-            name, res = _run(n)
-            _emit_results(name, res)
-
-        with ThreadPoolExecutor(max_workers=min(len(rest), 12)) as pool:
-            futures = {pool.submit(_run, n): n for n in rest}
-            for f in as_completed(futures):
-                try:
-                    name, res = f.result()
-                    _emit_results(name, res)
-                except Exception as e:
-                    log.error(f"  Future error: {e}")
-
-        _send("done", {"total": total})
-        log.info(f"Total: {total} results")
-
-    def _launch_mpv(self, params: dict):
-        """Launch MPV with a TorrServer stream. Decodes all audio codecs (AC3/DTS)
-        and renders embedded subtitles (SSA/PGS) natively — fixing the no-audio /
-        no-subtitle issue with the browser <video> element."""
-        info_hash = params.get("hash", [""])[0]
-        magnet = params.get("link", [""])[0]
-        if not info_hash and magnet:
-            import re
-            m = re.search(r"btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})", magnet)
-            if m:
-                info_hash = m.group(1).lower()
-        if not info_hash:
-            self._json_response(400, {"error": "Missing 'hash' or 'link' parameter"})
-            return
-
-        base = params.get("base", ["http://127.0.0.1:8090"])[0].rstrip("/")
-        title = params.get("title", [""])[0]
-        # Prefer second audio track for dual-audio releases, show first subtitle
-        audio_id = params.get("aid", [""])[0]
-        sub_id = params.get("sid", [""])[0]
-
-        mpv = shutil.which("mpv") or os.environ.get("MPV_PATH") or "mpv"
-        stream_url = f"{base}/stream/?link={info_hash}&play"
-        args = [mpv, f"--title={title or 'TorrStream'}", "--force-window=immediate"]
-        if audio_id:
-            args.append(f"--aid={audio_id}")
-        if sub_id:
-            args.append(f"--sid={sub_id}")
-        args.append(stream_url)
-
-        log.info(f"Launching MPV: {' '.join(args)}")
-        try:
-            # Detach MPV so it keeps running independent of the server process
-            kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
-            if sys.platform == "win32":
-                kwargs["creationflags"] = (
-                    subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
-                )
-            else:
-                kwargs["start_new_session"] = True
-            subprocess.Popen(args, **kwargs)
-            self._json_response(200, {"ok": True, "player": "mpv"})
-        except FileNotFoundError:
-            self._json_response(502, {"error": "mpv not found. Install MPV or set MPV_PATH env."})
-        except Exception as e:
-            self._json_response(502, {"error": str(e)})
-
-    def _handle_engines(self):
-        info = {}
-        for key, eng in ALL_ENGINES.items():
-            info[key] = {
-                "name": eng.name,
-                "url": eng.url,
-                "categories": list(eng.supported_categories.keys()),
-            }
-        self._json_response(200, info)
-
-    def _proxy_tmdb(self, params: dict):
-        """Proxy TMDB v3 API: ?path=/trending/movie/week
-        Keeps the API token server-side. Normalizes image paths to absolute URLs."""
-        path = params.get("path", ["/trending/movie/week"])[0]
-        if not path.startswith("/"):
-            path = "/" + path
-        # Disallow escaping the TMDB host
-        if ".." in path or "://" in path:
-            self._json_response(400, {"error": "Invalid path"})
-            return
-        # Split path into base path and any inline query string
-        if "?" in path:
-            base_path, inline_qs = path.split("?", 1)
-        else:
-            base_path, inline_qs = path, ""
-        url = f"{TMDB_API}{base_path}?language=en-US"
-        # Forward inline query params from the path (e.g. sort_by, with_origin_country, with_genres, year)
-        if inline_qs:
-            for pair in inline_qs.split("&"):
-                if "=" in pair:
-                    k, v = pair.split("=", 1)
-                    if k == "language":
-                        continue  # already set above
-                    url += f"&{k}={url_quote(v, safe='')}"
-        # Forward optional extra query params (page, append_to_response, query, etc.)
-        for k in ("page", "append_to_response", "query"):
-            if k in params:
-                url += f"&{k}={url_quote(params[k][0], safe='')}"
-        req = urllib.request.Request(url)
-        req.add_header("Authorization", f"Bearer {TMDB_TOKEN}")
-        req.add_header("Accept", "application/json")
-        try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8", "replace"))
-        except urllib.error.HTTPError as e:
-            self._json_response(e.code, {"error": f"TMDB HTTP {e.code}"})
-            return
-        except Exception as e:
-            self._json_response(502, {"error": str(e)})
-            return
-        # Normalize poster/backdrop/profile paths to absolute URLs
-        for item in data.get("results", []) or []:
-            _normalize_tmdb_images(item)
-        # Single-item detail response (movie/tv + credits)
-        _normalize_tmdb_images(data)
-        if isinstance(data.get("credits"), dict):
-            for c in data["credits"].get("cast", []) or []:
-                if c.get("profile_path"):
-                    c["profile_url"] = "https://image.tmdb.org/t/p/w185" + c["profile_path"]
-        # Person endpoint: normalize movie_credits cast posters
-        if isinstance(data.get("movie_credits"), dict):
-            for m in data["movie_credits"].get("cast", []) or []:
-                _normalize_tmdb_images(m)
-        self._json_response(200, data)
-
-    def _handle_subtitles(self, params: dict):
-        """Proxy Subdl v2 API for subtitle search."""
-        api_key = "subdl_1DHXQhNIm-r0FluQBOGPzMrwCn5pSMc-mcr-QWOif9g"
-        imdb_id = params.get("imdb_id", [""])[0]
-        film_name = params.get("film_name", [""])[0]
-        sub_type = params.get("type", [""])[0]
-        languages = params.get("languages", [""])[0]
-        season = params.get("season", [""])[0]
-        episode = params.get("episode", [""])[0]
-        if not imdb_id and not film_name:
-            self._json_response(400, {"error": "imdb_id or film_name required"})
-            return
-        # Build v2 subtitle search URL
-        parts = []
-        if imdb_id:
-            parts.append(f"imdb_id={imdb_id}")
-        elif film_name:
-            parts.append(f"film_name={url_quote(film_name)}")
-        if sub_type:
-            parts.append(f"type={sub_type}")
-        if languages:
-            parts.append(f"languages={languages}")
-        if season:
-            parts.append(f"season={season}")
-        if episode:
-            parts.append(f"episode={episode}")
-        url = f"https://api.subdl.com/api/v2/subtitles/search?{'&'.join(parts)}"
-        req = urllib.request.Request(url)
-        req.add_header("Authorization", f"Bearer {api_key}")
-        req.add_header("Accept", "application/json")
-        try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8", "replace"))
-        except Exception as e:
-            self._json_response(502, {"error": str(e)})
-            return
-        # Normalize: v2 returns { results: [...], subtitles: [...] }
-        # Build full download URLs from relative paths
-        for sub in data.get("subtitles", []) or []:
-            url = sub.get("url", "")
-            if url and not url.startswith("http"):
-                sub["download_url"] = f"https://api.subdl.com{url}"
-        self._json_response(200, data)
-
     def _handle_settings_get(self, params: dict):
         key = params.get("key", [None])[0]
         if key:
@@ -478,53 +205,6 @@ class TorrentHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(body)
-
-    def _proxy_torrserver(self, params: dict):
-        base = params.get("base", ["http://127.0.0.1:11471"])[0].rstrip("/")
-        path = params.get("path", ["/torrents"])[0]
-        url = f"{base}{path}"
-        try:
-            req = urllib.request.Request(url)
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                ct = resp.headers.get("Content-Type", "application/json")
-                cl = resp.headers.get("Content-Length")
-                self.send_response(200)
-                self.send_header("Content-Type", ct)
-                if cl:
-                    self.send_header("Content-Length", cl)
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                # Stream chunks (for video or large responses)
-                while True:
-                    chunk = resp.read(65536)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
-                    self.wfile.flush()
-        except urllib.error.URLError as e:
-            self._json_response(502, {"error": str(e)})
-        except Exception as e:
-            self._json_response(502, {"error": str(e)})
-
-    def _proxy_torrserver_post(self, params: dict, body: bytes):
-        base = params.get("base", ["http://127.0.0.1:11471"])[0].rstrip("/")
-        path = params.get("path", ["/torrents"])[0]
-        url = f"{base}{path}"
-        try:
-            req = urllib.request.Request(url, data=body, method="POST")
-            req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            self.send_response(200)
-            self.send_header("Content-Type", resp.headers.get("Content-Type", "application/json"))
-            self.send_header("Content-Length", len(data))
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(data)
-        except urllib.error.URLError as e:
-            self._json_response(502, {"error": str(e)})
-        except Exception as e:
-            self._json_response(502, {"error": str(e)})
 
     def log_message(self, format, *args):
         pass
@@ -568,8 +248,8 @@ def watcher(stop_event):
 
 
 def main():
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), TorrentHandler)
-    print(f"Torrent Search running at http://localhost:{PORT}")
+    server = ThreadingHTTPServer(("127.0.0.1", PORT), HubHandler)
+    print(f"Tools Hub running at http://localhost:{PORT}")
     print("Press Ctrl+C to stop.")
     if os.environ.get("TS_OPEN_BROWSER", "1") != "0":
         webbrowser.open(f"http://localhost:{PORT}")

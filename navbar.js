@@ -31,13 +31,11 @@
     { label: "HTML Report Inspector", href: "page/HTML-Report-Inspector.html", c1: "#f472b6", icon: "file-code", cat: "Documents & OCR" },
     { label: "Extract Subjects", href: "page/Extract-Subjects.html", c1: "#fb923c", icon: "folder-tree", cat: "Academic" },
     { label: "Kalender Akademik", href: "page/Kalender-Akademik.html", c1: "#60a5fa", icon: "calendar", cat: "Academic" },
-    { label: "School Notes & To Do", href: "page/School-Notes-&-To-Do.html", c1: "#2dd4bf", icon: "notebook-pen", cat: "Academic" },
     { label: "Address Fixer", href: "page/Address-Fixer.html", c1: "#f87171", icon: "map-pin", cat: "Utilities" },
     { label: "Fix Name", href: "page/Fix-Name.html", c1: "#f472b6", icon: "user-pen", cat: "Utilities" },
     { label: "Username Maker", href: "page/Username-Maker.html", c1: "#22d3ee", icon: "user", cat: "Utilities" },
     { label: "Variable Python", href: "page/Variable-Python.html", c1: "#60a5fa", icon: "code", cat: "Utilities" },
     { label: "Date Formatter", href: "page/Date-Formatter.html", c1: "#fbbf24", icon: "calendar-days", cat: "Utilities" },
-    { label: "Torrent Search", href: "page/Torrent-Search.html", c1: "#38bdf8", icon: "search", cat: "Search & Download" },
   ];
 
   function getHidden() {
@@ -48,73 +46,16 @@
       return [];
     }
   }
-  function escapeHtml(s) {
-    return (s || "").replace(/[&<"'>]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m]));
-  }
-
-  // ── School Notes: navbar jadi daftar catatan (view 2 & 3) ──
-  let snState = { view: "home", schoolId: null, activeNoteId: null };
-  const isSchoolNotes = location.pathname.split("/").pop() === "School-Notes-&-To-Do.html";
-  function getSchoolNotes() {
-    if (window.Settings) return Settings.get("school-notes-db", {});
-    try {
-      return JSON.parse(localStorage.getItem("school-notes-db") || "{}");
-    } catch {
-      return {};
-    }
-  }
-  function buildNoteItems() {
-    const school = getSchoolNotes()[snState.schoolId];
-    if (!school) return "";
-    const notes = (school.notes || [])
-      .filter((n) => !n.done)
-      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-    let html = "";
-    notes.forEach((n) => {
-      const active = n.id === snState.activeNoteId ? " active" : "";
-      html += `<a class="nav-item${active}" data-note-id="${n.id}" style="--icon-bg:#2dd4bf"><span class="nav-ico"><i data-lucide="sticky-note"></i></span><span class="label">${escapeHtml(n.text)}</span></a>`;
-    });
-    return html;
-  }
-
-  function buildSchoolItems() {
-    const db = getSchoolNotes();
-    const schools = Object.keys(db)
-      .map((id) => ({ id, school: db[id] }))
-      .sort((a, b) => (a.school.order || 0) - (b.school.order || 0));
-    let html = "";
-    schools.forEach(({ id, school }) => {
-      const active = id === snState.schoolId ? " active" : "";
-      const count = (school.notes || []).filter((n) => !n.done).length;
-      const locked = !!school.pin;
-      html += `<a class="nav-item${active}" data-school-id="${id}"${locked ? ' data-locked="1"' : ""} style="--icon-bg:#22d3ee"><span class="nav-ico"><i data-lucide="school"></i></span><span class="label">${escapeHtml(school.name)}</span>${count ? `<span style="margin-left:auto;margin-right:8px;padding:2px 8px;border-radius:30px;background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary);font-size:0.8rem;font-weight:600">${count}</span>` : ""}</a>`;
-    });
-    return html;
-  }
 
   function buildItems() {
     const nav = mount.querySelector(".nav-items");
     if (!nav) return;
-    if (isSchoolNotes && snState.schoolId && snState.view === "desc") {
-      nav.innerHTML = buildNoteItems();
-      const s = mount.querySelector("#nav-search");
-      if (s) s.placeholder = "Cari catatan...";
-      applySearchFilter();
-      return;
-    }
-    if (isSchoolNotes && snState.schoolId && snState.view === "detail") {
-      nav.innerHTML = buildSchoolItems();
-      const s = mount.querySelector("#nav-search");
-      if (s) s.placeholder = "Cari sekolah...";
-      applySearchFilter();
-      return;
-    }
     const hidden = getHidden();
     const filtered = TOOLS
       .filter((t) => hidden.indexOf(t.label) === -1);
 
     /* Group by category */
-    const catOrder = ["Data & Comparison", "Documents & OCR", "Academic", "Utilities", "Search & Download"];
+    const catOrder = ["Data & Comparison", "Documents & OCR", "Academic", "Utilities"];
     const grouped = {};
     filtered.forEach((t) => {
       const c = t.cat || "Lainnya";
@@ -169,34 +110,6 @@
   const activeItem = mount.querySelector(".nav-item.active");
   if (activeItem) activeItem.scrollIntoView({ block: "center", behavior: "instant" });
   window.addEventListener("tools-hidden-change", () => { buildItems(); refreshIcons(); });
-
-  // ── School Notes: klik item catatan → beritahu page ──
-  const navEl = mount.querySelector(".nav-items");
-  if (navEl) {
-    navEl.addEventListener("click", (e) => {
-      const item = e.target.closest(".nav-item");
-      if (!item) return;
-      // Item School Notes → handle via custom event (jangan navigasi link)
-      if (item.dataset.schoolId || item.dataset.noteId) {
-        e.preventDefault();
-        if (item.dataset.schoolId) {
-          window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "school", schoolId: item.dataset.schoolId } }));
-        } else if (item.dataset.noteId) {
-          window.dispatchEvent(new CustomEvent("sn-nav", { detail: { action: "note", noteId: item.dataset.noteId } }));
-        }
-      }
-    });
-  }
-
-  // ── School Notes: page kabari navbar soal view/sekolah/catatan aktif ──
-  window.addEventListener("sn-view", (e) => {
-    const d = e.detail || {};
-    if (d.view !== undefined) snState.view = d.view;
-    if (d.schoolId !== undefined) snState.schoolId = d.schoolId;
-    if (d.activeNoteId !== undefined) snState.activeNoteId = d.activeNoteId;
-    buildItems();
-    refreshIcons();
-  });
 
   // Tampilkan navbar SEKETIKA setelah build (sinkron) — jangan via setTimeout.
   // Class ini (opacity:1) harus sudah ada saat collapse-warm dilepas, supaya

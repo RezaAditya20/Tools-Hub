@@ -1,7 +1,7 @@
 {
   "name": "tools-hub",
   "version": "1.0.0",
-  "description": "Tools Hub - Torrent Search & More",
+  "description": "Tools Hub - Kumpulan tools",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
@@ -29,9 +29,7 @@
       "fontawesome/**/*",
       "navbar.js",
       "icon.svg",
-      "engines.py",
-      "server.py",
-      "settings.json"
+      "server.py"
     ],
     "win": {
       "target": "nsis",

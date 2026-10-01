@@ -206,23 +206,6 @@ code {
     bottom: 0;
 }
 
-/* School Notes: collapse subtitle wrappers (view 2 button row / view 3 date row) */
-#sub-home,
-#sub-detail,
-#sub-desc {
-    max-height: 80px;
-    opacity: 1;
-    overflow: hidden;
-    transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
-}
-.topbar.scroll-compact #sub-home,
-.topbar.scroll-compact #sub-detail,
-.topbar.scroll-compact #sub-desc {
-    max-height: 0;
-    opacity: 0;
-    margin: 0;
-}
-
 .topbar > .d-flex, .topbar-row {
     display: flex;
     flex-wrap: wrap;

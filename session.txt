@@ -9,3 +9,4 @@
 2026-09-30 - Perbaiki search navbar yang tidak berfungsi (ReferenceError nav is not defined di navbar.js)
 2026-09-30 - Tambah tool Date Formatter (ubah tanggal ke format custom: dd/mm/yyyy, yyyy/mm/dd, d mmmm yyyy, HH:mm, dll)
 2026-09-30 - Date Formatter: panduan token dibuat bisa di-collapse (default tersembunyi)
+2026-10-01 14:09 (remove-torrent-school) - Hapus page & function Torrent Search dan School Notes (termasuk engines.py, My-List, backup, copy legacy, entry menu, route server)
