@@ -1,0 +1,14 @@
+# Deploy sebagai static site — allowlist: hanya file yang dipakai web.
+# Baris pertama ignore semua file di root, baris ! di bawah = diizinkan.
+/*
+!index.html
+!navbar.js
+!icon.svg
+!manifest.json
+!vercel.json
+!package.json
+!page
+!fontawesome
+
+# Isi page/ yang tidak dipakai web
+page/Backup
