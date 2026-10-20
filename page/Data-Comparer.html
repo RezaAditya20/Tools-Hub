@@ -95,9 +95,9 @@
         max-height: 500px;
         margin: 0;
       }
-      .col-check { width: 34px; text-align: center; }
-      .col-no { width: 40px; text-align: center; }
-      .col-id {width: 15% !important;min-width: 0;font-family: ui-monospace, SFMono-Regular, monospace;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;}
+      .col-check { width: 5px !important; text-align: center; padding-left: 0; padding-right: 0; }
+      .col-no { width: 5px !important; text-align: center; padding-left: 0; padding-right: 0; }
+      .col-id {width: 10% !important;min-width: 0;font-family: ui-monospace, SFMono-Regular, monospace;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;}
       .col-data { width: 30%; min-width: 0; }
       .col-res { width: 10%; min-width: 0; text-align: center; }
 
@@ -125,6 +125,9 @@
       }
       input[type="checkbox"]:checked {
         animation: cb-pop 0.2s ease;
+      }
+      #panel-results[hidden] {
+        display: none;
       }
     </style>
   </head>
@@ -169,7 +172,7 @@
         </div>
       </div>
 
-      <div class="panel-group">
+      <div class="panel-group" id="panel-results" hidden>
         <div class="panel-title-row">
           <h2>Hasil Perbandingan</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -192,6 +195,7 @@
             <option value="beda">Hanya "Beda"</option>
             <option value="sama">Hanya "Sama"</option>
           </select>
+          <button id="btn-uncheck-all" class="panel-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Uncek Semua</button>
         </div>
 
         <div class="table-wrap">
@@ -300,6 +304,7 @@
         document.getElementById("filter-status").value = "all";
         searchInput.value = "";
         searchClear.classList.remove("visible");
+        document.getElementById("panel-results").hidden = true;
         render();
         document.getElementById("input-1").focus();
         showToast("Input dan tabel dibersihkan");
@@ -350,6 +355,7 @@
 
         selectedRows.clear();
         document.getElementById("filter-status").value = "beda";
+        document.getElementById("panel-results").hidden = false;
         render();
         showToast("Perbandingan selesai");
       });
@@ -412,7 +418,11 @@
           showToast("Tidak ada yang disalin");
           return;
         }
-        navigator.clipboard.writeText(text).then(() => showToast(msg));
+        navigator.clipboard.writeText("")
+          .catch(() => {})
+          .then(() => navigator.clipboard.writeText(text))
+          .then(() => showToast(msg))
+          .catch(() => showToast("Gagal menyalin ke clipboard"));
       }
 
       document.getElementById("tbody").addEventListener("change", (e) => {
@@ -444,6 +454,17 @@
           e.target.checked ? selectedRows.add(key) : selectedRows.delete(key);
         });
         render();
+      });
+
+      document.getElementById("btn-uncheck-all").addEventListener("click", () => {
+        if (selectedRows.size === 0) {
+          showToast("Belum ada baris yang dipilih");
+          return;
+        }
+        selectedRows.clear();
+        document.getElementById("check-all").checked = false;
+        render();
+        showToast("Semua pilihan dilepas");
       });
 
       document.getElementById("btn-copy-selected").addEventListener("click", () => {
