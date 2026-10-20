@@ -123,9 +123,6 @@
       .cell-clickable {
         cursor: pointer;
       }
-      input[type="checkbox"]:checked {
-        animation: cb-pop 0.2s ease;
-      }
       #panel-results[hidden] {
         display: none;
       }
@@ -205,7 +202,7 @@
                 <th class="col-no">#</th>
                 <th class="col-id">ID</th>
                 <th class="col-data">Data 1</th>
-                <th class="col-check"><input type="checkbox" id="check-all" aria-label="Pilih semua"></th>
+                <th class="col-check"><div class="cb-wrap" id="check-all-wrap"><input type="checkbox" id="check-all" aria-label="Pilih semua"><svg class="cb-svg" viewBox="0 0 16 16"><polyline points="3.5,8 6.5,11 12.5,5"/></svg></div></th>
                 <th class="col-id">ID Compare</th>
                 <th class="col-data">Data 2</th>
                 <th class="col-res">Hasil</th>
@@ -365,7 +362,7 @@
         if (comparedData.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Belum ada data. Paste data di atas lalu klik "Bandingkan Data".</td></tr>`;
           document.getElementById("row-count").textContent = "0";
-          document.getElementById("check-all").checked = false;
+          syncCheckAll();
           return;
         }
 
@@ -394,7 +391,7 @@
             <td class="col-no">${i + 1}</td>
             <td class="col-id">${escapeHtml(r.id1)}</td>
             <td class="col-data">${escapeHtml(r.d1)}</td>
-            <td class="col-check"><input type="checkbox" class="row-check" data-key="${r.key}" ${selectedRows.has(r.key) ? "checked" : ""} aria-label="Pilih baris"></td>
+            <td class="col-check"><div class="cb-wrap${selectedRows.has(r.key) ? " checked" : ""}"><input type="checkbox" class="row-check" data-key="${r.key}" ${selectedRows.has(r.key) ? "checked" : ""} aria-label="Pilih baris"><svg class="cb-svg" viewBox="0 0 16 16"><polyline points="3.5,8 6.5,11 12.5,5"/></svg></div></td>
             <td class="col-id cell-clickable">${escapeHtml(r.id2)}</td>
             <td class="col-data cell-clickable">${escapeHtml(r.d2)}</td>
             <td class="col-res"><span class="badge ${badgeClass}">${r.result}</span></td>
@@ -402,9 +399,30 @@
           tbody.appendChild(tr);
         });
         document.getElementById("row-count").textContent = filtered.length;
-        const visibleKeys = filtered.map(r => r.key);
+        syncCheckAll();
+      }
+
+      function popCheckbox(cb) {
+        cb.classList.add("cb-pop");
+        cb.addEventListener("animationend", () => cb.classList.remove("cb-pop"), { once: true });
+      }
+
+      function applyPick(tr, cb, on) {
+        const key = Number(cb.dataset.key);
+        on ? selectedRows.add(key) : selectedRows.delete(key);
+        cb.checked = on;
+        const wrap = cb.closest(".cb-wrap");
+        if (wrap) wrap.classList.toggle("checked", on);
+        if (tr) tr.classList.toggle("picked", on);
+        popCheckbox(cb);
+      }
+
+      function syncCheckAll() {
         const checkAll = document.getElementById("check-all");
-        checkAll.checked = visibleKeys.length > 0 && visibleKeys.every(key => selectedRows.has(key));
+        const wraps = [...document.querySelectorAll("#tbody .row-check")];
+        const allOn = wraps.length > 0 && wraps.every(cb => cb.checked);
+        checkAll.checked = allOn;
+        document.getElementById("check-all-wrap").classList.toggle("checked", allOn);
       }
 
       function escapeHtml(unsafe) {
@@ -428,9 +446,8 @@
       document.getElementById("tbody").addEventListener("change", (e) => {
         const cb = e.target.closest(".row-check");
         if (!cb) return;
-        const key = Number(cb.dataset.key);
-        cb.checked ? selectedRows.add(key) : selectedRows.delete(key);
-        render();
+        applyPick(cb.closest("tr"), cb, cb.checked);
+        syncCheckAll();
       });
 
       document.getElementById("tbody").addEventListener("click", (e) => {
@@ -439,21 +456,16 @@
         const tr = cell.closest("tr");
         const cb = tr.querySelector(".row-check");
         if (!cb) return;
-        const key = Number(cb.dataset.key);
-        if (selectedRows.has(key)) {
-          selectedRows.delete(key);
-        } else {
-          selectedRows.add(key);
-        }
-        render();
+        applyPick(tr, cb, !cb.checked);
+        syncCheckAll();
       });
 
       document.getElementById("check-all").addEventListener("change", (e) => {
-        document.querySelectorAll(".row-check").forEach(cb => {
-          const key = Number(cb.dataset.key);
-          e.target.checked ? selectedRows.add(key) : selectedRows.delete(key);
+        const on = e.target.checked;
+        document.querySelectorAll("#tbody .row-check").forEach(cb => {
+          applyPick(cb.closest("tr"), cb, on);
         });
-        render();
+        syncCheckAll();
       });
 
       document.getElementById("btn-uncheck-all").addEventListener("click", () => {
@@ -462,8 +474,10 @@
           return;
         }
         selectedRows.clear();
-        document.getElementById("check-all").checked = false;
-        render();
+        document.querySelectorAll("#tbody .row-check").forEach(cb => {
+          applyPick(cb.closest("tr"), cb, false);
+        });
+        syncCheckAll();
         showToast("Semua pilihan dilepas");
       });
 
