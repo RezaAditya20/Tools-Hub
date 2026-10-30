@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="preload" href="../fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="../fontawesome/webfonts/fa-duotone-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Italic Fixer</title>
+    <link rel="icon" type="image/svg+xml" href="../icon.svg" />
+    <style>
+      .topbar-row {
+        align-items: flex-start;
+      }
+
+      textarea {
+        min-height: 190px;
+        font-family: inherit;
+        font-size: 0.9375rem;
+        line-height: 1.7;
+        letter-spacing: normal;
+      }
+
+      #dict {
+        min-height: 170px;
+        font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+        font-size: 0.8125rem;
+        line-height: 1.6;
+        letter-spacing: -0.01em;
+      }
+
+      .hint {
+        font-size: 0.6875rem;
+        color: var(--muted);
+        margin: 8px 0 0;
+        line-height: 1.5;
+      }
+
+      /* ── View tabs ── */
+      .tabs {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        background: var(--card);
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+
+      .tab {
+        padding: 5px 14px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+      }
+
+      .tab:hover {
+        color: var(--fg);
+      }
+
+      .tab.active {
+        background: color-mix(in srgb, var(--primary) 14%, transparent);
+        border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+        color: var(--primary);
+      }
+
+      .tab.active:hover {
+        background: color-mix(in srgb, var(--primary) 20%, transparent);
+      }
+
+      /* ── Output ── */
+      .out {
+        border-top: 1px solid var(--border);
+        padding-top: 6px;
+        max-height: 55vh;
+        overflow: auto;
+      }
+
+      .line {
+        display: grid;
+        grid-template-columns: 30px 1fr;
+        gap: 10px;
+        padding: 7px 6px;
+        border-radius: 6px;
+      }
+
+      .line:nth-child(odd) {
+        background: var(--row-hover);
+      }
+
+      .no {
+        font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+        font-size: 0.6875rem;
+        color: var(--muted);
+        text-align: right;
+        padding-top: 5px;
+        user-select: none;
+      }
+
+      .txt {
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.7;
+        font-size: 0.875rem;
+      }
+
+      .out i {
+        font-style: italic;
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .out.hl i {
+        background: rgba(255, 214, 10, 0.16);
+        color: var(--fg);
+        padding: 1px 4px;
+        border-radius: 4px;
+        box-shadow: inset 0 -1px 0 rgba(255, 214, 10, 0.4);
+      }
+
+      #code {
+        margin: 0;
+        padding: 14px;
+        background: var(--bg);
+        border-radius: 8px;
+        font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+        font-size: 0.8125rem;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--fg);
+      }
+
+      #code .tag {
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .empty-msg {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+
+      /* ── Options row ── */
+      .opts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+        margin-bottom: 12px;
+      }
+
+      .summary-row strong {
+        color: var(--fg);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <script src="../navbar.js"></script>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Italic Fixer</h1>
+            <p class="subtitle">
+              Bungkus kosakata bahasa Inggris pakai <code>&lt;i&gt;</code> otomatis - <code>kinds of jobs</code> jadi
+              <code>&lt;i&gt;kinds of jobs&lt;/i&gt;</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="panel-group">
+        <div class="panel-title-row">
+          <div class="panel-title">
+            <h2>1. Teks Asli</h2>
+            <p>Paste teks berbahasa Indonesia yang memuat kosakata Inggris, satu butir per baris.</p>
+          </div>
+          <div class="btn-group">
+            <button id="btn-sample" class="panel-btn" title="Isi dengan contoh data">Contoh</button>
+            <button id="btn-clear" class="panel-btn" title="Kosongkan input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              Bersihkan
+            </button>
+          </div>
+        </div>
+        <div class="panel">
+          <textarea
+            id="input"
+            spellcheck="false"
+            placeholder="Mengidentifikasi jenis-jenis pekerjaan (kinds of jobs) secara tepat sesuai konteks.&#10;Melengkapi kalimat menggunakan pola might/could + verb 1 untuk menyatakan kemungkinan."
+          ></textarea>
+          <p class="hint">
+            Frasa Inggris di dalam <code>( kurung )</code> dan <code>" tanda kutip "</code> dibungkus sebagai satu
+            frasa utuh. Di luar itu, kata Inggris berdekatan digabung sampai bertemu kata Indonesia - jadi
+            <code>too dan enough</code> jadi <code>&lt;i&gt;too&lt;/i&gt; dan &lt;i&gt;enough&lt;/i&gt;</code>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Hasil -->
+      <div class="panel-group">
+        <div class="panel-title-row">
+          <div class="panel-title">
+            <h2>2. Hasil</h2>
+            <p>Pratinjau hasil atau kode HTML siap tempel ke Word / website.</p>
+          </div>
+          <div class="btn-group">
+            <button id="btn-highlight" class="panel-btn" title="Tandai latar kata Inggris di pratinjau">Sorot</button>
+            <button id="btn-copy" class="panel-btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Salin HTML
+            </button>
+            <button id="btn-download" class="panel-btn" title="Unduh hasil sebagai berkas .html">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Unduh
+            </button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="tabs">
+            <button class="tab active" data-view="preview">Pratinjau</button>
+            <button class="tab" data-view="code">Kode HTML</button>
+          </div>
+          <div class="out" id="out">
+            <div id="preview"></div>
+            <pre id="code" hidden></pre>
+          </div>
+          <div class="empty-msg" id="empty-msg">Belum ada teks. Paste data di panel 1 atau klik Contoh.</div>
+          <div class="summary-row" id="summary-row" style="display: none">
+            <span id="stat-lines"></span>
+            <span id="stat-phrases"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pengaturan -->
+      <div class="panel-group">
+        <div class="panel-title-row">
+          <div class="panel-title">
+            <h2>3. Pengaturan</h2>
+            <p>Kamus kata Indonesia &amp; opsi penandaan. Cukup diubah bila ada kata yang salah tersorot.</p>
+          </div>
+          <div class="btn-group">
+            <button id="btn-dict-add" class="panel-btn" title="Tambahkan kata terpilih di panel 1 ke kamus">Tambah Kata</button>
+            <button id="btn-dict-reset" class="panel-btn" title="Kembalikan kamus ke daftar default">Kembalikan Default</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="opts">
+            <label class="settings-item">
+              <input type="checkbox" id="opt-merge" checked />
+              Gabung kata berdekatan jadi satu frasa
+            </label>
+            <label class="settings-item">
+              <input type="checkbox" id="opt-strip" checked />
+              Hapus label <code>&lt;i&gt;</code> lama sebelum proses ulang
+            </label>
+          </div>
+          <textarea id="dict" spellcheck="false"></textarea>
+          <p class="hint">
+            Kata yang <b>tidak ada</b> di daftar ini dianggap bahasa Inggris lalu dibungkus <code>&lt;i&gt;</code>.
+            Tulis kata Indonesia yang ikut tersorot di sini (satu baris atau dipisah spasi/koma). Tanda
+            <code>#</code> untuk komentar.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="settings.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        /* ── Reference data ── */
+        const DEFAULT_ID_WORDS = "\n# --- Words taken from the sample data ---\nmengidentifikasi menggunakan kosakata yang berhubungan dengan kegiatan sosial\nsecara tepat sesuai konteks menyusun kalimat atau berkomunikasi menulis\nmempresentasikan biografi seorang tokoh struktur teks dan unsur kebahasaan\nruntut terkait jenis pekerjaan serta tantangan dalam kata untuk menyatakan\nwaktu terjadinya peristiwa pada masa lampau sederhana pola kemungkinan\nberkaitan bencana alam membuat kaidah tata bahasa inggris informasi utama\nrinci dari tentang berbahasa melengkapi menjelaskan makna berbagai pertunjukan\nmenerapkan penggunaan akan datang pertanyaan bagian tubuh manusia hidup sehat\nposter informatif mengenai kebiasaan jelas menceritakan anggota keluarga runut\nungkapan gerakan bertanya merespons nama ruangan profesi orang bekerja sekolah\nfrasa benda kelas percakapan kepemilikan hewan tumbuhan kolam bentuk tunggal\njamak taman posisi menunjukkan kerja permainan bersama teman mendeskripsikan\npositif negatif kehidupan sehari hari permintaan disukai tidak lisan\nmengungkapkan menggunakani tersebut berikut berkenaan berkenaan bahkan pula\nsaja adapun sekaligus diperlukan seharusnya masing-masing setidaknya\n\n# --- Pronouns, particles, quantifiers ---\naku kamu engkau ia dia beliau kami kita kalian mereka saya sendiri masing\nsemua seluruh sebagian beberapa banyak sedikit lain setiap tiap para sang si\nini itu sini situ sana begitu begini begitulah demikian para masing-masing\nku mu nya sendirinya segala serba\n\n# --- Prepositions, conjunctions, connectors ---\ndi ke dari pada dalam luar atas bawah depan belakang samping antara oleh\nkarena jika bila kalau agar supaya sehingga namun tetapi tapi maupun\nsedangkan sementara walaupun meskipun kendati seperti bagai sebagai yaitu\nyakni ialah adalah bukan tak jangan belum sudah telah sedang masih pun juga\nhanya cukup sangat terlalu paling lebih kurang hampir sekitar sejak hingga\nsampai menuju melalui berkat tanpa guna bagi antar hingga sementara\nseolah seakan sebab lalu kemudian selanjutnya akhirnya misalnya contohnya\nterutama khusus umumnya biasanya seringkadang kadang selalu tak pernah\n\n# --- Common verbs ---\nmakan minum tidur bangun berangkat pulang tiba pergi belajar mengajar\nbermain berlari berjalan berbicara bercakap berkata mengatakan menyampaikan\nmenuturkan menerangkan memaparkan menunjukkan melihat mengamati memerhatikan\nmendengar mendengarkan merasakan memikirkan berpikir mengetahui mengenal\nmemahami menghafal mengingat melupakan merencanakan memutuskan memilih\nmenentukan mencari menemukan mendapat mendapatkan memperoleh mengumpulkan\nmenyimpan mengeluarkan memasukkan membuka menutup memasang melepas mengikat\nmemotong membangun membikin memperbaiki mengubah mengganti memindahkan\nmenggeser menarik mendorong mengangkat menjatuhkan melempar menangkap\nmemegang membawa mengantar menjemput menyusul mengejar mengikuti mendahului\nmelewati melintas melintasi berhenti menunggu mencegah menghalangi melindungi\nmerawat memelihara membersihkan mencuci menanam memanen memasak menyapu\nmengepel mengurus mengatur mengelola menyelenggarakan menghadiri mengikuti\nberlatih berolahraga berkompetisi memenangkan kalah menolak menerima\nmengizinkan melarang menyuruh meminta meminjam meminjamkan menjual membeli\nmembayar menabung menukar menukarkan bertukar berbagi memberi memberikan\nmembantu menolong berjuang berusaha berharap berencana berniat bermaksud\nmenyangka mengira menilai mengevaluasi menguji memeriksa memverifikasi\nmenyimpulkan memutuskan memilih menggabungkan memisahkan membandingkan\nmembedakan menjelaskan menggambarkan mendeskripsikan menyatakan menyebutkan\nmenyebut mengutip menulis menyalin menyalin mengetik mencetak menerbitkan\nmempublikasikan menyebarkan membagikan menyebar\n\n# --- Common adjectives / states ---\nbaik buruk besar kecil panjang pendek tinggi rendah cepat lambat mahal murah\nmudah sulit senang sedih marah takut heran kagum bangga malu sakit lelah\nlapar haus kenyang penuh kosong bersih kotor baru lama muda tua hangat dingin\npanas terang gelap ramai sepi ramah sopan jujur rajin malas pintar pandai\ncerdas bodoh cantik tampan jelek kuat lemah hati-hati penting berguna\nberharga menarik membosankan seru menyenangkan mengasyikkan mudah susah\nsederhana kompleks jelas rinci lengkap singkat panjang tepat salah benar\nmungkin pasti pastinya terutama utama pokok dasar lanjutan lanjut tingkat\nrendah tinggi lokal daerah nasional global internasional umum khusus\ntertentu berbagai macam jenis jenis-jenis ragam variasi\n\n# --- School, places, objects ---\nsekolah kelas ruang ruangan gedung lapangan kantor pasar toko masjid gereja\ngereja perpustakaan laboratorium lab kantin aula koridor tangga lantai atap\ndinding lantai pintu jendela meja kursi papan tulis kapur spidol buku\nbuku-buku kertas pensil pulpen penghapus penggaris ransel tas sepatu seragam\ntopi jam papan papan nama peta globe globe lampukipas meja-kita peralatan\nperangkat komputer laptop layar papan tik keyboard printer kabel stopkontak\nlab dapur kamar kamar-mandi wc toilet taman halaman garasi dapur lemari\nkulkas telepon televisi radio koran majalah surat kabar\n\n# --- People, jobs, family ---\nguru kepala-sekolah guru-guru murid siswa peserta-didik petugas penjaga\nsatpam petugas-kebersihan petugas-kantin koki juru-masak petani nelayan\npeternak penambang pabrik buruh karyawan pegawai direktur manajer pemilik\npengusaha pedagang penjual pembeli pelanggan dokter perawat bidan apoteker\napoteker insinyur arsitek jaksa hakim polisi tentara pemadam penyanyi\npenari aktor artis atlet pemain olahragawan wartawan jurnalis fotografer\npengacara notaris penerjemah pemandu pemandu-wisata penjaga-taman pilot\nmasinis sopir supir tukang sopir-angkot pengemudi penjual koran ibu-bapa\norangtua ayah ibu bapak nenek kakek kakek-nenek cucu momong adik kakak\nsaudara saudari saudara-saudari keluarga sanak saudara kerabat tetangga\nteman-teman kawan sahabat sahabat karib rekan partner musuh\n\n# --- Body, health ---\ntubuh badan kepala rambut alis mata telinga hidung mulut gigi lidah bibir\nleher bahu lengan siku tangan jari kuku punggung dada perut pinggang pinggul\nkaki lutut betis tumit penyakit gejala demam batuk flu pilek asma alergi\nluka perban obat vitamin makanan-minuman minuman udara olahraga istirahat\ntidur sarapan makanan bergizi gizi seimbang kebersihan kebiasaan pola-hidup\nkebugaran kesehatan rumah-sakit klinik puskesmas\n\n# --- Nature, disasters, animals, plants ---\nalam bencana gempa bumi tsunami banjir longsor gunung-gunung berapi letusan\nangin-puting-belitung angin topan kemarau kekeringan kebakaran hutan cuaca\niklim hujan deras angin kencang petir kilat awan kabut embun salju es\nsungai danau laut samudra lautan pantai pulau hutan bukit gunung lembah\nsawah ladang kebun tanah batu pasir tanaman tumbuhan bunga pohon rumput\nrerumputan daun akar batang buah biji hewan binatang burung ikan katak\nular tikus kucing anjing ayam bebek kambing sapi kerbau kuda gajah harimau\nsinga monyet ular-lebah lebah nyamuk kupu-kupu cacing siput kodok pohon-pohon\ntaman-taman kolam ikan-koi eceng-gondok teratai\n\n# --- Activities, likes, time ---\npermainan perjalanan liburan wisata rekreasi piknik pesta ulang-tahun\nperayaan upacara lomba kompetisi pertandingan festival konser pertunjukan\nfilm serial lagu musik buku-cerita dongeng hobi kesenangan minat bakat\nkesukaan ketidaksukaan kemampuan keterampilan prestasi tantangan rintangan\nkendala hambatan kesulitan masalah solusi jalan-keluar pagi siang sore malam\ntadi kemarin nanti besok lusa detik menit jam hari minggu bulan tahun\npekan akhir-minggu hari-libur masa-lampau masa-depan sekarang tiba-waktu\ndulu kelak\n\n# --- Generic descriptor filler words ---\nkegiatan-kegiatan tujuan capaian pembelajaran materi indikator kompetensi\nkecakapan literasi numerasi sains seni budaya agama kewarganegaraan\npendidikan jasmani keterampilan bukti demonstrasi kineria capaian peserta\ndidik komponen elemen aspek dimensi silabus rencana pelaksanaan langkah\nkegiatan pendahuluan inti penutup angket kuis tes ujian ulangan tugas\nlembar-kerja LKPD instrumen penilaian rubrik skala butir soal ajuan\npertanyaan-pertanyaan jawaban pernyataan isian singkat uraian ganda\npilihan majemuk benar-salah contoh-contoh ilustrasi gambar diagram grafik\ntabel bagan skema rancangan proyek produk karya hasil proses tahapan\ntahap awal akhir lanjutan pertama kedua ketiga keempat kelima\n";
+        const SAMPLE_TEXT = "Mengidentifikasi dan menggunakan kosakata yang berhubungan dengan kegiatan sosial secara tepat sesuai konteks.\nMenggunakan quantifiers yang tepat untuk menyusun kalimat atau berkomunikasi sesuai konteks.\nMenulis dan mempresentasikan biografi seorang tokoh menggunakan struktur teks dan unsur kebahasaan yang tepat secara runtut.\nMengidentifikasi dan menggunakan kosakata bahasa Inggris terkait jenis-jenis pekerjaan (kinds of jobs) serta tantangan dalam pekerjaan tersebut (difficulties of each job) secara tepat sesuai konteks.\nMengidentifikasi dan menggunakan kata ago untuk menyatakan waktu terjadinya peristiwa pada masa lampau dalam kalimat bahasa Inggris secara tepat sesuai konteks.\nMelengkapi kalimat bahasa Inggris sederhana menggunakan pola might/could + verb 1 untuk menyatakan kemungkinan secara tepat sesuai konteks.\nMengidentifikasi dan menggunakani kosakata bahasa Inggris yang berkaitan dengan bencana alam (natural disasters) secara tepat.\nMembuat kalimat sederhana menggunakan passive voice secara tepat sesuai kaidah tata bahasa.\nMengidentifikasi informasi utama dan informasi rinci dari teks berbahasa Inggris tentang bencana alam (natural disasters) secara tepat.\nMelengkapi dan menyusun kalimat bahasa Inggris sederhana menggunakan too dan enough secara tepat sesuai konteks.\nMengidentifikasi serta menjelaskan makna kosakata bahasa Inggris terkait berbagai jenis pertunjukan (kinds of shows) secara tepat.\nMenerapkan penggunaan present simple untuk menjelaskan peristiwa yang akan datang secara tepat.\nMembuat kalimat pertanyaan menggunakan subject questions dan object questions secara tepat sesuai kaidah tata bahasa.\nMengidentifikasi serta menggunakan kosakata bahasa Inggris tentang bagian tubuh manusia (human body) dan pola hidup sehat (healthy living) secara tepat.\nMelengkapi serta menyusun kalimat sederhana menggunakan present perfect continuous secara tepat sesuai kaidah tata bahasa.\nMembuat poster informatif mengenai kebiasaan hidup sehat (healthy habits) menggunakan kosakata dan struktur kalimat yang tepat.\nMempresentasikan poster tentang kebiasaan hidup sehat (healthy habits) menggunakan kosakata dan kalimat sederhana dalam bahasa Inggris secara jelas dan tepat.\nMengidentifikasi dan menyebutkan kosakata bahasa Inggris yang berkaitan dengan anggota keluarga (family members) secara tepat.\nMenceritakan anggota keluarga dalam bahasa Inggris menggunakan kosakata dan kalimat sederhana secara tepat dan runut.\nMenulis kalimat sederhana menggunakan ungkapan “Yes, it is” / “No, it isn’t” dan “Yes, they are” / “No, they aren’t” secara tepat sesuai konteks.\nMenggunakan gerakan tubuh untuk bertanya dan merespons pertanyaan tentang nama-nama ruangan serta profesi orang yang bekerja di sekolah dalam bahasa Inggris secara tepat.\nMengidentifikasi dan menyebutkan nama-nama ruangan di sekolah dalam bahasa Inggris secara tepat.\nMenulis frasa dan kalimat sederhana menggunakan demonstrative pronouns (this, that, these, dan those) untuk bertanya dan merespons pertanyaan tentang benda-benda di dalam kelas secara tepat.\nMenggunakan possessive adjectives (my, your, his, her, dan our) dalam percakapan sederhana untuk menyatakan kepemilikan secara tepat.\nMengidentifikasi dan menyebutkan kosakata bahasa Inggris yang berkaitan dengan hewan dan tumbuhan yang hidup di kolam (life in a pond) secara tepat.\nMenulis frasa sederhana menggunakan bentuk tunggal (singular) dan jamak (plural) pada nama-nama hewan dan tumbuhan yang hidup di kolam dan taman dalam bahasa Inggris secara tepat.\nMenulis frasa dan kalimat sederhana menggunakan prepositions of place (in, on, under, dan next to) untuk menunjukkan posisi hewan dan tumbuhan di kolam dan taman dalam bahasa Inggris secara tepat.\nMengidentifikasi dan menyebutkan kosakata kata kerja bahasa Inggris yang berkaitan dengan berbagai kegiatan dan permainan bersama teman secara tepat.\nMenggunakan Present Simple Tense dalam bentuk kalimat positif (affirmative) dan negatif (negative) untuk mendeskripsikan kegiatan bersama teman dalam kehidupan sehari-hari secara tepat.\nMenggunakan pertanyaan dan jawaban Yes/No Questions dalam bentuk Present Simple Tense untuk bertanya dan merespons permintaan sederhana dalam bahasa Inggris secara tepat sesuai konteks kehidupan sehari-hari.\nMengidentifikasi dan menyebutkan kosakata bahasa Inggris yang berkaitan dengan kegiatan yang disukai dan tidak disukai (likes and dislikes) secara tepat.\nMengungkapkan kegiatan yang disukai dan tidak disukai (likes and dislikes) secara lisan menggunakan kosakata dan ungkapan sederhana dalam bahasa Inggris secara tepat.\nMenulis kalimat sederhana menggunakan Present Simple Tense dengan pola like, likes, don’t like, dan doesn’t like untuk menyatakan kegiatan yang disukai dan tidak disukai dalam bahasa Inggris secara tepat.";
+
+        const LS_KEY = "italic-fixer";
+
+        /* ── Engine ── */
+        const TOKEN_RE = /[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[-'\u2019][A-Za-zÀ-ÖØ-öø-ÿ]+)*|[0-9]+/g;
+        const SEGMENT_RE = /(\([^()\n]*\)|“[^”\n]*”|‘[^’\n]*’|"[^"\n]*")/g;
+
+        function buildIdSet(dictText) {
+          const clean = dictText
+            .split(/\r?\n/)
+            .filter((line) => !line.trim().startsWith("#"))
+            .join(" ");
+          return new Set(
+            clean
+              .split(/[\s,;]+/)
+              .map((w) => w.toLowerCase().replace(/^[-'\u2019]+|[-'\u2019]+$/g, ""))
+              .filter((w) => w.length > 0)
+          );
+        }
+
+        function isIndonesianWord(word, idSet) {
+          const w = word.toLowerCase().replace(/^[-'\u2019]+|[-'\u2019]+$/g, "");
+          if (!w) return true;
+          if (idSet.has(w)) return true;
+          if (/[-']/.test(w)) {
+            return w
+              .split(/[-']/)
+              .filter(Boolean)
+              .every((p) => idSet.has(p));
+          }
+          return false;
+        }
+
+        function escapeHtml(text) {
+          return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function isMergeableGap(gap, opts) {
+          if (/^\s*$/.test(gap)) return true;
+          if (opts.mergePunct && /^\s*[,/;|]\s*$/.test(gap)) return true;
+          return false;
+        }
+
+        function wrapEnglishRuns(text, idSet, opts) {
+          const tokens = [];
+          TOKEN_RE.lastIndex = 0;
+          let m;
+          while ((m = TOKEN_RE.exec(text))) {
+            tokens.push({
+              value: m[0],
+              start: m.index,
+              end: m.index + m[0].length,
+              isDigit: /^[0-9]+$/.test(m[0]),
+            });
+          }
+
+          const flags = tokens.map((t) =>
+            t.isDigit ? "num" : isIndonesianWord(t.value, idSet) ? "id" : "en"
+          );
+
+          let out = "";
+          let cursor = 0;
+          let count = 0;
+          let i = 0;
+          while (i < tokens.length) {
+            if (flags[i] !== "en") {
+              i++;
+              continue;
+            }
+            let j = i;
+            while (
+              j + 1 < tokens.length &&
+              flags[j + 1] !== "id" &&
+              isMergeableGap(text.slice(tokens[j].end, tokens[j + 1].start), opts)
+            ) {
+              j++;
+            }
+            out += text.slice(cursor, tokens[i].start);
+            out += "<i>" + text.slice(tokens[i].start, tokens[j].end) + "</i>";
+            cursor = tokens[j].end;
+            count++;
+            i = j + 1;
+          }
+          out += text.slice(cursor);
+          return { html: out, count };
+        }
+
+        function processSegment(segment, idSet, opts) {
+          const open = segment[0];
+          const close = segment[segment.length - 1];
+          const inner = segment.slice(1, -1);
+          const trimmed = inner.trim();
+
+          const words = [];
+          TOKEN_RE.lastIndex = 0;
+          let m;
+          while ((m = TOKEN_RE.exec(trimmed))) words.push(m[0]);
+
+          if (words.length === 0) return { html: segment, count: 0 };
+
+          const allEnglish = words.every((w) => !isIndonesianWord(w, idSet));
+          if (allEnglish) return { html: open + "<i>" + trimmed + "</i>" + close, count: 1 };
+
+          const res = wrapEnglishRuns(inner, idSet, opts);
+          return { html: open + res.html + close, count: res.count };
+        }
+
+        function italicizeText(rawText, options) {
+          const opts = Object.assign({ mergePunct: true, stripTags: true }, options);
+          const idSet = buildIdSet(opts.idWords || DEFAULT_ID_WORDS);
+          const source = opts.stripTags ? rawText.replace(/<\/?(i|em|b|strong)>/gi, "") : rawText;
+
+          let total = 0;
+          const htmlLines = source.split(/\r?\n/).map((line) => {
+            const safe = escapeHtml(line);
+            const parts = [];
+            let last = 0;
+            SEGMENT_RE.lastIndex = 0;
+            let m;
+            while ((m = SEGMENT_RE.exec(safe))) {
+              const before = m.index > last ? wrapEnglishRuns(safe.slice(last, m.index), idSet, opts) : { html: "", count: 0 };
+              parts.push(before.html);
+              total += before.count;
+              const seg = processSegment(m[0], idSet, opts);
+              parts.push(seg.html);
+              total += seg.count;
+              last = m.index + m[0].length;
+            }
+            if (last < safe.length) {
+              const rest = wrapEnglishRuns(safe.slice(last), idSet, opts);
+              parts.push(rest.html);
+              total += rest.count;
+            }
+            return parts.join("");
+          });
+
+          return { html: htmlLines.join("\n"), count: total, lineCount: htmlLines.length };
+        }
+
+        /* ── UI ── */
+        const $ = (id) => document.getElementById(id);
+        const input = $("input");
+        const dict = $("dict");
+        const preview = $("preview");
+        const code = $("code");
+        const out = $("out");
+
+        let html = "";
+        let phrases = 0;
+        let dictDirty = false;
+
+        function showToast(msg, err) {
+          const c = $("toast-container");
+          const t = document.createElement("div");
+          t.className = "toast" + (err ? " error" : "");
+          t.textContent = msg;
+          c.appendChild(t);
+          requestAnimationFrame(() => t.classList.add("show"));
+          setTimeout(() => {
+            t.classList.remove("show");
+            setTimeout(() => t.remove(), 220);
+          }, 2200);
+        }
+
+        function copyText(text, msg) {
+          navigator.clipboard
+            .writeText(text)
+            .then(() => showToast(msg))
+            .catch(() => showToast("Gagal menyalin", true));
+        }
+
+        function run() {
+          const text = input.value;
+
+          if (!text.trim()) {
+            html = "";
+            phrases = 0;
+            preview.innerHTML = "";
+            code.textContent = "";
+            $("empty-msg").style.display = "";
+            $("summary-row").style.display = "none";
+            savePrefs();
+            return;
+          }
+
+          const res = italicizeText(text, {
+            idWords: dict.value,
+            mergePunct: $("opt-merge").checked,
+            stripTags: $("opt-strip").checked,
+          });
+
+          html = res.html;
+          phrases = res.count;
+
+          /* Preview per baris */
+          const frag = document.createDocumentFragment();
+          res.html.split("\n").forEach((line, i) => {
+            const row = document.createElement("div");
+            row.className = "line";
+
+            const no = document.createElement("span");
+            no.className = "no";
+            no.textContent = String(i + 1);
+
+            const txt = document.createElement("div");
+            txt.className = "txt";
+            txt.innerHTML = line || "&nbsp;";
+
+            row.appendChild(no);
+            row.appendChild(txt);
+            frag.appendChild(row);
+          });
+          preview.innerHTML = "";
+          preview.appendChild(frag);
+
+          /* Kode HTML - tag ditampilkan sebagai teks, bukan elemen */
+          code.innerHTML = "";
+          res.html.split(/(<\/?i>)/g).forEach((part) => {
+            if (/^<\/?i>$/.test(part)) {
+              const s = document.createElement("span");
+              s.className = "tag";
+              s.textContent = part;
+              code.appendChild(s);
+            } else {
+              code.appendChild(document.createTextNode(part));
+            }
+          });
+
+          $("empty-msg").style.display = "none";
+          $("summary-row").style.display = "";
+          $("stat-lines").innerHTML = "<strong>" + res.lineCount + "</strong> baris";
+          $("stat-phrases").innerHTML = "<strong>" + phrases + "</strong> frasa Inggris";
+          savePrefs();
+        }
+
+        let timer = null;
+        function schedule() {
+          clearTimeout(timer);
+          timer = setTimeout(run, 180);
+        }
+
+        /* ── Preferences (SQLite via Settings, localStorage fallback) ── */
+        function currentOpts() {
+          return { merge: $("opt-merge").checked, strip: $("opt-strip").checked };
+        }
+
+        function savePrefs() {
+          if (!window.Settings) return;
+          Settings.set(LS_KEY + "-opts", currentOpts());
+          if (dictDirty) Settings.set(LS_KEY + "-dict", dict.value);
+        }
+
+        function loadPrefs() {
+          if (!window.Settings) return;
+          const opts = Settings.get(LS_KEY + "-opts");
+          if (opts && typeof opts === "object") {
+            if (typeof opts.merge === "boolean") $("opt-merge").checked = opts.merge;
+            if (typeof opts.strip === "boolean") $("opt-strip").checked = opts.strip;
+          }
+          const saved = Settings.get(LS_KEY + "-dict");
+          if (typeof saved === "string" && saved.trim()) {
+            dict.value = saved;
+            dictDirty = saved !== DEFAULT_ID_WORDS;
+          }
+        }
+
+        /* ── Events ── */
+        input.addEventListener("input", schedule);
+        dict.addEventListener("input", () => {
+          dictDirty = true;
+          schedule();
+        });
+        $("opt-merge").addEventListener("change", run);
+        $("opt-strip").addEventListener("change", run);
+
+        $("btn-sample").addEventListener("click", () => {
+          input.value = SAMPLE_TEXT;
+          run();
+          showToast("Contoh data dimuat");
+        });
+
+        $("btn-clear").addEventListener("click", () => {
+          input.value = "";
+          run();
+          input.focus();
+        });
+
+        $("btn-copy").addEventListener("click", () => {
+          if (!html) return;
+          copyText(html, phrases + " frasa disalin");
+        });
+
+        $("btn-download").addEventListener("click", () => {
+          if (!html) return;
+          const doc =
+            "<!doctype html>\n<html lang=\"id\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Hasil Italic Fixer</title>\n" +
+            "<style>body{font-family:'Segoe UI',system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;line-height:1.8;color:#e8e8ec;background:#0a0a0b}li{margin-bottom:10px}i{font-style:italic}</style>\n" +
+            "</head>\n<body>\n<ol>\n" +
+            html.split("\n").map((l) => "<li>" + l + "</li>").join("\n") +
+            "\n</ol>\n</body>\n</html>";
+          const blob = new Blob([doc], { type: "text/html;charset=utf-8" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "hasil-italic.html";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+          showToast("Hasil-italic.html diunduh");
+        });
+
+        $("btn-dict-reset").addEventListener("click", () => {
+          dict.value = DEFAULT_ID_WORDS;
+          dictDirty = false;
+          if (window.Settings) Settings.set(LS_KEY + "-dict", "");
+          run();
+          showToast("Kamus dikembalikan ke default");
+        });
+
+        $("btn-dict-add").addEventListener("click", () => {
+          const sel = (input.value.substring(input.selectionStart, input.selectionEnd) || "").trim();
+          if (!sel) {
+            showToast("Pilih dulu kata di panel 1", true);
+            return;
+          }
+          const word = sel
+            .split(/\s+/)[0]
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}-]/gu, "");
+          if (!word) {
+            showToast("Tidak ada kata yang bisa ditambahkan", true);
+            return;
+          }
+          if (dict.value.toLowerCase().split(/\s+/).indexOf(word) !== -1) {
+            showToast('"' + word + '" sudah ada di kamus');
+            return;
+          }
+          dict.value = dict.value.trimEnd() + "\n" + word;
+          dictDirty = true;
+          run();
+          showToast('"' + word + '" ditambahkan ke kamus');
+        });
+
+        /* View tabs */
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const isPreview = tab.dataset.view === "preview";
+            preview.hidden = !isPreview;
+            code.hidden = isPreview;
+            $("btn-highlight").style.display = isPreview ? "" : "none";
+          });
+        });
+
+        /* Highlight toggle */
+        $("btn-highlight").addEventListener("click", function () {
+          const on = !out.classList.contains("hl");
+          out.classList.toggle("hl", on);
+          this.textContent = on ? "Berhenti Sorot" : "Sorot";
+        });
+
+        /* ── Boot ── */
+        dict.value = DEFAULT_ID_WORDS;
+        (async () => {
+          if (window.Settings) await Settings.init();
+          loadPrefs();
+          run();
+        })();
+      })();
+    </script>
+  </body>
+</html>
