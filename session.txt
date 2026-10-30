@@ -12,3 +12,4 @@
 2026-10-01 14:09 (remove-torrent-school) - Hapus page & function Torrent Search dan School Notes (termasuk engines.py, My-List, backup, copy legacy, entry menu, route server)
 2026-10-01 14:27 (vercel-fix) - Tambah vercel.json + .vercelignore agar deploy Vercel jadi static site (lewati npm install & build electron-builder)
 2026-10-30 10:17 (italic-fixer) - Tambah tool Italic Fixer (bungkus otomatis kosakata Inggris dengan tag <i> ... ) + daftar tool di index.html dan navbar.js
+2026-10-30 10:30 (italic-fixer) - Sembunyikan textarea kamus di Pengaturan (toggle Kamus), tambah opsi kapital huruf paling depan tiap baris, dan perluas daftar kata Indonesia jadi 2152 entri
