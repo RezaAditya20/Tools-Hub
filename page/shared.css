@@ -1670,7 +1670,20 @@ textarea {
     .navbar {
         transform: translateX(calc(-100% - 16px));
         transition: none;
-        padding-top: 50px;
+        /* Burger fixed (bottom ~52px) → padding-top jaga jarak "Tools Hub"
+           dari burger, jangan terlalu nempel. */
+        padding-top: 60px;
+        /* Drawer mobile MENIMPA konten (overlay) → background wajib solid,
+           kalau transparan konten di belakang menembus & teksnya bertumpuk.
+           Var tema otomatis ikut light/dark mode. */
+        background: var(--bg);
+        border-right: 1px solid var(--border);
+    }
+
+    /* Bayangan hanya saat terbuka — saat tertutup drawer di luar layar
+       (translateX -100%-16px), blur shadow masih bisa merembet ke tepi kiri. */
+    .navbar.open {
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
     }
 
     .nav-collapse-btn {
