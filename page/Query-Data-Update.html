@@ -747,6 +747,7 @@
           filtered.forEach((f) => {
             const isSelected = Boolean(selectedMap[f.name]);
             const tr = document.createElement("tr");
+            tr.dataset.field = f.name;
             if (isSelected) tr.classList.add("selected");
             tr.innerHTML = `
             <td><div class="cb-wrap${isSelected ? " checked" : ""}">
@@ -788,6 +789,7 @@
               if (!nextVal) {
                 clearFieldLetter(f.name);
                 state.letters[f.name] = "";
+                state.order = state.order.filter((n) => n !== f.name);
               }
               reorderRows();
               if (nextVal) {
@@ -814,7 +816,9 @@
         }
 
         /* Field tercentang di-pin ke paling atas, dipisah garis dari yang
-           belum tercentang. Urutan di dalam tiap grup tetap urutan field. */
+           belum tercentang. Urutan grup pin mengikuti state.order: hasil
+           Terapkan dari modal preview jadi urut sesuai modal (atas ke bawah),
+           sedangkan centang manual mengikuti urutan pencentangan. */
         function createPinSep() {
           const sep = document.createElement("tr");
           sep.className = "pin-sep";
@@ -828,7 +832,12 @@
           if (oldSep) oldSep.remove();
           const rows = [...tbody.querySelectorAll("tr")];
           if (!rows.length) return;
-          const pinned = rows.filter((r) => r.classList.contains("selected"));
+          const orderIndex = new Map(state.order.map((name, i) => [name, i]));
+          const byOrder = (tr) => {
+            const i = orderIndex.get(tr.dataset.field);
+            return i === undefined ? Infinity : i;
+          };
+          const pinned = rows.filter((r) => r.classList.contains("selected")).sort((a, b) => byOrder(a) - byOrder(b));
           const rest = rows.filter((r) => !r.classList.contains("selected"));
           pinned.forEach((r) => tbody.appendChild(r));
           if (pinned.length && rest.length) tbody.appendChild(createPinSep());
