@@ -974,28 +974,49 @@
         return parts.map((s) => s.trim()).filter(Boolean);
       }
 
+      /* Tampilan modal: Title Case dari teks mentah; akronim yang memang
+         sudah huruf semua (NIS, NIK, RT, HP) dipertahankan, dan pemisah
+         _ - . / ikut tersimpan apa adanya. */
+      function titleCaseToken(raw) {
+        return String(raw || "")
+          .split(/\s+/)
+          .map((word) =>
+            word
+              .split(/([_\-./]+)/)
+              .map((part, i) => {
+                if (i % 2 === 1) return part;
+                if (part.length > 1 && part === part.toUpperCase()) return part;
+                return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+              })
+              .join("")
+          )
+          .join(" ");
+      }
+
       /* Susun rencana seleksi dari teks paste: pisah token → tentukan panel
          utama → cocokkan tiap token secara berurutan. Murni fungsi murni
          (panel di-inject) supaya bisa diuji tanpa DOM. */
       function planPaste(text, panels) {
         /* Pisah dulu di teks mentah (tab/baris/spasi ganda), normalisasi belakangan */
-        let tokens = splitPasteTokens(text);
-        if (!tokens.length) return { tokens: [], matches: [] };
+        let raws = splitPasteTokens(text);
+        if (!raws.length) return { tokens: [], matches: [], rows: [] };
 
-        const norm = (tk) => normLabel(tk);
-        const hasMatch = (tk) => panels.some((p) => findBestField(norm(tk), p));
+        const hasMatch = (tk) => panels.some((p) => findBestField(normLabel(tk), p));
         /* Satu token utuh tidak cocok → coba pisah dengan 2+ spasi atau titik koma */
-        if (tokens.length === 1 && !hasMatch(tokens[0])) {
-          const alt = tokens[0]
+        if (raws.length === 1 && !hasMatch(raws[0])) {
+          const alt = raws[0]
             .split(/\s{2,}|;/)
             .map((s) => s.trim())
             .filter(Boolean);
-          if (alt.length > 1) tokens = alt;
+          if (alt.length > 1) raws = alt;
         }
-        /* Token dinormalkan (huruf kecil, _/- jadi spasi) supaya
-           "NIS", "No. HP", "birth_place" ikut cocok */
-        tokens = tokens.map(norm).filter(Boolean);
-        if (!tokens.length) return { tokens: [], matches: [] };
+        /* Pasangan raw + token: raw untuk tampilan modal (huruf sesuai
+           aslinya lalu di-Title-Case), token ternormalkan untuk mencocokkan */
+        const pairs = raws
+          .map((raw) => ({ raw, token: normLabel(raw) }))
+          .filter((p) => p.token);
+        if (!pairs.length) return { tokens: [], matches: [], rows: [] };
+        const tokens = pairs.map((p) => p.token);
 
         /* Panel utama: kecocokan terbanyak; seri → skor token pertama;
            masih seri → panel pertama (Profile). */
@@ -1012,7 +1033,8 @@
 
         const matches = [];
         const rows = [];
-        tokens.forEach((t) => {
+        pairs.forEach((p, i) => {
+          const t = tokens[i];
           let idx = main;
           let name = findBestField(t, panels[idx]);
           if (!name && panels.length > 1) {
@@ -1020,7 +1042,7 @@
             name = findBestField(t, panels[idx]);
           }
           /* rows berisi semua token (cocok maupun tidak) untuk preview modal */
-          rows.push({ token: t, panel: name ? idx : main, name: name || null });
+          rows.push({ token: t, raw: p.raw, panel: name ? idx : main, name: name || null });
           if (name) matches.push({ panel: idx, name });
         });
         return { tokens, matches, rows };
@@ -1083,10 +1105,13 @@
           const div = document.createElement("div");
           div.className = "paste-row" + (row.name ? "" : " miss");
 
+          /* Tampilan Title Case dari teks asli (bukan token ternormalkan) */
+          const label = titleCaseToken(row.raw);
+
           const token = document.createElement("span");
           token.className = "paste-token";
-          token.textContent = row.token;
-          token.title = row.token;
+          token.textContent = label;
+          token.title = label;
 
           const arrow = document.createElement("span");
           arrow.className = "paste-arrow";
@@ -1098,7 +1123,7 @@
           const del = document.createElement("button");
           del.type = "button";
           del.className = "paste-del";
-          del.setAttribute("aria-label", "Hapus baris " + row.token);
+          del.setAttribute("aria-label", "Hapus baris " + label);
           del.textContent = "×";
           del.addEventListener("click", () => {
             div.remove();
