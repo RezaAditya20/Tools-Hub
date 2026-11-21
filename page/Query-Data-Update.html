@@ -1261,6 +1261,31 @@
           letter.disabled = !settings.formulaMode || !sel.value;
           letter.placeholder = letter.disabled ? "–" : "A";
         });
+        validateModalLetters();
+      }
+
+      /* Cek huruf ganda antar baris modal preview: huruf yang sama di lebih
+         dari satu baris ditandai .dup (border merah + shake) sejak diketik,
+         bukan hanya saat Terapkan. */
+      function validateModalLetters() {
+        const rows = [...pasteRowsEl.querySelectorAll(".paste-row")];
+        const usage = new Map();
+        rows.forEach((row) => {
+          const sel = row.querySelector(".paste-map");
+          const letter = row.querySelector(".paste-letter");
+          if (!sel || !letter || !sel.value || !settings.formulaMode) return;
+          const v = letter.value.trim().toUpperCase();
+          if (!v) return;
+          if (!usage.has(v)) usage.set(v, []);
+          usage.get(v).push(letter);
+        });
+        rows.forEach((row) => {
+          const letter = row.querySelector(".paste-letter");
+          if (!letter) return;
+          const v = letter.value.trim().toUpperCase();
+          const dup = Boolean(settings.formulaMode && v && (usage.get(v) || []).length > 1);
+          letter.classList.toggle("dup", dup);
+        });
       }
 
       function openPasteModal(plan) {
@@ -1296,16 +1321,12 @@
           letter.addEventListener("input", () => {
             const v = letter.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 1);
             if (letter.value !== v) letter.value = v;
-            /* Penanda konflik live: huruf sudah dipakai field lain */
-            const field = sel.value ? sel.value.slice(sel.value.indexOf("|") + 1) : "";
-            const owner = v ? letterOwner[v] : "";
-            letter.classList.toggle("dup", Boolean(owner && owner !== field));
+            validateModalLetters();
           });
 
           sel.addEventListener("change", () => {
             /* Ganti field → isi huruf ikut menyesuaikan field barunya */
             letter.value = letterFor(sel.value);
-            letter.classList.remove("dup");
             syncModalLetterState();
             updatePasteTotal();
           });
@@ -1318,7 +1339,10 @@
           del.addEventListener("click", () => {
             div.remove();
             if (!pasteRowsEl.children.length) closePasteModal();
-            else updatePasteTotal();
+            else {
+              validateModalLetters();
+              updatePasteTotal();
+            }
           });
 
           div.append(token, sel, letter, del);

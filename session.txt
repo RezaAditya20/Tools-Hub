@@ -29,3 +29,4 @@
 2026-11-21 13:33 (query-update) - Perbaiki centering vertikal teks "Mode formula" di modal preview paste (line-height 1 pada label)
 2026-11-21 13:33 (query-update) - Field tercentang di panel Profile/Student otomatis di-pin ke paling atas dan dipisah garis putus-putus dari yang belum tercentang
 2026-11-21 13:41 (query-update) - Urutan field tercentang yang di-pin mengikuti urutan centang; hasil Terapkan modal preview urut dari baris teratas modal
+2026-11-21 13:52 (query-update) - Modal preview paste kini cek huruf formula ganda antar baris secara live (border merah + shake), bukan hanya saat Terapkan
