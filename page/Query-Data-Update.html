@@ -76,7 +76,8 @@
         border-radius: 999px;
         white-space: nowrap;
       }
-      .paste-sub { margin: 0; font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+      /* Angka pada badge total diberi warna biru (primary) */
+      .paste-total .pt-num { color: var(--primary); font-weight: 600; }
       .paste-rows {
         display: flex;
         flex-direction: column;
@@ -104,12 +105,29 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .paste-arrow { flex-shrink: 0; font-size: 0.85rem; color: var(--muted); }
+      /* Panah: inline-flex + line-height 1 supaya glyph pasti di tengah
+         kotaknya, lalu align-self center di sumbu baris */
+      .paste-arrow {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+        font-size: 0.85rem;
+        color: var(--muted);
+        align-self: center;
+      }
+      .paste-token,
+      .paste-map,
+      .paste-del,
+      .paste-row .paste-letter { align-self: center; }
       .paste-map {
         flex: 1;
         min-width: 0;
         font-size: 0.8rem;
-        padding: 5px 26px 5px 8px;
+        /* Tinggi tetap 30px + padding vertikal 0: teks select dipusatkan
+           browser, dan setinggi dengan kolom huruf → rata vertikal */
+        height: 30px;
+        padding: 0 26px 0 8px;
         border-radius: 6px;
         border: 1px solid var(--border);
         /* background-COLOR saja: shorthand `background` akan mematikan
@@ -164,6 +182,12 @@
       .paste-row .paste-letter {
         flex: 0 0 auto;
         min-width: 44px;
+        /* Tinggi sama dengan select (30px), padding vertikal 0, line-height 1
+           → teks/placeholder pasti di tengah, tidak meluber ke atas/bawah */
+        height: 30px;
+        padding-top: 0;
+        padding-bottom: 0;
+        line-height: 1;
         background-color: var(--card);
         border: 1px solid var(--border);
       }
@@ -247,11 +271,6 @@
             <span class="paste-total" id="paste-total">Belum ada field dipilih</span>
           </div>
         </div>
-        <p class="paste-sub">
-          Cek pemetaan tiap kolom — kalau salah (mis. <code>nik</code> harusnya ke field student), ganti lewat dropdown.
-          Baris yang dibiarkan kosong tidak ikut diterapkan. Urutan baris = urutan field di query.
-          Kolom huruf (untuk formula) hanya bisa diisi saat Mode formula aktif — sakelarnya tersambung dengan yang di halaman.
-        </p>
         <div class="paste-rows" id="paste-rows"></div>
         <div class="paste-actions">
           <button class="panel-btn" id="paste-cancel" type="button">Batal</button>
@@ -1176,8 +1195,10 @@
         const values = [...pasteRowsEl.querySelectorAll(".paste-map")].map((s) => s.value).filter(Boolean);
         const per = pasteTargets.map((_, pi) => values.filter((v) => v.indexOf(pi + "|") === 0).length);
         const total = values.length;
-        const breakdown = pasteTargets.map((p, pi) => `${p.label}: ${per[pi]}`).join(" · ");
-        pasteTotalEl.textContent = total ? `${total} field akan tercentang — ${breakdown}` : "Belum ada field dipilih";
+        /* Hanya angka yang diberi span .pt-num (warna biru primary) */
+        const num = (n) => `<b class="pt-num">${n}</b>`;
+        const breakdown = pasteTargets.map((p, pi) => `${p.label}: ${num(per[pi])}`).join(" · ");
+        pasteTotalEl.innerHTML = total ? `${num(total)} field akan tercentang — ${breakdown}` : "Belum ada field dipilih";
         pasteApplyBtn.disabled = total === 0;
       }
 

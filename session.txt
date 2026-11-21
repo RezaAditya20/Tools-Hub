@@ -22,3 +22,6 @@
 2026-11-21 12:28 (query-update) - Tambah kolom Huruf formula di modal preview paste + sakelar Mode formula di modal yang tersambung dua arah dengan checkbox halaman (huruf hanya bisa diisi saat ON, konflik live, diterapkan saat Terapkan)
 2026-11-21 12:28 (query-update) - Saat Terapkan, seleksi & huruf lama di kedua panel di-reset dulu sehingga hasil akhir persis mengikuti daftar paste (reset() per panel sebelum select)
 2026-11-21 12:38 (query-update) - Perbaiki input huruf modal ketutup (tertimpa aturan input[type=text] generik shared.css padding 14px/border 0): pakai class letter-input + selektor .paste-row .paste-letter (0,2,0), dan paste-map pakai background-color supaya panah select shared tetap tampil
+2026-11-21 12:56 (query-update) - Rapikan centering vertikal baris modal: panah inline-flex line-height 1, select & kolom huruf tinggi tetap 30px padding vertikal 0, align-self center pada token/map/del/letter
+2026-11-21 12:56 (query-update) - Badge total: hanya angka (total & per panel) dibungkus .pt-num berwarna primary/biru, sisanya tetap muted
+2026-11-21 12:56 (query-update) - Hapus paragraf bantuan .paste-sub dari modal preview paste (HTML + CSS)
