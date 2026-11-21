@@ -19,6 +19,111 @@
       .topbar-row { align-items: flex-start; }
       th:first-child, td:first-child { width: 36px; min-width: 36px; padding-left: 8px; }
       th:nth-child(5), td:nth-child(5) { width: 10%; }
+
+      /* Modal preview paste */
+      .paste-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+      }
+      .paste-overlay.show { display: flex; }
+      .paste-box {
+        width: min(640px, 100%);
+        max-height: min(80vh, 640px);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+      }
+      .paste-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .paste-head h2 { margin: 0; font-size: 1rem; }
+      .paste-total {
+        font-size: 0.78rem;
+        color: var(--muted);
+        padding: 3px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .paste-sub { margin: 0; font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+      .paste-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow-y: auto;
+        min-height: 60px;
+        padding-right: 2px;
+      }
+      .paste-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+      }
+      .paste-row.miss { border-color: rgba(255, 180, 0, 0.45); }
+      .paste-token {
+        flex: 0 0 32%;
+        min-width: 0;
+        font-size: 0.8rem;
+        color: var(--fg);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .paste-arrow { flex-shrink: 0; font-size: 0.85rem; color: var(--muted); }
+      .paste-map {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.8rem;
+        padding: 5px 6px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg);
+        cursor: pointer;
+      }
+      .paste-del {
+        flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .paste-del:hover { color: var(--fg); }
+      .paste-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 2px;
+      }
     </style>
   </head>
   <body>
@@ -60,11 +165,29 @@
         <p>Catatan</p>
         <ul>
           <li>* menandai field yang sering digunakan.</li>
-          <li>Paste teks header yang dipisah Tab di area mana saja, contoh: <code>tanggal lahir</code> Tab <code>agama</code> Tab <code>kota</code> — field yang cocok otomatis tercentang sesuai urutan.</li>
+          <li>Paste teks header yang dipisah Tab di area mana saja, contoh: <code>tanggal lahir</code> Tab <code>agama</code> Tab <code>kota</code> — muncul preview modal: periksa/koreksi pemetaan field (mis. <code>nik</code> bisa diganti ke field student), lalu tekan Terapkan supaya tercentang sesuai urutan.</li>
           <li>Jika formula yang dihasilkan lebih dari 255 karakter, akan otomatis dipisah menjadi dua baris pada spasi terakhir.</li>
           <li>Ganti <code>''</code> dengan nilai Anda dan atur <code>u.username=''</code> ke user target sebelum dijalankan.</li>
         </ul>
       </footer>
+    </div>
+
+    <div class="paste-overlay" id="paste-modal" role="dialog" aria-modal="true" aria-labelledby="paste-modal-title">
+      <div class="paste-box">
+        <div class="paste-head">
+          <h2 id="paste-modal-title">Preview hasil paste</h2>
+          <span class="paste-total" id="paste-total">Belum ada field dipilih</span>
+        </div>
+        <p class="paste-sub">
+          Cek pemetaan tiap kolom — kalau salah (mis. <code>nik</code> harusnya ke field student), ganti lewat dropdown.
+          Baris yang dibiarkan kosong tidak ikut diterapkan. Urutan baris = urutan field di query.
+        </p>
+        <div class="paste-rows" id="paste-rows"></div>
+        <div class="paste-actions">
+          <button class="panel-btn" id="paste-cancel" type="button">Batal</button>
+          <button class="panel-btn btn-primary" id="paste-apply" type="button">Terapkan</button>
+        </div>
+      </div>
     </div>
 
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
@@ -86,6 +209,9 @@
       document.addEventListener("click", (event) => {
         const button = event.target.closest("button");
         if (!button || button.disabled) return;
+
+        /* Tombol dalam modal preview paste ditangani sendiri (tanpa toast global) */
+        if (button.closest("#paste-modal")) return;
 
         const label = button.getAttribute("aria-label") || button.textContent.trim() || button.id || "Tombol";
 
@@ -658,6 +784,7 @@
         /* Panel mendaftar ke handler paste global (auto-check header) */
         pasteTargets.push({
           fields,
+          label: title.split(" - ")[0],
           select(name) {
             state.selected[name] = true;
             state.order = state.order.filter((n) => n !== name);
@@ -864,6 +991,7 @@
         }
 
         const matches = [];
+        const rows = [];
         tokens.forEach((t) => {
           let idx = main;
           let name = findBestField(t, panels[idx]);
@@ -871,11 +999,135 @@
             idx = idx === 0 ? 1 : 0;
             name = findBestField(t, panels[idx]);
           }
+          /* rows berisi semua token (cocok maupun tidak) untuk preview modal */
+          rows.push({ token: t, panel: name ? idx : main, name: name || null });
           if (name) matches.push({ panel: idx, name });
         });
-        return { tokens, matches };
+        return { tokens, matches, rows };
       }
 
+      /* ── Modal preview hasil paste (dicek/diubah dulu, baru diterapkan) ── */
+      const pasteModalEl = document.getElementById("paste-modal");
+      const pasteRowsEl = document.getElementById("paste-rows");
+      const pasteTotalEl = document.getElementById("paste-total");
+      const pasteApplyBtn = document.getElementById("paste-apply");
+
+      function allFieldOptions() {
+        const out = [];
+        pasteTargets.forEach((p, pi) => {
+          p.fields.forEach((f) => {
+            out.push({
+              value: pi + "|" + f.name,
+              text: f.name + (f.desc ? " — " + f.desc : ""),
+              group: p.label,
+            });
+          });
+        });
+        return out;
+      }
+
+      /* Satu select gabungan: optgroup per panel, value "panel|field"
+         (nama field bisa sama di dua panel, mis. id, created_date) */
+      function createMapSelect(cur) {
+        const sel = document.createElement("select");
+        sel.className = "paste-map";
+        sel.setAttribute("aria-label", "Field untuk kolom ini");
+        sel.appendChild(new Option("— pilih field —", ""));
+        let lastGroup = null;
+        let og = null;
+        allFieldOptions().forEach((e) => {
+          if (e.group !== lastGroup) {
+            og = document.createElement("optgroup");
+            og.label = e.group;
+            sel.appendChild(og);
+            lastGroup = e.group;
+          }
+          og.appendChild(new Option(e.text, e.value));
+        });
+        if (cur) sel.value = cur;
+        return sel;
+      }
+
+      function updatePasteTotal() {
+        const values = [...pasteRowsEl.querySelectorAll(".paste-map")].map((s) => s.value).filter(Boolean);
+        const per = pasteTargets.map((_, pi) => values.filter((v) => v.indexOf(pi + "|") === 0).length);
+        const total = values.length;
+        const breakdown = pasteTargets.map((p, pi) => `${p.label}: ${per[pi]}`).join(" · ");
+        pasteTotalEl.textContent = total ? `${total} field akan tercentang — ${breakdown}` : "Belum ada field dipilih";
+        pasteApplyBtn.disabled = total === 0;
+      }
+
+      function openPasteModal(plan) {
+        pasteRowsEl.innerHTML = "";
+        plan.rows.forEach((row) => {
+          const div = document.createElement("div");
+          div.className = "paste-row" + (row.name ? "" : " miss");
+
+          const token = document.createElement("span");
+          token.className = "paste-token";
+          token.textContent = row.token;
+          token.title = row.token;
+
+          const arrow = document.createElement("span");
+          arrow.className = "paste-arrow";
+          arrow.textContent = "→";
+
+          const sel = createMapSelect(row.name ? row.panel + "|" + row.name : "");
+          sel.addEventListener("change", updatePasteTotal);
+
+          const del = document.createElement("button");
+          del.type = "button";
+          del.className = "paste-del";
+          del.setAttribute("aria-label", "Hapus baris " + row.token);
+          del.textContent = "×";
+          del.addEventListener("click", () => {
+            div.remove();
+            if (!pasteRowsEl.children.length) closePasteModal();
+            else updatePasteTotal();
+          });
+
+          div.append(token, arrow, sel, del);
+          pasteRowsEl.appendChild(div);
+        });
+        updatePasteTotal();
+        pasteModalEl.classList.add("show");
+        (pasteRowsEl.querySelector(".paste-map") || pasteApplyBtn).focus();
+      }
+
+      function closePasteModal() {
+        pasteModalEl.classList.remove("show");
+        pasteRowsEl.innerHTML = "";
+      }
+
+      function applyPasteModal() {
+        const chosen = [];
+        [...pasteRowsEl.querySelectorAll(".paste-map")].forEach((sel) => {
+          if (!sel.value) return;
+          const bar = sel.value.indexOf("|");
+          chosen.push({ panel: Number(sel.value.slice(0, bar)), name: sel.value.slice(bar + 1) });
+        });
+        if (!chosen.length) return;
+        const touched = new Set();
+        chosen.forEach((m) => {
+          pasteTargets[m.panel].select(m.name);
+          touched.add(m.panel);
+        });
+        touched.forEach((i) => pasteTargets[i].refresh());
+        closePasteModal();
+        showToast(chosen.length + " field tercentang sesuai urutan paste");
+      }
+
+      pasteApplyBtn.addEventListener("click", applyPasteModal);
+      document.getElementById("paste-cancel").addEventListener("click", closePasteModal);
+      /* Klik area gelap / Esc = batal */
+      pasteModalEl.addEventListener("click", (e) => {
+        if (e.target === pasteModalEl) closePasteModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && pasteModalEl.classList.contains("show")) closePasteModal();
+      });
+
+      /* Paste di area mana saja → tampilkan modal preview (bukan langsung centang) */
       document.addEventListener("paste", (e) => {
         /* Lewati input yang bisa diedit (search, letter input, username) */
         const target = e.target;
@@ -883,14 +1135,8 @@
 
         const text = (e.clipboardData && e.clipboardData.getData("text")) || "";
         const plan = planPaste(text, pasteTargets);
-        if (!plan.tokens.length) return;
-        if (!plan.matches.length) {
-          showToast("Tidak ada field yang cocok dengan teks yang dipaste", true);
-          return;
-        }
-        plan.matches.forEach((m) => pasteTargets[m.panel].select(m.name));
-        [...new Set(plan.matches.map((m) => m.panel))].forEach((i) => pasteTargets[i].refresh());
-        showToast(plan.matches.length + " field tercentang sesuai urutan paste");
+        if (!plan.rows.length) return;
+        openPasteModal(plan);
       });
     </script>
   </body>
