@@ -25,3 +25,4 @@
 2026-11-21 12:56 (query-update) - Rapikan centering vertikal baris modal: panah inline-flex line-height 1, select & kolom huruf tinggi tetap 30px padding vertikal 0, align-self center pada token/map/del/letter
 2026-11-21 12:56 (query-update) - Badge total: hanya angka (total & per panel) dibungkus .pt-num berwarna primary/biru, sisanya tetap muted
 2026-11-21 12:56 (query-update) - Hapus paragraf bantuan .paste-sub dari modal preview paste (HTML + CSS)
+2026-11-21 13:10 (query-update) - Tab di kolom huruf modal langsung lompat ke kolom huruf baris berikutnya (Shift+Tab ke sebelumnya), baris disabled dilewati, kalau habis biarkan Tab default

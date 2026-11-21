@@ -1353,6 +1353,24 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && pasteModalEl.classList.contains("show")) closePasteModal();
       });
+      /* Tab di kolom huruf baris 1 → langsung ke kolom huruf baris 2, dst.
+         (Shift+Tab ke baris sebelumnya). Baris yang disabled dilewati;
+         kalau tidak ada target lagi, biarkan Tab default berjalan. */
+      pasteRowsEl.addEventListener("keydown", (e) => {
+        if (e.key !== "Tab" || !e.target.classList.contains("paste-letter")) return;
+        const letters = [...pasteRowsEl.querySelectorAll(".paste-letter")];
+        const from = letters.indexOf(e.target);
+        if (from < 0) return;
+        const dir = e.shiftKey ? -1 : 1;
+        for (let j = from + dir; j >= 0 && j < letters.length; j += dir) {
+          if (!letters[j].disabled) {
+            e.preventDefault();
+            letters[j].focus();
+            letters[j].select();
+            return;
+          }
+        }
+      });
 
       /* Paste di area mana saja → tampilkan modal preview (bukan langsung centang) */
       document.addEventListener("paste", (e) => {
