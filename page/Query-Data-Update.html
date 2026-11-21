@@ -20,6 +20,19 @@
       th:first-child, td:first-child { width: 36px; min-width: 36px; padding-left: 8px; }
       th:nth-child(5), td:nth-child(5) { width: 10%; }
 
+      /* Tinggi settings bar dikunci: input Username yang muncul saat Mode
+         formula ON tidak lagi menambah tinggi bar (padding vertikal 13px +
+         input 35px = 62px, sama dengan tinggi saat OFF) */
+      .settings-bar { padding: 13px 20px; }
+
+      /* Empty state saat pencarian field tidak menemukan hasil */
+      tbody tr.empty-row,
+      tbody tr.empty-row:hover {
+        background: transparent;
+        cursor: default;
+      }
+      tbody tr.empty-row td.empty-state { border-bottom: 0; }
+
       /* Modal preview paste */
       .paste-overlay {
         position: fixed;
@@ -810,6 +823,13 @@
             });
             tbody.appendChild(tr);
           });
+
+          if (!filtered.length) {
+            const tr = document.createElement("tr");
+            tr.className = "empty-row";
+            tr.innerHTML = `<td colspan="5" class="empty-state">Tidak ada field yang cocok dengan pencarian.</td>`;
+            tbody.appendChild(tr);
+          }
 
           reorderRows();
           refreshOutput();
