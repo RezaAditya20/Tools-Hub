@@ -96,6 +96,22 @@
         background: var(--bg);
       }
       .paste-row.miss { border-color: rgba(255, 180, 0, 0.45); }
+      /* Garis pemisah antara field tercentang (di-pin di atas) dan sisanya */
+      tbody tr.pin-sep,
+      tbody tr.pin-sep:hover {
+        background: transparent;
+        border-bottom: 0;
+        cursor: default;
+      }
+      tbody tr.pin-sep td {
+        padding: 4px 10px;
+        border-bottom: 0;
+      }
+      tbody tr.pin-sep td::after {
+        content: "";
+        display: block;
+        border-top: 1px dashed color-mix(in srgb, var(--fg) 22%, transparent);
+      }
       .paste-token {
         flex: 0 0 32%;
         min-width: 0;
@@ -104,17 +120,6 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-      }
-      /* Panah: inline-flex + line-height 1 supaya glyph pasti di tengah
-         kotaknya, lalu align-self center di sumbu baris */
-      .paste-arrow {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        line-height: 1;
-        font-size: 0.85rem;
-        color: var(--muted);
-        align-self: center;
       }
       .paste-token,
       .paste-map,
@@ -169,6 +174,9 @@
         align-items: center;
         gap: 6px;
         font-size: 0.78rem;
+        /* line-height 1 membuat line box teks setinggi font (bukan 1.47x),
+           sehingga titik tengah teks jatuh tepat di titik tengah checkbox */
+        line-height: 1;
         color: var(--muted);
         cursor: pointer;
         user-select: none;
@@ -781,7 +789,8 @@
                 clearFieldLetter(f.name);
                 state.letters[f.name] = "";
               }
-              else {
+              reorderRows();
+              if (nextVal) {
                 const li = tr.querySelector(".letter-input");
                 if (li) li.focus();
               }
@@ -800,7 +809,30 @@
             tbody.appendChild(tr);
           });
 
+          reorderRows();
           refreshOutput();
+        }
+
+        /* Field tercentang di-pin ke paling atas, dipisah garis dari yang
+           belum tercentang. Urutan di dalam tiap grup tetap urutan field. */
+        function createPinSep() {
+          const sep = document.createElement("tr");
+          sep.className = "pin-sep";
+          sep.setAttribute("aria-hidden", "true");
+          sep.innerHTML = `<td colspan="5"></td>`;
+          return sep;
+        }
+
+        function reorderRows() {
+          const oldSep = tbody.querySelector(".pin-sep");
+          if (oldSep) oldSep.remove();
+          const rows = [...tbody.querySelectorAll("tr")];
+          if (!rows.length) return;
+          const pinned = rows.filter((r) => r.classList.contains("selected"));
+          const rest = rows.filter((r) => !r.classList.contains("selected"));
+          pinned.forEach((r) => tbody.appendChild(r));
+          if (pinned.length && rest.length) tbody.appendChild(createPinSep());
+          rest.forEach((r) => tbody.appendChild(r));
         }
 
         function refreshOutput() {
@@ -1236,10 +1268,6 @@
           token.textContent = label;
           token.title = label;
 
-          const arrow = document.createElement("span");
-          arrow.className = "paste-arrow";
-          arrow.textContent = "→";
-
           const sel = createMapSelect(row.name ? row.panel + "|" + row.name : "");
 
           /* Kolom huruf formula — hanya bisa diisi saat Mode formula ON */
@@ -1284,7 +1312,7 @@
             else updatePasteTotal();
           });
 
-          div.append(token, arrow, sel, letter, del);
+          div.append(token, sel, letter, del);
           pasteRowsEl.appendChild(div);
         });
         syncFormulaModal();

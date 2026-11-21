@@ -26,3 +26,5 @@
 2026-11-21 12:56 (query-update) - Badge total: hanya angka (total & per panel) dibungkus .pt-num berwarna primary/biru, sisanya tetap muted
 2026-11-21 12:56 (query-update) - Hapus paragraf bantuan .paste-sub dari modal preview paste (HTML + CSS)
 2026-11-21 13:10 (query-update) - Tab di kolom huruf modal langsung lompat ke kolom huruf baris berikutnya (Shift+Tab ke sebelumnya), baris disabled dilewati, kalau habis biarkan Tab default
+2026-11-21 13:33 (query-update) - Perbaiki centering vertikal teks "Mode formula" di modal preview paste (line-height 1 pada label)
+2026-11-21 13:33 (query-update) - Field tercentang di panel Profile/Student otomatis di-pin ke paling atas dan dipisah garis putus-putus dari yang belum tercentang
