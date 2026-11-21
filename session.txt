@@ -32,3 +32,4 @@
 2026-11-21 13:52 (query-update) - Modal preview paste kini cek huruf formula ganda antar baris secara live (border merah + shake), bukan hanya saat Terapkan
 2026-11-21 14:05 (query-update) - Kunci tinggi settings bar di 62px walau Mode formula ON/OFF (padding vertikal 13px) agar input Username tidak menggeser layout
 2026-11-21 14:05 (query-update) - Tampilkan empty state "Tidak ada field yang cocok dengan pencarian" di tabel Profile dan Student saat hasil search kosong
+2026-11-21 14:10 (query-update) - Input Username diberi border-radius 6px agar sama dengan search field
