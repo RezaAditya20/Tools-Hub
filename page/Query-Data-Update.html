@@ -25,15 +25,26 @@
         position: fixed;
         inset: 0;
         z-index: 300;
-        display: none;
+        display: flex;
         align-items: center;
         justify-content: center;
         padding: 20px;
         background: rgba(0, 0, 0, 0.55);
         backdrop-filter: blur(3px);
         -webkit-backdrop-filter: blur(3px);
+        /* Fade buka/tutup: visibility ditahan sampai opacity selesai turun
+           (visibility tidak bisa ditransisikan kalau pakai display:none) */
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease, visibility 0s linear 0.22s;
       }
-      .paste-overlay.show { display: flex; }
+      .paste-overlay.show {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 0.22s ease, visibility 0s linear 0s;
+      }
       .paste-box {
         width: min(640px, 100%);
         max-height: min(80vh, 640px);
@@ -45,7 +56,10 @@
         border-radius: 12px;
         padding: 18px;
         box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
       }
+      .paste-overlay.show .paste-box { transform: none; }
       .paste-head {
         display: flex;
         align-items: center;
@@ -123,6 +137,12 @@
         justify-content: flex-end;
         gap: 8px;
         padding-top: 2px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .paste-overlay,
+        .paste-box {
+          transition: none;
+        }
       }
     </style>
   </head>
@@ -1095,8 +1115,9 @@
       }
 
       function closePasteModal() {
+        /* Isi tidak dibersihkan di sini supaya konten tetap terlihat
+           selama fade-out; dibersihkan lagi oleh openPasteModal(). */
         pasteModalEl.classList.remove("show");
-        pasteRowsEl.innerHTML = "";
       }
 
       function applyPasteModal() {
