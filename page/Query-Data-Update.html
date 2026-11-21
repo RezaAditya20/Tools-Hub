@@ -25,8 +25,15 @@
          input 35px = 62px, sama dengan tinggi saat OFF) */
       .settings-bar { padding: 13px 20px; }
 
-      /* Samakan sudut input Username dengan search field (6px, bukan kotak) */
-      .settings-item input[type="text"] { border-radius: 6px; }
+      /* Samakan tampilan input Username dengan search field: border 1px
+         (global input[type="text"] border 0px) + sudut 6px */
+      .settings-item input[type="text"] {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+
+      /* Textarea hasil query (Baris 1 & 2) ikut rounded seperti search field */
+      .output textarea { border-radius: 6px; }
 
       /* Empty state saat pencarian field tidak menemukan hasil */
       tbody tr.empty-row,
@@ -201,7 +208,7 @@
       /* Kolom huruf modal: class letter-input diambil dari shared.css
          (ukuran/font konsisten dengan tabel utama) dan selektor dinaikkan ke
          .paste-row .paste-letter (0,2,0) supaya aturan generik
-         input[type="text"] (0,1,1) — padding 14px, border 0 — tidak menimpa
+         input[type="text"] (0,1,1) - padding 14px, border 0 - tidak menimpa
          dan menutup input seperti sebelumnya. */
       .paste-row .paste-letter {
         flex: 0 0 auto;
@@ -271,7 +278,7 @@
         <p>Catatan</p>
         <ul>
           <li>* menandai field yang sering digunakan.</li>
-          <li>Paste teks header yang dipisah Tab di area mana saja, contoh: <code>tanggal lahir</code> Tab <code>agama</code> Tab <code>kota</code> — muncul preview modal: periksa/koreksi pemetaan field (mis. <code>nik</code> bisa diganti ke field student), lalu tekan Terapkan supaya tercentang sesuai urutan.</li>
+          <li>Paste teks header yang dipisah Tab di area mana saja, contoh: <code>tanggal lahir</code> Tab <code>agama</code> Tab <code>kota</code> - muncul preview modal: periksa/koreksi pemetaan field (mis. <code>nik</code> bisa diganti ke field student), lalu tekan Terapkan supaya tercentang sesuai urutan.</li>
           <li>Jika formula yang dihasilkan lebih dari 255 karakter, akan otomatis dipisah menjadi dua baris pada spasi terakhir.</li>
           <li>Ganti <code>''</code> dengan nilai Anda dan atur <code>u.username=''</code> ke user target sebelum dijalankan.</li>
         </ul>
@@ -393,7 +400,11 @@
         syncFormulaModal();
       }
 
-      formulaCb.addEventListener("change", (e) => setFormulaMode(e.target.checked));
+      formulaCb.addEventListener("change", (e) => {
+        setFormulaMode(e.target.checked);
+        /* Centang Mode formula → langsung fokus ke input Username */
+        if (e.target.checked) usernameInput.focus();
+      });
 
       usernameInput.addEventListener("input", (e) => {
         settings.username = e.target.value.trim().toUpperCase();
@@ -670,14 +681,14 @@
         output.innerHTML = `
         <div>
           <div class="output-label">
-            <span class="label-1">Baris 1 — 0 karakter</span>
+            <span class="label-1">Baris 1 - 0 karakter</span>
             <button class="panel-btn btn-primary btn-copy-1" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin</button>
           </div>
           <textarea class="line-1" readonly></textarea>
         </div>
         <div class="line-2-block">
           <div class="output-label">
-            <span class="label-2">Baris 2 (≤ 255 karakter) — 0 karakter</span>
+            <span class="label-2">Baris 2 (≤ 255 karakter) - 0 karakter</span>
             <button class="panel-btn btn-primary btn-copy-2" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin</button>
           </div>
           <textarea class="line-2" readonly></textarea>
@@ -873,8 +884,8 @@
           countEl.textContent = preview.chosen.length;
           line1El.value = line1;
           line2El.value = line2;
-          label1El.textContent = `Baris 1 — ${preview.count} karakter`;
-          label2El.textContent = `Baris 2 (${line2.length > LIMIT ? "melewati" : "≤"} 255 karakter) — ${line2.length} karakter`;
+          label1El.textContent = `Baris 1 - ${preview.count} karakter`;
+          label2El.textContent = `Baris 2 (${line2.length > LIMIT ? "melewati" : "≤"} 255 karakter) - ${line2.length} karakter`;
           warningEl.textContent = overLimit ? "Peringatan: baris 2 sudah melebihi 255 karakter. Kurangi jumlah field yang dipilih." : warningEl.textContent;
           warningEl.classList.toggle("hidden", !overLimit && warningEl.textContent === "");
           copy1Btn.disabled = !line1;
@@ -1225,7 +1236,7 @@
           p.fields.forEach((f) => {
             out.push({
               value: pi + "|" + f.name,
-              text: f.name + (f.desc ? " — " + f.desc : ""),
+              text: f.name + (f.desc ? " - " + f.desc : ""),
               group: p.label,
             });
           });
@@ -1239,7 +1250,7 @@
         const sel = document.createElement("select");
         sel.className = "paste-map";
         sel.setAttribute("aria-label", "Field untuk kolom ini");
-        sel.appendChild(new Option("— pilih field —", ""));
+        sel.appendChild(new Option("- pilih field -", ""));
         let lastGroup = null;
         let og = null;
         allFieldOptions().forEach((e) => {
@@ -1262,7 +1273,7 @@
         /* Hanya angka yang diberi span .pt-num (warna biru primary) */
         const num = (n) => `<b class="pt-num">${n}</b>`;
         const breakdown = pasteTargets.map((p, pi) => `${p.label}: ${num(per[pi])}`).join(" · ");
-        pasteTotalEl.innerHTML = total ? `${num(total)} field akan tercentang — ${breakdown}` : "Belum ada field dipilih";
+        pasteTotalEl.innerHTML = total ? `${num(total)} field akan tercentang - ${breakdown}` : "Belum ada field dipilih";
         pasteApplyBtn.disabled = total === 0;
       }
 
@@ -1327,7 +1338,7 @@
 
           const sel = createMapSelect(row.name ? row.panel + "|" + row.name : "");
 
-          /* Kolom huruf formula — hanya bisa diisi saat Mode formula ON */
+          /* Kolom huruf formula - hanya bisa diisi saat Mode formula ON */
           const letter = document.createElement("input");
           letter.type = "text";
           /* letter-input = class shared.css (ukuran konsisten dengan tabel utama) */
@@ -1427,9 +1438,17 @@
       pasteApplyBtn.addEventListener("click", applyPasteModal);
       document.getElementById("paste-cancel").addEventListener("click", closePasteModal);
       /* Sakelar modal → jalur yang sama dengan checkbox halaman */
-      document.getElementById("paste-mode-formula").addEventListener("change", (e) =>
-        setFormulaMode(e.target.checked)
-      );
+      document.getElementById("paste-mode-formula").addEventListener("change", (e) => {
+        setFormulaMode(e.target.checked);
+        /* Centang Mode formula di modal → fokus ke kolom huruf pertama */
+        if (e.target.checked) {
+          const first = [...pasteRowsEl.querySelectorAll(".paste-letter")].find((el) => !el.disabled);
+          if (first) {
+            first.focus();
+            first.select();
+          }
+        }
+      });
       /* Klik area gelap / Esc = batal */
       pasteModalEl.addEventListener("click", (e) => {
         if (e.target === pasteModalEl) closePasteModal();

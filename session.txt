@@ -33,3 +33,6 @@
 2026-11-21 14:05 (query-update) - Kunci tinggi settings bar di 62px walau Mode formula ON/OFF (padding vertikal 13px) agar input Username tidak menggeser layout
 2026-11-21 14:05 (query-update) - Tampilkan empty state "Tidak ada field yang cocok dengan pencarian" di tabel Profile dan Student saat hasil search kosong
 2026-11-21 14:10 (query-update) - Input Username diberi border-radius 6px agar sama dengan search field
+2026-11-21 14:20 (query-update) - Input Username diberi border 1px + radius 6px dan textarea Baris 1/2 dibuat rounded 6px seperti search field
+2026-11-21 14:20 (query-update) - Centang Mode formula di halaman langsung fokus ke input Username; centang sakelar Mode formula di modal preview langsung fokus ke kolom huruf pertama
+2026-11-21 14:20 (query-update) - Ganti semua karakter em dash jadi hyphen di halaman Query Data Update
