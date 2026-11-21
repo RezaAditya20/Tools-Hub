@@ -60,6 +60,7 @@
         <p>Catatan</p>
         <ul>
           <li>* menandai field yang sering digunakan.</li>
+          <li>Paste teks header yang dipisah Tab di area mana saja, contoh: <code>tanggal lahir</code> Tab <code>agama</code> Tab <code>kota</code> — field yang cocok otomatis tercentang sesuai urutan.</li>
           <li>Jika formula yang dihasilkan lebih dari 255 karakter, akan otomatis dipisah menjadi dua baris pada spasi terakhir.</li>
           <li>Ganti <code>''</code> dengan nilai Anda dan atur <code>u.username=''</code> ke user target sebelum dijalankan.</li>
         </ul>
@@ -106,6 +107,7 @@
       });
 
       const panelUpdaters = [];
+      const pasteTargets = [];
       const settings = { formulaMode: false, username: "B" };
 
       const letterOwner = {};
@@ -653,6 +655,17 @@
         copy1Btn.addEventListener("click", () => handleCopy(line1El));
         copy2Btn.addEventListener("click", () => handleCopy(line2El));
 
+        /* Panel mendaftar ke handler paste global (auto-check header) */
+        pasteTargets.push({
+          fields,
+          select(name) {
+            state.selected[name] = true;
+            state.order = state.order.filter((n) => n !== name);
+            state.order.push(name);
+          },
+          refresh: update,
+        });
+
         panelUpdaters.push(refreshOutput);
         render();
       }
@@ -660,6 +673,225 @@
       createPanel("profile-panel", "Profile - common_profile", profileData, "update common_profile p set ", " from auth_user u where u.id=p.user_id and u.username='");
 
       createPanel("student-panel", "Student - common_student", studentData, "update common_student s set ", " from common_profile p, auth_user u where s.profile_id=p.id and p.user_id=u.id and u.username='");
+
+      /* ── Auto-check field dari teks header yang di-paste (dipisah Tab) ── */
+      /* Kamus alias label Indonesia/Inggris umum → nama field.
+         Key sudah dinormalkan (huruf kecil, spasi tunggal). */
+      const FIELD_ALIASES = {
+        /* Profile */
+        "tanggal lahir": "birth_date",
+        "tgl lahir": "birth_date",
+        "tanggal lahiran": "birth_date",
+        "tempat lahir": "birth_place",
+        "agama": "religion",
+        "kota": "city",
+        "kecamatan": "district",
+        "kelurahan": "village",
+        "provinsi": "province",
+        "alamat": "address",
+        "jenis kelamin": "gender",
+        "kelamin": "gender",
+        "nama panggilan": "nick_name",
+        "nama tengah": "middle_name",
+        "sekolah": "school_id",
+        "no hp": "mobile_no",
+        "nomor hp": "mobile_no",
+        "no handphone": "mobile_no",
+        "no telp": "mobile_no",
+        "no telepon": "mobile_no",
+        "telepon": "mobile_no",
+        "hp": "mobile_no",
+        "kode pos": "post_code",
+        "negara": "country",
+        "kewarganegaraan": "nationality",
+        "warga negara": "nationality",
+        "rt": "rt_number",
+        "rw": "rw_number",
+        "foto": "profile_photo",
+        "foto profil": "profile_photo",
+        "golongan darah": "blood_type",
+        "nik": "nik",
+        "nip": "nip",
+        "nuptk": "nuptk",
+        "alergi": "allergies",
+        "riwayat penyakit": "medical_history",
+        "status kepegawaian": "status_kepegawaian",
+        "barcode": "barcode_number",
+        "tanda tangan": "signature",
+        "virtual account": "virtual_account",
+        "jam masuk": "clock_in_time",
+        "jam pulang": "clock_out_time",
+        "bahasa": "preferred_lang",
+        "tanggal buat": "created_date",
+        "tanggal input": "created_date",
+        "tanggal ubah": "modified_date",
+        /* Student */
+        "nis": "student_reg_no",
+        "nisn": "student_reg_no_national",
+        "nama ayah": "father_name",
+        "ayah": "father_name",
+        "no hp ayah": "father_mobile_no",
+        "telepon ayah": "father_mobile_no",
+        "pendidikan ayah": "father_education",
+        "pekerjaan ayah": "father_job",
+        "alamat ayah": "father_address",
+        "tanggal lahir ayah": "father_birth_date",
+        "nama ibu": "mother_name",
+        "ibu": "mother_name",
+        "no hp ibu": "mother_mobile_no",
+        "telepon ibu": "mother_mobile_no",
+        "pendidikan ibu": "mother_education",
+        "pekerjaan ibu": "mother_job",
+        "alamat ibu": "mother_address",
+        "nama wali": "guardian_name",
+        "wali": "guardian_name",
+        "no hp wali": "guardian_mobile_no",
+        "pekerjaan wali": "guardian_job",
+        "pendidikan wali": "guardian_education",
+        "alamat wali": "guardian_address",
+        "anak ke": "child_number",
+        "anak ke berapa": "child_number",
+        "jumlah saudara": "total_siblings",
+        "saudara": "total_siblings",
+        "status dalam keluarga": "status_in_family",
+        "status keluarga": "status_in_family",
+        "sekolah asal": "previous_school",
+        "asal sekolah": "previous_school",
+        "alamat sekolah asal": "previous_school_address",
+        "tanggal diterima": "acceptance_date",
+        "diterima": "acceptance_date",
+        "kelas diterima": "acceptance_class",
+        "kelas": "grade_id",
+        "kartu pelajar": "student_card",
+        "nama kontak darurat": "emergency_name",
+        "no darurat": "emergency_mobile_no",
+        "hubungan darurat": "emergency_relationship",
+      };
+
+      function normLabel(s) {
+        return String(s || "")
+          .toLowerCase()
+          .replace(/[_\-./,()]+/g, " ")
+          .replace(/[^a-z0-9 ]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      /* Skor kecocoken token (sudah dinormalkan) terhadap satu field:
+         alias 120 > nama persis 100 > deskripsi persis 90 >
+         semua kata ada di nama 70 > di deskripsi 65 > substring 40/35 */
+      function scoreField(token, f) {
+        if (!token) return 0;
+        const alias = FIELD_ALIASES[token];
+        if (alias && alias === f.name) return 120;
+        const nName = normLabel(f.name);
+        const nDesc = normLabel(f.desc);
+        if (nName === token) return 100;
+        if (nDesc && nDesc === token) return 90;
+        const tWords = token.split(" ");
+        if (tWords.every((w) => nName.split(" ").includes(w))) return 70;
+        if (nDesc && tWords.every((w) => nDesc.split(" ").includes(w))) return 65;
+        if (token.length >= 4 && nName.includes(token)) return 40;
+        if (nDesc && token.length >= 4 && nDesc.includes(token)) return 35;
+        return 0;
+      }
+
+      function bestScoreField(token, panel) {
+        let best = 0;
+        panel.fields.forEach((f) => {
+          const sc = scoreField(token, f);
+          if (sc > best) best = sc;
+        });
+        return best;
+      }
+
+      function findBestField(token, panel) {
+        let best = 0;
+        let found = null;
+        panel.fields.forEach((f) => {
+          const sc = scoreField(token, f);
+          if (sc > best) {
+            best = sc;
+            found = f.name;
+          }
+        });
+        return found;
+      }
+
+      function splitPasteTokens(text) {
+        const raw = String(text || "").replace(/\r/g, "");
+        let parts;
+        if (raw.includes("\t")) parts = raw.split("\t");
+        else if (raw.includes("\n")) parts = raw.split("\n");
+        else parts = [raw];
+        return parts.map((s) => s.trim()).filter(Boolean);
+      }
+
+      /* Susun rencana seleksi dari teks paste: pisah token → tentukan panel
+         utama → cocokkan tiap token secara berurutan. Murni fungsi murni
+         (panel di-inject) supaya bisa diuji tanpa DOM. */
+      function planPaste(text, panels) {
+        /* Pisah dulu di teks mentah (tab/baris/spasi ganda), normalisasi belakangan */
+        let tokens = splitPasteTokens(text);
+        if (!tokens.length) return { tokens: [], matches: [] };
+
+        const norm = (tk) => normLabel(tk);
+        const hasMatch = (tk) => panels.some((p) => findBestField(norm(tk), p));
+        /* Satu token utuh tidak cocok → coba pisah dengan 2+ spasi atau titik koma */
+        if (tokens.length === 1 && !hasMatch(tokens[0])) {
+          const alt = tokens[0]
+            .split(/\s{2,}|;/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+          if (alt.length > 1) tokens = alt;
+        }
+        /* Token dinormalkan (huruf kecil, _/- jadi spasi) supaya
+           "NIS", "No. HP", "birth_place" ikut cocok */
+        tokens = tokens.map(norm).filter(Boolean);
+        if (!tokens.length) return { tokens: [], matches: [] };
+
+        /* Panel utama: kecocokan terbanyak; seri → skor token pertama;
+           masih seri → panel pertama (Profile). */
+        let main = 0;
+        if (panels.length > 1) {
+          const ranked = panels.map((p, i) => ({
+            i,
+            count: tokens.filter((t) => findBestField(t, p)).length,
+            first: bestScoreField(tokens[0], p),
+          }));
+          ranked.sort((a, b) => b.count - a.count || b.first - a.first);
+          main = ranked[0].i;
+        }
+
+        const matches = [];
+        tokens.forEach((t) => {
+          let idx = main;
+          let name = findBestField(t, panels[idx]);
+          if (!name && panels.length > 1) {
+            idx = idx === 0 ? 1 : 0;
+            name = findBestField(t, panels[idx]);
+          }
+          if (name) matches.push({ panel: idx, name });
+        });
+        return { tokens, matches };
+      }
+
+      document.addEventListener("paste", (e) => {
+        /* Lewati input yang bisa diedit (search, letter input, username) */
+        const target = e.target;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA") && !target.readOnly) return;
+
+        const text = (e.clipboardData && e.clipboardData.getData("text")) || "";
+        const plan = planPaste(text, pasteTargets);
+        if (!plan.tokens.length) return;
+        if (!plan.matches.length) {
+          showToast("Tidak ada field yang cocok dengan teks yang dipaste", true);
+          return;
+        }
+        plan.matches.forEach((m) => pasteTargets[m.panel].select(m.name));
+        [...new Set(plan.matches.map((m) => m.panel))].forEach((i) => pasteTargets[i].refresh());
+        showToast(plan.matches.length + " field tercentang sesuai urutan paste");
+      });
     </script>
   </body>
 </html>
