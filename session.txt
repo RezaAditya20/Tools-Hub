@@ -19,3 +19,5 @@
 2026-11-21 11:47 (query-update) - Ubah paste langsung centang jadi modal preview: daftar kolom -> field lewat dropdown (bisa koreksi, mis. nik -> field student), total field per panel, baris bisa dihapus, Esc/Batal untuk batal, Terapkan untuk mencentang sesuai urutan
 2026-11-21 12:11 (query-update) - Tambah animasi fade buka/tutup modal preview paste: opacity+visibility 0.22s (bukan display:none), box ikut scale 0.96->1, isi tidak dibersihkan saat tutup supaya fade-out utuh, hormati prefers-reduced-motion
 2026-11-21 12:14 (query-update) - Tampilkan token di modal preview paste sebagai Title Case (agama -> Agama) dari teks asli, akronim NIS/NIK/RT/HP tetap kapital, pemisah _ - . / dipertahankan
+2026-11-21 12:28 (query-update) - Tambah kolom Huruf formula di modal preview paste + sakelar Mode formula di modal yang tersambung dua arah dengan checkbox halaman (huruf hanya bisa diisi saat ON, konflik live, diterapkan saat Terapkan)
+2026-11-21 12:28 (query-update) - Saat Terapkan, seleksi & huruf lama di kedua panel di-reset dulu sehingga hasil akhir persis mengikuti daftar paste (reset() per panel sebelum select)

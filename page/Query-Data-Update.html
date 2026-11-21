@@ -138,6 +138,46 @@
         gap: 8px;
         padding-top: 2px;
       }
+      .paste-head-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .paste-formula-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .paste-letter {
+        flex: 0 0 30px;
+        width: 30px;
+        padding: 5px 0;
+        text-align: center;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--card);
+        color: var(--fg);
+        transition: border-color 0.15s ease;
+      }
+      .paste-letter:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+      .paste-letter:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .paste-letter.dup {
+        border-color: #e5484d;
+      }
       @media (prefers-reduced-motion: reduce) {
         .paste-overlay,
         .paste-box {
@@ -196,11 +236,23 @@
       <div class="paste-box">
         <div class="paste-head">
           <h2 id="paste-modal-title">Preview hasil paste</h2>
-          <span class="paste-total" id="paste-total">Belum ada field dipilih</span>
+          <div class="paste-head-right">
+            <label class="paste-formula-toggle" title="Sama dengan sakelar Mode formula di halaman">
+              <span class="cb-wrap" id="paste-formula-wrap">
+                <input type="checkbox" id="paste-mode-formula" aria-label="Mode formula">
+                <svg class="cb-svg" viewBox="0 0 16 16">
+                  <polyline points="3.5,8 6.5,11 12.5,5"/>
+                </svg>
+              </span>
+              Mode formula
+            </label>
+            <span class="paste-total" id="paste-total">Belum ada field dipilih</span>
+          </div>
         </div>
         <p class="paste-sub">
           Cek pemetaan tiap kolom — kalau salah (mis. <code>nik</code> harusnya ke field student), ganti lewat dropdown.
           Baris yang dibiarkan kosong tidak ikut diterapkan. Urutan baris = urutan field di query.
+          Kolom huruf (untuk formula) hanya bisa diisi saat Mode formula aktif — sakelarnya tersambung dengan yang di halaman.
         </p>
         <div class="paste-rows" id="paste-rows"></div>
         <div class="paste-actions">
@@ -286,12 +338,21 @@
         return settings.formulaMode ? settings.username : "";
       }
 
-      formulaCb.addEventListener("change", (e) => {
-        settings.formulaMode = e.target.checked;
-        formulaCb.classList.add("cb-pop");
-        formulaCb.addEventListener("animationend", () => formulaCb.classList.remove("cb-pop"), { once: true });
+      /* Satu sumber kebenaran Mode formula: checkbox halaman dan sakelar di
+         modal preview paste selalu sinkron (dua arah). */
+      function setFormulaMode(on) {
+        settings.formulaMode = Boolean(on);
+        formulaCb.checked = settings.formulaMode;
+        [formulaCb, document.getElementById("paste-mode-formula")].forEach((cb) => {
+          if (!cb) return;
+          cb.classList.add("cb-pop");
+          cb.addEventListener("animationend", () => cb.classList.remove("cb-pop"), { once: true });
+        });
         refreshSettingsUI();
-      });
+        syncFormulaModal();
+      }
+
+      formulaCb.addEventListener("change", (e) => setFormulaMode(e.target.checked));
 
       usernameInput.addEventListener("input", (e) => {
         settings.username = e.target.value.trim().toUpperCase();
@@ -805,10 +866,33 @@
         pasteTargets.push({
           fields,
           label: title.split(" - ")[0],
+          /* Seleksi + huruf lama dibersihkan (dipakai sebelum Terapkan paste) */
+          reset() {
+            state.selected = {};
+            state.order = [];
+            fields.forEach((f) => clearFieldLetter(f.name));
+            state.letters = {};
+          },
           select(name) {
             state.selected[name] = true;
             state.order = state.order.filter((n) => n !== name);
             state.order.push(name);
+          },
+          getLetter(name) {
+            return state.letters[name] || "";
+          },
+          setLetter(name, v) {
+            if (!v) {
+              clearFieldLetter(name);
+              state.letters[name] = "";
+              refreshOutput();
+              return { ok: true };
+            }
+            const conflict = trySetLetter(name, v);
+            if (conflict) return { ok: false, conflict };
+            state.letters[name] = v;
+            refreshOutput();
+            return { ok: true };
           },
           refresh: update,
         });
@@ -1099,6 +1183,26 @@
         pasteApplyBtn.disabled = total === 0;
       }
 
+      /* Sinkronkan sakelar Mode formula modal dengan settings + aktifkan
+         kolom huruf per baris (hanya bisa diisi bila ON & field terpilih) */
+      function syncFormulaModal() {
+        const mc = document.getElementById("paste-mode-formula");
+        const mw = document.getElementById("paste-formula-wrap");
+        if (mc) mc.checked = settings.formulaMode;
+        if (mw) mw.classList.toggle("checked", settings.formulaMode);
+        syncModalLetterState();
+      }
+
+      function syncModalLetterState() {
+        pasteRowsEl.querySelectorAll(".paste-row").forEach((row) => {
+          const sel = row.querySelector(".paste-map");
+          const letter = row.querySelector(".paste-letter");
+          if (!letter || !sel) return;
+          letter.disabled = !settings.formulaMode || !sel.value;
+          letter.placeholder = letter.disabled ? "–" : "A";
+        });
+      }
+
       function openPasteModal(plan) {
         pasteRowsEl.innerHTML = "";
         plan.rows.forEach((row) => {
@@ -1118,7 +1222,36 @@
           arrow.textContent = "→";
 
           const sel = createMapSelect(row.name ? row.panel + "|" + row.name : "");
-          sel.addEventListener("change", updatePasteTotal);
+
+          /* Kolom huruf formula — hanya bisa diisi saat Mode formula ON */
+          const letter = document.createElement("input");
+          letter.type = "text";
+          letter.className = "paste-letter";
+          letter.maxLength = 1;
+          letter.placeholder = "A";
+          letter.setAttribute("aria-label", "Huruf kolom formula untuk " + label);
+          const letterFor = (value) => {
+            if (!value) return "";
+            const bar = value.indexOf("|");
+            return pasteTargets[Number(value.slice(0, bar))].getLetter(value.slice(bar + 1));
+          };
+          letter.value = letterFor(sel.value);
+          letter.addEventListener("input", () => {
+            const v = letter.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 1);
+            if (letter.value !== v) letter.value = v;
+            /* Penanda konflik live: huruf sudah dipakai field lain */
+            const field = sel.value ? sel.value.slice(sel.value.indexOf("|") + 1) : "";
+            const owner = v ? letterOwner[v] : "";
+            letter.classList.toggle("dup", Boolean(owner && owner !== field));
+          });
+
+          sel.addEventListener("change", () => {
+            /* Ganti field → isi huruf ikut menyesuaikan field barunya */
+            letter.value = letterFor(sel.value);
+            letter.classList.remove("dup");
+            syncModalLetterState();
+            updatePasteTotal();
+          });
 
           const del = document.createElement("button");
           del.type = "button";
@@ -1131,9 +1264,10 @@
             else updatePasteTotal();
           });
 
-          div.append(token, arrow, sel, del);
+          div.append(token, arrow, sel, letter, del);
           pasteRowsEl.appendChild(div);
         });
+        syncFormulaModal();
         updatePasteTotal();
         pasteModalEl.classList.add("show");
         (pasteRowsEl.querySelector(".paste-map") || pasteApplyBtn).focus();
@@ -1147,24 +1281,51 @@
 
       function applyPasteModal() {
         const chosen = [];
-        [...pasteRowsEl.querySelectorAll(".paste-map")].forEach((sel) => {
-          if (!sel.value) return;
+        const letters = [];
+        [...pasteRowsEl.querySelectorAll(".paste-row")].forEach((row) => {
+          const sel = row.querySelector(".paste-map");
+          if (!sel || !sel.value) return;
           const bar = sel.value.indexOf("|");
-          chosen.push({ panel: Number(sel.value.slice(0, bar)), name: sel.value.slice(bar + 1) });
+          const panel = Number(sel.value.slice(0, bar));
+          const name = sel.value.slice(bar + 1);
+          chosen.push({ panel, name });
+          /* Huruf hanya dipakai bila Mode formula aktif */
+          const li = row.querySelector(".paste-letter");
+          if (settings.formulaMode && li && li.value) {
+            letters.push({ panel, name, letter: li.value });
+          }
         });
         if (!chosen.length) return;
+
+        /* Seleksi & huruf lama di-reset dulu di kedua panel →
+           hasil akhir persis mengikuti daftar paste ini saja */
+        pasteTargets.forEach((p) => p.reset());
+
         const touched = new Set();
         chosen.forEach((m) => {
           pasteTargets[m.panel].select(m.name);
           touched.add(m.panel);
         });
+
+        /* Tulis huruf formula setelah field terpilih; konflik dilewati + toast */
+        const conflicts = [];
+        letters.forEach((l) => {
+          const res = pasteTargets[l.panel].setLetter(l.name, l.letter);
+          if (!res.ok) conflicts.push("Huruf " + l.letter + " sudah dipakai field " + res.conflict);
+        });
+
         touched.forEach((i) => pasteTargets[i].refresh());
         closePasteModal();
-        showToast(chosen.length + " field tercentang sesuai urutan paste");
+        if (conflicts.length) showToast(conflicts.join("; "), true);
+        else showToast(chosen.length + " field tercentang sesuai urutan paste");
       }
 
       pasteApplyBtn.addEventListener("click", applyPasteModal);
       document.getElementById("paste-cancel").addEventListener("click", closePasteModal);
+      /* Sakelar modal → jalur yang sama dengan checkbox halaman */
+      document.getElementById("paste-mode-formula").addEventListener("change", (e) =>
+        setFormulaMode(e.target.checked)
+      );
       /* Klik area gelap / Esc = batal */
       pasteModalEl.addEventListener("click", (e) => {
         if (e.target === pasteModalEl) closePasteModal();
