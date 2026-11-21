@@ -109,10 +109,12 @@
         flex: 1;
         min-width: 0;
         font-size: 0.8rem;
-        padding: 5px 6px;
+        padding: 5px 26px 5px 8px;
         border-radius: 6px;
         border: 1px solid var(--border);
-        background: var(--card);
+        /* background-COLOR saja: shorthand `background` akan mematikan
+           gambar panah dropdown yang diberi shared.css untuk select */
+        background-color: var(--card);
         color: var(--fg);
         cursor: pointer;
       }
@@ -154,29 +156,25 @@
         user-select: none;
         white-space: nowrap;
       }
-      .paste-letter {
-        flex: 0 0 30px;
-        width: 30px;
-        padding: 5px 0;
-        text-align: center;
-        font-size: 0.8rem;
-        text-transform: uppercase;
+      /* Kolom huruf modal: class letter-input diambil dari shared.css
+         (ukuran/font konsisten dengan tabel utama) dan selektor dinaikkan ke
+         .paste-row .paste-letter (0,2,0) supaya aturan generik
+         input[type="text"] (0,1,1) — padding 14px, border 0 — tidak menimpa
+         dan menutup input seperti sebelumnya. */
+      .paste-row .paste-letter {
+        flex: 0 0 auto;
+        min-width: 44px;
+        background-color: var(--card);
         border: 1px solid var(--border);
-        border-radius: 6px;
-        background: var(--card);
-        color: var(--fg);
-        transition: border-color 0.15s ease;
       }
-      .paste-letter:focus {
-        outline: none;
+      .paste-row .paste-letter:focus {
         border-color: var(--primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
       }
-      .paste-letter:disabled {
+      .paste-row .paste-letter:disabled {
         opacity: 0.4;
         cursor: not-allowed;
-      }
-      .paste-letter.dup {
-        border-color: #e5484d;
+        background-color: var(--bg);
       }
       @media (prefers-reduced-motion: reduce) {
         .paste-overlay,
@@ -1226,7 +1224,8 @@
           /* Kolom huruf formula — hanya bisa diisi saat Mode formula ON */
           const letter = document.createElement("input");
           letter.type = "text";
-          letter.className = "paste-letter";
+          /* letter-input = class shared.css (ukuran konsisten dengan tabel utama) */
+          letter.className = "paste-letter letter-input";
           letter.maxLength = 1;
           letter.placeholder = "A";
           letter.setAttribute("aria-label", "Huruf kolom formula untuk " + label);

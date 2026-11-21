@@ -21,3 +21,4 @@
 2026-11-21 12:14 (query-update) - Tampilkan token di modal preview paste sebagai Title Case (agama -> Agama) dari teks asli, akronim NIS/NIK/RT/HP tetap kapital, pemisah _ - . / dipertahankan
 2026-11-21 12:28 (query-update) - Tambah kolom Huruf formula di modal preview paste + sakelar Mode formula di modal yang tersambung dua arah dengan checkbox halaman (huruf hanya bisa diisi saat ON, konflik live, diterapkan saat Terapkan)
 2026-11-21 12:28 (query-update) - Saat Terapkan, seleksi & huruf lama di kedua panel di-reset dulu sehingga hasil akhir persis mengikuti daftar paste (reset() per panel sebelum select)
+2026-11-21 12:38 (query-update) - Perbaiki input huruf modal ketutup (tertimpa aturan input[type=text] generik shared.css padding 14px/border 0): pakai class letter-input + selektor .paste-row .paste-letter (0,2,0), dan paste-map pakai background-color supaya panah select shared tetap tampil
